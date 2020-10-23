@@ -1,8 +1,10 @@
 import DefinitionGeneration.DefinitionGenerator;
 import DefinitionGeneration.DefinitionGeneratorNNF;
+import DefinitionGeneration.RedundancyOptions;
 import ExceptionHandlers.ReasonerException;
 import Classification.OntologyReasoningService;
-import RenamingApproach.PropertyValueRenamer;
+import RenamingApproach.PropertyValueNamer;
+import ResultsWriters.MapPrinter;
 import ResultsWriters.RF2Printer;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
@@ -11,10 +13,7 @@ import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Application {
 
@@ -23,11 +22,10 @@ public class Application {
         1) For each PV (existential restriction) in SCT,
 
      */
-
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException {
         //File inputOntologyFile = new File(args[0]);
-        File inputOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/" +
-                "sct/sct-july-2020.owl");
+        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/";
+        File inputOntologyFile = new File(inputPath + "sct/sct-july-2020-noTransitivity.owl");
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLDataFactory df = man.getOWLDataFactory();
@@ -39,8 +37,14 @@ public class Application {
         //RENAMING TEST
         ///////////
         //for each PV in ontology, add a definition of the form PVCi == PVi
-        PropertyValueRenamer renamer = new PropertyValueRenamer();
-        OWLOntology inputOntologyWithRenamings = renamer.renamePropertyValues(inputOntology);
+        PropertyValueNamer renamer = new PropertyValueNamer();
+        OWLOntology inputOntologyWithRenamings = renamer.namePropertyValues(inputOntology);
+
+        //MapPrinter printer = new MapPrinter(inputPath + "namingTest/");
+
+        //Map<OWLObjectSomeValuesFrom, OWLClass> pvRenamingsMap = renamer.getPvNamingMap();
+
+        //printer.printNamingsForPVs(pvRenamingsMap);
 
         //perform classification using ELK
         OntologyReasoningService reasoningService = new OntologyReasoningService(inputOntologyWithRenamings);
@@ -63,7 +67,7 @@ public class Application {
         ontClasses.addAll(inputOntology.getClassesInSignature());
         List<OWLClass> classesToDefine = new ArrayList<OWLClass>(ontClasses);
         for(OWLClass cls:ontClasses) {
-            if(renamer.renamingPvMap.containsKey(cls)) {
+            if(renamer.namingPvMap.containsKey(cls)) {
                 classesToDefine.remove(cls);
             }
         }
@@ -72,22 +76,21 @@ public class Application {
 
         Set<OWLAxiom> definitionsNNF = new HashSet<OWLAxiom>();
 
-        DefinitionGenerator definitionGenerator = new DefinitionGeneratorNNF(inputOntology, reasoningService, renamer);
+        DefinitionGeneratorNNF definitionGenerator = new DefinitionGeneratorNNF(inputOntology, reasoningService, renamer);
+
+        Set<RedundancyOptions> redundancyOptions = new HashSet<RedundancyOptions>();
+        redundancyOptions.add(RedundancyOptions.eliminatereflexivePVRedundancy);
+        redundancyOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
 
         for(OWLClass cls:classesToDefine) {
-            if(cls.toString().contains("210478007")) {
-                System.out.println("Generating NNF for class: " + cls.toString());
-                definitionGenerator.generateDefinition(cls);
-            }
+            System.out.println("Generating NNF for class: " + cls.toString());
+            definitionGenerator.generateDefinition(cls, redundancyOptions);
         }
 
-
-
-        //for(int i=0; i<500; i++) {
-        //    OWLClass cls = classesToDefine.get(i);
-        //    System.out.println("Generating NNF for class: " + cls.toString());
-        //    //definitionGenerator.generateDefinition(cls);
-        //    definitionsNNF.add(definitionGenerator.generateNNF(cls));
+       // for(OWLClass cls:classesToDefine) {
+          //  if(cls.toString().contains("387139005")) {
+          //      definitionGenerator.generateDefinition(cls, redundancyOptions);
+          // }
        // }
 
         definitionsNNF.addAll(definitionGenerator.getGeneratedDefinitions());

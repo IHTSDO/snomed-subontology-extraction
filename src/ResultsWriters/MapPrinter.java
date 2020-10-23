@@ -1,6 +1,7 @@
 package ResultsWriters;
 
 import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -12,10 +13,14 @@ public class MapPrinter extends Printer {
 
     private static String outputDirectory;
     public MapPrinter(String outputPath) {
+        if(!outputPath.substring(outputPath.length() - 1).equals("/")) {
+            this.outputDirectory = outputPath + "/";
+            return;
+        }
         this.outputDirectory = outputPath;
     }
 
-    public void printEquivalentClassesMap(Map map, String mapName) throws IOException {
+    public void printGeneralMap(Map map, String mapName) throws IOException {
         String outputFilePath = outputDirectory + mapName + ".txt";
         System.out.println("Printing map to: " + outputFilePath);
         FileWriter fw = new FileWriter(new File(outputFilePath));
@@ -39,6 +44,31 @@ public class MapPrinter extends Printer {
                 }
             continue;
            }
+        }
+    }
+
+    public void printNamingsForPVs(Map<OWLObjectSomeValuesFrom, OWLClass> pvNamingsMap) throws IOException {
+        String outputFilePath = outputDirectory + "pvNamingMap.txt";
+        System.out.println("Printing map to: " + outputFilePath);
+        FileWriter fw = new FileWriter(new File(outputFilePath));
+        BufferedWriter writer =  new BufferedWriter(fw);
+
+        Iterator<Map.Entry<OWLObjectSomeValuesFrom, OWLClass>> iter = pvNamingsMap.entrySet().iterator();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("PV Expression: " + "\t" + "Name: ");
+        newline(writer);
+        sb.setLength(0);
+        writer.flush();
+        while(iter.hasNext()) {
+            Map.Entry currentEntry = iter.next();
+            sb.append(currentEntry.getKey());
+            sb.append("\t");
+            sb.append(currentEntry.getValue());
+            writer.write(sb.toString());
+            newline(writer);
+            sb.setLength(0);
+            writer.flush();
         }
     }
 

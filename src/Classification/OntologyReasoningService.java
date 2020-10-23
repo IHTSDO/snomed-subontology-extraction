@@ -90,12 +90,12 @@ public class OntologyReasoningService {
         return false;
     }
 
-    public boolean atLeastOneStrongerThan(OWLClass classBeingChecked, Set<OWLClass> setCheckedAgainst) {
+    public boolean weakerThanAtLeastOneOf(OWLClass classBeingChecked, Set<OWLClass> setCheckedAgainst) {
         for(OWLClass classCheckedAgainst:setCheckedAgainst) {
             System.out.println("Class being checked: " + classBeingChecked);
             System.out.println("Class checked against: " + classCheckedAgainst);
             if(this.getAncestorClasses(classCheckedAgainst).contains(classBeingChecked)) {
-                System.out.println("Class: " + classBeingChecked + " stronger than: " + classCheckedAgainst);
+                System.out.println("Class: " + classCheckedAgainst + " stronger than: " + classBeingChecked);
                 return true;
             }
         }
@@ -103,6 +103,10 @@ public class OntologyReasoningService {
         //    return true;
         //}
         return false;
+    }
+
+    public boolean isConsistent() {
+        return reasoner.isConsistent();
     }
 
 }
