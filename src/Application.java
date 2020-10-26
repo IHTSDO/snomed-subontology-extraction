@@ -1,10 +1,8 @@
-import DefinitionGeneration.DefinitionGenerator;
 import DefinitionGeneration.DefinitionGeneratorNNF;
 import DefinitionGeneration.RedundancyOptions;
 import ExceptionHandlers.ReasonerException;
 import Classification.OntologyReasoningService;
-import RenamingApproach.PropertyValueNamer;
-import ResultsWriters.MapPrinter;
+import NamingApproach.PropertyValueNamer;
 import ResultsWriters.RF2Printer;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
@@ -25,7 +23,7 @@ public class Application {
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException {
         //File inputOntologyFile = new File(args[0]);
         String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/";
-        File inputOntologyFile = new File(inputPath + "sct/sct-july-2020-noTransitivity.owl");
+        File inputOntologyFile = new File(inputPath + "sct/sct-july-2020.owl");
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLDataFactory df = man.getOWLDataFactory();

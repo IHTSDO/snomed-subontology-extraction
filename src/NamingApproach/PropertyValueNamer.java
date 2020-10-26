@@ -1,4 +1,4 @@
-package RenamingApproach;
+package NamingApproach;
 
 import org.semanticweb.owlapi.model.*;
 
@@ -68,7 +68,6 @@ public class PropertyValueNamer {
         Set<OWLObjectSomeValuesFrom> pvs = new HashSet<OWLObjectSomeValuesFrom>();
         for(OWLClass cls : renamedPVs) {
             pvs.add(namingPvMap.get(cls));
-            //System.out.println("RENAMING PV: " + renamingPvMap.get(cls).toString());
         }
         return pvs;
     }
@@ -77,7 +76,6 @@ public class PropertyValueNamer {
         Set<OWLClass> names = new HashSet<OWLClass>();
         for(OWLObjectSomeValuesFrom pv : pvs) {
             names.add(pvNamingMap.get(pv));
-            //System.out.println("RENAMING PV: " + renamingPvMap.get(cls).toString());
         }
         return names;
     }

@@ -1,7 +1,7 @@
 package DefinitionGeneration;
 
 import Classification.OntologyReasoningService;
-import RenamingApproach.PropertyValueNamer;
+import NamingApproach.PropertyValueNamer;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 

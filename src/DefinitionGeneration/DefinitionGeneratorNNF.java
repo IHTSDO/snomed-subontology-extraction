@@ -1,7 +1,7 @@
 package DefinitionGeneration;
 
 import Classification.OntologyReasoningService;
-import RenamingApproach.PropertyValueNamer;
+import NamingApproach.PropertyValueNamer;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.search.EntitySearcher;
 
@@ -92,7 +92,8 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         System.out.println("Checking reflexive PVs.");
 
         for(OWLObjectSomeValuesFrom pv:inputPVs) {
-            if (searcher.isReflexive(pv.getProperty(), backgroundOntology) == true && reasonerService.getAncestorClasses(inputClass).contains(pv.getFiller())) {
+            if (searcher.isReflexive(pv.getProperty(), backgroundOntology) == true
+                    && (reasonerService.getAncestorClasses(inputClass).contains(pv.getFiller()) || pv.getFiller().equals(inputClass))) {
                 System.out.println("PV: " + pv + " is reflexive redundancy.");
                 continue;
             }
