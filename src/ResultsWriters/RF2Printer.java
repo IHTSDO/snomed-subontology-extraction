@@ -144,22 +144,28 @@ public class RF2Printer extends Printer {
 
     private void writeRelationship(BufferedWriter writer, String status, String sourceTerm, String destinationTerm, String relationshipTypeTerm, String existentialRestrictionModifier) throws IOException {
         //add padding
-        writer.write(status);
-        writer.write(TAB);
+        try {
+            writer.write(status);
+            writer.write(TAB);
 
-        // sourceId
-        writer.write(sourceTerm);
-        writer.write(TAB);
+            // sourceId
+            writer.write(sourceTerm);
+            writer.write(TAB);
 
-        // typeId
-        writer.write(relationshipTypeTerm);
-        writer.write(TAB);
+            // typeId
+            writer.write(relationshipTypeTerm);
+            writer.write(TAB);
 
-        // destinationId
-        writer.write(destinationTerm);
-        writer.write(TAB);
+            // destinationId
+            writer.write(destinationTerm);
+            writer.write(TAB);
 
-        writer.newLine();
+            writer.newLine();
+        }
+        catch(NullPointerException e) {
+            //TODO: implement proper handling.
+            System.out.println("Null exception.");
+        }
     }
 
     public Map<Long, String> getConceptDescriptionMapFromDescriptionRF2() throws IOException {

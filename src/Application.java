@@ -23,7 +23,7 @@ public class Application {
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException {
         //File inputOntologyFile = new File(args[0]);
         String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/";
-        File inputOntologyFile = new File(inputPath + "sct/sct-july-2020.owl");
+        File inputOntologyFile = new File(inputPath + "anatomy-module/anatomy.owl");
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLDataFactory df = man.getOWLDataFactory();
@@ -80,16 +80,21 @@ public class Application {
         redundancyOptions.add(RedundancyOptions.eliminatereflexivePVRedundancy);
         redundancyOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
 
+        int i=0;
+        int numClasses = inputOntology.getClassesInSignature().size();
+
         for(OWLClass cls:classesToDefine) {
+            i++;
             System.out.println("Generating NNF for class: " + cls.toString());
+            System.out.println("Classes defined: " + i + " of: " + numClasses);
             definitionGenerator.generateDefinition(cls, redundancyOptions);
         }
 
-       // for(OWLClass cls:classesToDefine) {
-          //  if(cls.toString().contains("387139005")) {
-          //      definitionGenerator.generateDefinition(cls, redundancyOptions);
-          // }
-       // }
+        //for(OWLClass cls:classesToDefine) {
+        //    if (cls.toString().contains("42231008")) {
+        //        definitionGenerator.generateDefinition(cls, redundancyOptions);
+        //    }
+        //}
 
         definitionsNNF.addAll(definitionGenerator.getGeneratedDefinitions());
 
@@ -109,9 +114,11 @@ public class Application {
         //print in RF2 tuple format
         RF2Printer rf2Printer = new RF2Printer(inputOntologyPath);
         System.out.println(inputOntologyPath);
-        System.out.println(definitionsOnt.getAxioms());
+        //System.out.println(definitionsOnt.getAxioms());
         //RF2Printer.printNNFsAsRF2Tuples(definitionsOnt);
         rf2Printer.printNNFsAsFSNTuples(definitionsOnt);
+        System.out.println("Num undefined classes: " + definitionGenerator.getUndefinedClassAxioms().size());
+        System.out.println("Num defined classes:"  + definitionGenerator.getGeneratedDefinitions().size());
     }
 
 }

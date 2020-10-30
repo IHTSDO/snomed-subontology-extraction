@@ -2,20 +2,20 @@ package DefinitionGeneration;
 
 import Classification.OntologyReasoningService;
 import NamingApproach.PropertyValueNamer;
-import org.semanticweb.owlapi.model.*;
-import org.semanticweb.owlapi.search.EntitySearcher;
+import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLClassExpression;
+import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
+import org.semanticweb.owlapi.model.OWLOntology;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
-public class DefinitionGeneratorNNF extends DefinitionGenerator {
+public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
-    public DefinitionGeneratorNNF(OWLOntology inputOntology, OntologyReasoningService reasonerService, PropertyValueNamer namer) {
+    public DefinitionGeneratorAbstract(OWLOntology inputOntology, OntologyReasoningService reasonerService, PropertyValueNamer namer) {
         super(inputOntology, reasonerService, namer);
-        //this.computeReflexiveProperties();
     }
 
-    @Override
-    //TODO: make version of this for groups of signatures -- identify everything that can be done once, and only do it once (efficiency). Top down?
     public void generateDefinition(OWLClass inputClass) {
         this.generateDefinition(inputClass, new HashSet<RedundancyOptions>());
     }
@@ -40,6 +40,9 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         Set<OWLClass> reducedParentNamedClasses = reduceClassSet(parentNamedClasses);
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = replaceNamesWithPVs(reduceClassSet(ancestorRenamedPVs));
 
+        //if(redundancyOptions.contains(RedundancyOptions.eliminatereflexivePVRedundancy) == true) {
+        //    reducedAncestorPVs = eliminateReflexivePVRedundancies(reducedAncestorPVs, inputClass); //TODO: parent or reduced?
+        //}
         if(redundancyOptions.contains(RedundancyOptions.eliminateRoleGroupRedundancy) == true) {
             reducedAncestorPVs = eliminateRoleGroupRedundancies(reducedAncestorPVs);
         }
@@ -52,4 +55,6 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         constructNecessaryDefinitionAxiom(inputClass, nonRedundantAncestors);
 
     }
+
 }
+

@@ -1,12 +1,16 @@
 package Classification;
 
 import ExceptionHandlers.ReasonerException;
+import org.semanticweb.elk.owl.interfaces.ElkObjectProperty;
+import org.semanticweb.elk.owlapi.wrapper.OwlObjectPropertyAxiomConverterVisitor;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.reasoner.*;
+import org.semanticweb.owlapi.search.EntitySearcher;
 import org.semanticweb.owlapi.util.InferredEquivalentClassAxiomGenerator;
 import org.semanticweb.owlapi.util.InferredOntologyGenerator;
 import org.semanticweb.owlapi.util.InferredSubClassAxiomGenerator;
+import org.semanticweb.elk.owlapi.wrapper.OwlConverter;
 
 import java.util.*;
 
@@ -14,6 +18,7 @@ public class OntologyReasoningService {
 
     private OWLReasoner reasoner;
     private final OWLReasonerConfiguration configuration = new SimpleConfiguration(new ConsoleProgressMonitor());
+    //private OWLOntology inputOntology;
 
     //TODO 03-08-20: add all exceptions to one exception.
     //TODO " "     : check - return OWLOntology, or just precompute inferences and use this class to navigate graph?
@@ -21,6 +26,7 @@ public class OntologyReasoningService {
         this(inputOntology, "org.semanticweb.elk.owlapi.ElkReasonerFactory");
     }
     public OntologyReasoningService(OWLOntology inputOntology, String reasonerFactoryName) throws ReasonerException {
+        //this.inputOntology = inputOntology;
         reasoner = getReasonerFactory(reasonerFactoryName).createReasoner(inputOntology, configuration);
     }
 
@@ -83,6 +89,11 @@ public class OntologyReasoningService {
         return reasoner.getSuperClasses(cls, true).getFlattened();
     }
 
+    //public Set<OWLObjectPropertyExpression> getAncestorProperties(OWLObjectProperty r) {
+        //TODO: for some reason this is "not implemented" in ELK? Doesn't ELK return a property graph also?
+        //return reasoner.getSuperObjectProperties(prop, true).getFlattened();
+   // }
+
     public boolean isStrongerThan(OWLClass classBeingChecked, OWLClass classCheckedAgainst) {
         if(this.getAncestorClasses(classBeingChecked).contains(classCheckedAgainst)) {
             return true;
@@ -92,10 +103,10 @@ public class OntologyReasoningService {
 
     public boolean weakerThanAtLeastOneOf(OWLClass classBeingChecked, Set<OWLClass> setCheckedAgainst) {
         for(OWLClass classCheckedAgainst:setCheckedAgainst) {
-            System.out.println("Class being checked: " + classBeingChecked);
-            System.out.println("Class checked against: " + classCheckedAgainst);
+            //System.out.println("Class being checked: " + classBeingChecked);
+           // System.out.println("Class checked against: " + classCheckedAgainst);
             if(this.getAncestorClasses(classCheckedAgainst).contains(classBeingChecked)) {
-                System.out.println("Class: " + classCheckedAgainst + " stronger than: " + classBeingChecked);
+               // System.out.println("Class: " + classCheckedAgainst + " stronger than: " + classBeingChecked);
                 return true;
             }
         }
