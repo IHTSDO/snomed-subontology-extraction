@@ -14,12 +14,7 @@ import java.io.IOException;
 import java.util.*;
 
 public class Application {
-
-    /*
-    Test alternative to current toolkit approach to NNF generation. Steps include:
-        1) For each PV (existential restriction) in SCT,
-
-     */
+    
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException {
         //File inputOntologyFile = new File(args[0]);
         String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/";
@@ -114,8 +109,7 @@ public class Application {
         //print in RF2 tuple format
         RF2Printer rf2Printer = new RF2Printer(inputOntologyPath);
         System.out.println(inputOntologyPath);
-        //System.out.println(definitionsOnt.getAxioms());
-        //RF2Printer.printNNFsAsRF2Tuples(definitionsOnt);
+
         rf2Printer.printNNFsAsFSNTuples(definitionsOnt);
         System.out.println("Num undefined classes: " + definitionGenerator.getUndefinedClassAxioms().size());
         System.out.println("Num defined classes:"  + definitionGenerator.getGeneratedDefinitions().size());
