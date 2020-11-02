@@ -180,6 +180,11 @@ public abstract class DefinitionGenerator {
             undefinedClasses.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
             return;
         }
+        else if(definingConditions.size() == 1) {
+            OWLClassExpression definingCondition = (new ArrayList<OWLClassExpression>(definingConditions)).get(0);
+            generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, definingCondition));
+            return;
+        }
         //TODO: handle case with 1 necessary condition, no conjunction in superclass?
         generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
     }

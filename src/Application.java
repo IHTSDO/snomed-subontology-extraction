@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.util.*;
 
 public class Application {
-    
+
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException {
         //File inputOntologyFile = new File(args[0]);
         String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/";
@@ -73,11 +73,11 @@ public class Application {
 
         Set<RedundancyOptions> redundancyOptions = new HashSet<RedundancyOptions>();
         redundancyOptions.add(RedundancyOptions.eliminatereflexivePVRedundancy);
-        redundancyOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
+        //redundancyOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
 
-        int i=0;
         int numClasses = inputOntology.getClassesInSignature().size();
 
+        /*
         for(OWLClass cls:classesToDefine) {
             i++;
             System.out.println("Generating NNF for class: " + cls.toString());
@@ -85,11 +85,13 @@ public class Application {
             definitionGenerator.generateDefinition(cls, redundancyOptions);
         }
 
-        //for(OWLClass cls:classesToDefine) {
-        //    if (cls.toString().contains("42231008")) {
-        //        definitionGenerator.generateDefinition(cls, redundancyOptions);
-        //    }
-        //}
+         */
+
+        for(int i=0; i<100; i++) {
+
+                definitionGenerator.generateDefinition(classesToDefine.get(i), redundancyOptions);
+
+        }
 
         definitionsNNF.addAll(definitionGenerator.getGeneratedDefinitions());
 

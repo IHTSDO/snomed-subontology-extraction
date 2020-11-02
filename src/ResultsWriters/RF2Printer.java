@@ -1,6 +1,7 @@
 package ResultsWriters;
 
 import org.semanticweb.owlapi.model.*;
+import org.semanticweb.owlapi.model.parameters.Imports;
 import org.snomed.otf.owltoolkit.constants.Concepts;
 import org.snomed.otf.owltoolkit.conversion.AxiomRelationshipConversionService;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
@@ -81,10 +82,25 @@ public class RF2Printer extends Printer {
         AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<Long>());
 
         Map<Long, Set<OWLAxiom>> axiomsMap = new HashMap<Long, Set<OWLAxiom>>();
-        axiomsMap.put((long) 1, nnfOntology.getAxioms());
+        axiomsMap.put((long) 1, nnfOntology.getTBoxAxioms(Imports.fromBoolean(false))); //TODO: getAxioms or getTBoxAxioms?
 
-        Map<Long, Set<AxiomRepresentation>> representationsMap = converter.convertAxiomsToRelationships(axiomsMap, false);
+        System.out.println("AxiomsMap size: " + axiomsMap.entrySet());
+
+        Map<Long, Set<AxiomRepresentation>> representationsMap = new HashMap<Long, Set<AxiomRepresentation>>();
+        for(OWLAxiom ax:nnfOntology.getTBoxAxioms(Imports.fromBoolean(false))) {
+            System.out.println("Ax string: " + ax.toString());
+            AxiomRepresentation rep = converter.convertAxiomToRelationships(ax);
+            if(rep == null) {
+                System.out.println("Null representation for axiom: " + ax);
+            }
+        }
+
+        //Map<Long, Set<AxiomRepresentation>> representationsMap = converter.convertAxiomsToRelationships(axiomsMap, false);
         Set<AxiomRepresentation> representations = representationsMap.get((long)1);
+        System.out.println("Representations map keys: " + representationsMap.keySet());
+
+        //System.out.println("representationsMap: " + representationsMap.toString());
+        System.out.println("representations size: " + representations.size());
 
         FileWriter fw = new FileWriter(new File(outputFilePath));
         //BufferedWriter writer =  new BufferedWriter(fw);
@@ -96,9 +112,11 @@ public class RF2Printer extends Printer {
 
         Map<Long, String> conceptDescriptionMap = getConceptDescriptionMapFromDescriptionRF2();
 
+        int i=0;
         for(AxiomRepresentation rep:representations) {
+            i++;
+            System.out.println("Number printed: " + i);
             Long conceptID = rep.getLeftHandSideNamedConcept();
-
             Map<Integer, List<Relationship>> rightHandSideRelationshipsMap = rep.getRightHandSideRelationships();
 
             Iterator<Map.Entry<Integer, List<Relationship>>> iter = rightHandSideRelationshipsMap.entrySet().iterator();
@@ -121,6 +139,7 @@ public class RF2Printer extends Printer {
         for (Long sourceId : addedStatements.keySet()) {
             String active = "1";
             String sourceTerm = conceptDescriptionMap.get(sourceId);
+            System.out.println("Source term: " + sourceTerm + " for ID: " + sourceId);
 
             for (Relationship relationship : addedStatements.get(sourceId)) {
                 Long destinationId = relationship.getDestinationId();
@@ -128,6 +147,9 @@ public class RF2Printer extends Printer {
 
                 Long relationshipTypeId = relationship.getTypeId();
                 String relationshipTypeTerm = conceptDescriptionMap.get(relationshipTypeId);
+
+                System.out.println("Destination term: " + destinationTerm + " for ID: " + destinationId);
+                System.out.println("Relationship term: " + relationshipTypeTerm + " for ID: " + relationshipTypeId);
 
                 writeRelationship(writer,
                         "added",
@@ -182,10 +204,7 @@ public class RF2Printer extends Printer {
         for(String line:descriptionFileReader.lines().collect(Collectors.toList())) {
             String[] cols = line.split(TAB);
             if(cols[2].contains("1") && line.contains("900000000000003001")) {
-            //if(line.contains("900000000000003001")) {
-            //if(!line.contains("active") && line.contains("900000000000003001")){
                 idToFSNMap.putIfAbsent(Long.parseLong(cols[4]), cols[7]);
-                //System.out.println("ID: " + cols[4] + " term: " + cols[7]);
             }
         }
 

@@ -7,10 +7,11 @@ import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
 import org.semanticweb.owlapi.model.OWLOntology;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class DefinitionGeneratorAbstract extends DefinitionGenerator {
+
+    //private Set<OWLClass> closestPrimitiveAncestors;
 
     public DefinitionGeneratorAbstract(OWLOntology inputOntology, OntologyReasoningService reasonerService, PropertyValueNamer namer) {
         super(inputOntology, reasonerService, namer);
@@ -54,6 +55,36 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
         constructNecessaryDefinitionAxiom(inputClass, nonRedundantAncestors);
 
+    }
+
+    //possibly quicker than taking all primitive ancestors & redundancy checking?
+    public Set<OWLClass> computeClosestPrimitiveAncestors(OWLClass classToDefine) {
+        List<OWLClass> currentClassesToExpand = new ArrayList<OWLClass>();
+        Set<OWLClass> closestPrimitives = new HashSet<OWLClass>();
+
+        currentClassesToExpand.add(classToDefine);
+        ListIterator<OWLClass> iterator = currentClassesToExpand.listIterator();
+        while(iterator.hasNext()) {
+            OWLClass cls = iterator.next();
+            Set<OWLClass> parentClasses = reasonerService.getParentClasses(cls);
+            for(OWLClass parent:parentClasses) {
+                if(isPrimitive(parent) == true) {
+                    closestPrimitives.add(parent);
+                    continue;
+                }
+                iterator.add(parent);
+            }
+        }
+
+        return closestPrimitives;
+    }
+
+    public boolean isPrimitive(OWLClass cls) {
+        //TODO: for full SCT, could do this using fullyDefined IDs as in toolkit? Quicker?
+        if(backgroundOntology.getEquivalentClassesAxioms(cls).isEmpty()) {
+            return true;
+        }
+        return false;
     }
 
 }
