@@ -29,17 +29,23 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         Set<OWLClass> parentNamedClasses = new HashSet<OWLClass>();
         parentNamedClasses.addAll(reasonerService.getParentClasses(inputClass));
 
-        parentNamedClasses.removeAll(ancestorRenamedPVs); //TODO: needs testing.
+        parentNamedClasses.removeAll(ancestorRenamedPVs);
 
-        //TODO: needs to be done before rest of redundancy removal, due also to transitivity?
-        if(redundancyOptions.contains(RedundancyOptions.eliminatereflexivePVRedundancy) == true) {
+        Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
+        Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
+
+        if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy) == true) {
             Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
-            ancestorRenamedPVs = replacePVsWithNames(ancestorPVs);
+            ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t
         }
-
-        Set<OWLClass> reducedParentNamedClasses = reduceClassSet(parentNamedClasses);
-        Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = replaceNamesWithPVs(reduceClassSet(ancestorRenamedPVs));
-
+        if(redundancyOptions.contains(RedundancyOptions.eliminateLessSpecificRedundancy) == true) {
+            reducedParentNamedClasses = reduceClassSet(parentNamedClasses);
+            reducedAncestorPVs = replaceNamesWithPVs(reduceClassSet(ancestorRenamedPVs));
+        }
+        else {
+            reducedParentNamedClasses = parentNamedClasses;
+            reducedAncestorPVs = replaceNamesWithPVs(ancestorRenamedPVs);
+        }
         if(redundancyOptions.contains(RedundancyOptions.eliminateRoleGroupRedundancy) == true) {
             reducedAncestorPVs = eliminateRoleGroupRedundancies(reducedAncestorPVs);
         }

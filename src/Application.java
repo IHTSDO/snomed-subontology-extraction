@@ -18,7 +18,7 @@ public class Application {
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException {
         //File inputOntologyFile = new File(args[0]);
         String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/";
-        File inputOntologyFile = new File(inputPath + "anatomy-module/anatomy.owl");
+        File inputOntologyFile = new File(inputPath + "limb-hand-thumb/limb_hand_thumb_with_T.owl");
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLDataFactory df = man.getOWLDataFactory();
@@ -72,12 +72,13 @@ public class Application {
         DefinitionGeneratorNNF definitionGenerator = new DefinitionGeneratorNNF(inputOntology, reasoningService, renamer);
 
         Set<RedundancyOptions> redundancyOptions = new HashSet<RedundancyOptions>();
-        redundancyOptions.add(RedundancyOptions.eliminatereflexivePVRedundancy);
-        //redundancyOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
+        redundancyOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
+        redundancyOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
+        redundancyOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
 
         int numClasses = inputOntology.getClassesInSignature().size();
 
-        /*
+        int i=0;
         for(OWLClass cls:classesToDefine) {
             i++;
             System.out.println("Generating NNF for class: " + cls.toString());
@@ -85,13 +86,11 @@ public class Application {
             definitionGenerator.generateDefinition(cls, redundancyOptions);
         }
 
-         */
+        //for(int i=0; i<100; i++) {
 
-        for(int i=0; i<100; i++) {
+        //        definitionGenerator.generateDefinition(classesToDefine.get(i), redundancyOptions);
 
-                definitionGenerator.generateDefinition(classesToDefine.get(i), redundancyOptions);
-
-        }
+        //}
 
         definitionsNNF.addAll(definitionGenerator.getGeneratedDefinitions());
 

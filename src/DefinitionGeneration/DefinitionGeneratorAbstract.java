@@ -33,7 +33,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         parentNamedClasses.removeAll(ancestorRenamedPVs); //TODO: needs testing.
 
         //TODO: needs to be done before rest of redundancy removal, due also to transitivity?
-        if(redundancyOptions.contains(RedundancyOptions.eliminatereflexivePVRedundancy) == true) {
+        if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy) == true) {
             Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
             ancestorRenamedPVs = replacePVsWithNames(ancestorPVs);
         }
