@@ -86,6 +86,7 @@ public class RF2Printer extends Printer {
 
         System.out.println("AxiomsMap size: " + axiomsMap.entrySet());
 
+        /*
         Map<Long, Set<AxiomRepresentation>> representationsMap = new HashMap<Long, Set<AxiomRepresentation>>();
         for(OWLAxiom ax:nnfOntology.getTBoxAxioms(Imports.fromBoolean(false))) {
             System.out.println("Ax string: " + ax.toString());
@@ -95,7 +96,9 @@ public class RF2Printer extends Printer {
             }
         }
 
-        //Map<Long, Set<AxiomRepresentation>> representationsMap = converter.convertAxiomsToRelationships(axiomsMap, false);
+         */
+
+        Map<Long, Set<AxiomRepresentation>> representationsMap = converter.convertAxiomsToRelationships(axiomsMap, false);
         Set<AxiomRepresentation> representations = representationsMap.get((long)1);
         System.out.println("Representations map keys: " + representationsMap.keySet());
 

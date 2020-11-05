@@ -46,8 +46,8 @@ public abstract class DefinitionGenerator {
         }   // TODO:...but if A |= B, then we have B |= C, via this approach we can safely remove them as we identify them? DOUBLE CHECK.
 
         inputClassSet.removeAll(redundantClasses);
-        inputClassSet.remove(df.getOWLThing());
-        inputClassSet.remove(df.getOWLNothing());
+        //inputClassSet.remove(df.getOWLThing());
+        //inputClassSet.remove(df.getOWLNothing());
         return (inputClassSet); //TODO: return as list or set?
     }
 
@@ -172,6 +172,8 @@ public abstract class DefinitionGenerator {
 
     protected void constructNecessaryDefinitionAxiom(OWLClass definedClass, Set<OWLClassExpression> definingConditions) {
         //Optional<OWLAxiom> definition = null;
+        definingConditions.remove(df.getOWLThing());
+        definingConditions.remove(df.getOWLNothing());
         System.out.println("cls: " + definedClass);
         System.out.println("definingConditions: " + definingConditions);
         if (definingConditions.size() == 0) {
