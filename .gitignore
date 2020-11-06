@@ -1,2 +1,15 @@
-target/
+target
+.*
+*.iml
 *.zip
+/*.txt
+/debug
+/*.owl
+/local*
+_*
+/RF2
+tmp*
+work
+log.log
+/SnomedCT_*
+*.jar
