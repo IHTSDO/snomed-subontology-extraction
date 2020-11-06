@@ -1,3 +1,5 @@
+import DefinitionGeneration.DefinitionGenerator;
+import DefinitionGeneration.DefinitionGeneratorAbstract;
 import DefinitionGeneration.DefinitionGeneratorNNF;
 import DefinitionGeneration.RedundancyOptions;
 import ExceptionHandlers.ReasonerException;
@@ -17,8 +19,10 @@ public class Application {
 
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException {
         //File inputOntologyFile = new File(args[0]);
-        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/";
-        File inputOntologyFile = new File(inputPath + "limb-hand-thumb/limb_hand_thumb_with_T.owl");
+        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/limb-hand-thumb/";
+        File inputOntologyFile = new File(inputPath + "limb_hand_thumb_with_T.owl");
+        String defType = "NNF";
+
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLDataFactory df = man.getOWLDataFactory();
@@ -32,12 +36,6 @@ public class Application {
         //for each PV in ontology, add a definition of the form PVCi == PVi
         PropertyValueNamer renamer = new PropertyValueNamer();
         OWLOntology inputOntologyWithRenamings = renamer.namePropertyValues(inputOntology);
-
-        //MapPrinter printer = new MapPrinter(inputPath + "namingTest/");
-
-        //Map<OWLObjectSomeValuesFrom, OWLClass> pvRenamingsMap = renamer.getPvNamingMap();
-
-        //printer.printNamingsForPVs(pvRenamingsMap);
 
         //perform classification using ELK
         OntologyReasoningService reasoningService = new OntologyReasoningService(inputOntologyWithRenamings);
@@ -67,9 +65,15 @@ public class Application {
         classesToDefine.remove(df.getOWLThing());
         classesToDefine.remove(df.getOWLNothing());
 
-        Set<OWLAxiom> definitionsNNF = new HashSet<OWLAxiom>();
+        Set<OWLAxiom> definitions = new HashSet<OWLAxiom>();
 
-        DefinitionGeneratorNNF definitionGenerator = new DefinitionGeneratorNNF(inputOntology, reasoningService, renamer);
+        DefinitionGenerator definitionGenerator;
+        if(defType.equals("abstract")) {
+            definitionGenerator = definitionGenerator = new DefinitionGeneratorAbstract(inputOntology, reasoningService, renamer);
+        }
+        else {
+            definitionGenerator = new DefinitionGeneratorNNF(inputOntology, reasoningService, renamer);
+        }
 
         Set<RedundancyOptions> redundancyOptions = new HashSet<RedundancyOptions>();
         redundancyOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
@@ -81,21 +85,15 @@ public class Application {
         int i=0;
         for(OWLClass cls:classesToDefine) {
             i++;
-            System.out.println("Generating NNF for class: " + cls.toString());
+            System.out.println("Generating definition for class: " + cls.toString());
             System.out.println("Classes defined: " + i + " of: " + numClasses);
             definitionGenerator.generateDefinition(cls, redundancyOptions);
         }
 
-        //for(int i=0; i<100; i++) {
-
-        //        definitionGenerator.generateDefinition(classesToDefine.get(i), redundancyOptions);
-
-        //}
-
-        definitionsNNF.addAll(definitionGenerator.getGeneratedDefinitions());
+        definitions.addAll(definitionGenerator.getGeneratedDefinitions());
 
         OWLOntology definitionsOnt = man.createOntology();
-        man.addAxioms(definitionsOnt, definitionsNNF);
+        man.addAxioms(definitionsOnt, definitions);
 
         Set<OWLAnnotationAssertionAxiom> annotations = new HashSet<OWLAnnotationAssertionAxiom>();
         for(OWLEntity ent : definitionsOnt.getSignature()) {
@@ -104,11 +102,15 @@ public class Application {
 
         man.addAxioms(definitionsOnt, annotations);
 
+        //man.saveOntology(definitionsOnt, new OWLXMLDocumentFormat(),
+        //        IRI.create(new File("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/NNF_definitions_" + inputOntologyFile.getName())));
+
         man.saveOntology(definitionsOnt, new OWLXMLDocumentFormat(),
-                IRI.create(new File("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/NNF_definitions_" + inputOntologyFile.getName())));
+                IRI.create(new File(inputPath + defType + "_definitions_" + inputOntologyFile.getName())));
+
 
         //print in RF2 tuple format
-        RF2Printer rf2Printer = new RF2Printer(inputOntologyPath);
+        RF2Printer rf2Printer = new RF2Printer(inputOntologyPath + defType);
         System.out.println(inputOntologyPath);
 
         rf2Printer.printNNFsAsFSNTuples(definitionsOnt);

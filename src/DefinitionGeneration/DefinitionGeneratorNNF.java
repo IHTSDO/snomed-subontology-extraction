@@ -3,7 +3,6 @@ package DefinitionGeneration;
 import Classification.OntologyReasoningService;
 import NamingApproach.PropertyValueNamer;
 import org.semanticweb.owlapi.model.*;
-import org.semanticweb.owlapi.search.EntitySearcher;
 
 import java.util.*;
 
@@ -13,8 +12,6 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         super(inputOntology, reasonerService, namer);
         //this.computeReflexiveProperties();
     }
-
-    @Override
     //TODO: make version of this for groups of signatures -- identify everything that can be done once, and only do it once (efficiency). Top down?
     public void generateDefinition(OWLClass inputClass) {
         this.generateDefinition(inputClass, new HashSet<RedundancyOptions>());

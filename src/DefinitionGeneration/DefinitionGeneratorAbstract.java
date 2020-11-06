@@ -27,10 +27,10 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         Set<OWLClass> ancestorRenamedPVs = extractNamedPVs(ancestors);
         System.out.println("Class: " + inputClass + ", ancestor PVs: " + ancestorRenamedPVs);
 
-        Set<OWLClass> parentNamedClasses = new HashSet<OWLClass>();
-        parentNamedClasses.addAll(reasonerService.getParentClasses(inputClass));
+        Set<OWLClass> primitiveAncestors = new HashSet<OWLClass>();
+        primitiveAncestors.addAll(computeClosestPrimitiveAncestors(inputClass));
 
-        parentNamedClasses.removeAll(ancestorRenamedPVs); //TODO: needs testing.
+        primitiveAncestors.removeAll(ancestorRenamedPVs);
 
         //TODO: needs to be done before rest of redundancy removal, due also to transitivity?
         if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy) == true) {
@@ -38,16 +38,12 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             ancestorRenamedPVs = replacePVsWithNames(ancestorPVs);
         }
 
-        Set<OWLClass> reducedParentNamedClasses = reduceClassSet(parentNamedClasses);
+        Set<OWLClass> reducedParentNamedClasses = reduceClassSet(primitiveAncestors);
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = replaceNamesWithPVs(reduceClassSet(ancestorRenamedPVs));
 
-        //if(redundancyOptions.contains(RedundancyOptions.eliminatereflexivePVRedundancy) == true) {
-        //    reducedAncestorPVs = eliminateReflexivePVRedundancies(reducedAncestorPVs, inputClass); //TODO: parent or reduced?
-        //}
         if(redundancyOptions.contains(RedundancyOptions.eliminateRoleGroupRedundancy) == true) {
             reducedAncestorPVs = eliminateRoleGroupRedundancies(reducedAncestorPVs);
         }
-
 
         Set<OWLClassExpression> nonRedundantAncestors = new HashSet<OWLClassExpression>();
         nonRedundantAncestors.addAll(reducedParentNamedClasses);
@@ -63,16 +59,27 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         Set<OWLClass> closestPrimitives = new HashSet<OWLClass>();
 
         currentClassesToExpand.add(classToDefine);
+        System.out.println("Computing primitive ancestors for class: " + classToDefine);
         ListIterator<OWLClass> iterator = currentClassesToExpand.listIterator();
         while(iterator.hasNext()) {
             OWLClass cls = iterator.next();
             Set<OWLClass> parentClasses = reasonerService.getParentClasses(cls);
+            Set<OWLClass> namedPVs = extractNamedPVs(parentClasses);
+            parentClasses.removeAll(namedPVs);
+            System.out.println("Searching for primitive parents of ancestor: " + cls);
             for(OWLClass parent:parentClasses) {
+                System.out.println("Checking if ancestor: " + parent + " is primitive");
+                //If is primitive, add to returned set
                 if(isPrimitive(parent) == true) {
+                    System.out.println("...is primitive.");
                     closestPrimitives.add(parent);
                     continue;
                 }
+                //If not primitive, add to check
                 iterator.add(parent);
+                iterator.previous();
+                System.out.println("...is not primitive.");
+
             }
         }
 
@@ -81,6 +88,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
     public boolean isPrimitive(OWLClass cls) {
         //TODO: for full SCT, could do this using fullyDefined IDs as in toolkit? Quicker?
+        System.out.println("equiv axioms for class: " + cls + " are: " + backgroundOntology.getEquivalentClassesAxioms(cls));
         if(backgroundOntology.getEquivalentClassesAxioms(cls).isEmpty()) {
             return true;
         }

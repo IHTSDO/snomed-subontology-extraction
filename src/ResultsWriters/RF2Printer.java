@@ -32,7 +32,7 @@ public class RF2Printer extends Printer {
 
     public static void printNNFsAsRF2Tuples(OWLOntology nnfOntology) throws ConversionException, IOException {
         //get attributes (roles) from ontology to be provided to toolkit OntologyService. TODO: we don't actually need the ontology service to go from OWL --> RF2, so doesn't matter?
-        String outputFilePath = outputDirectory + "_NNF_tuples" + ".txt";
+        String outputFilePath = outputDirectory + "_FSN_tuples" + ".txt";
 
         System.out.println("Printing FSN tuples for definitions to: " + outputFilePath);
         AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<Long>());
@@ -76,7 +76,7 @@ public class RF2Printer extends Printer {
 
     //TODO: code duplication from above, reduce.
     public void printNNFsAsFSNTuples(OWLOntology nnfOntology) throws IOException, ConversionException {
-        String outputFilePath = outputDirectory + "_NNF_tuples" + ".txt";
+        String outputFilePath = outputDirectory + "_FSN_tuples" + ".txt";
         //String outputFilePath = outputDirectory + "_NNF_tuples" + ".zip";
 
         AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<Long>());

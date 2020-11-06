@@ -30,7 +30,7 @@ public abstract class DefinitionGenerator {
         undefinedClasses = new HashSet<OWLAxiom>(); //TODO: add "memory" of generated defs somewhere?
     }
 
-    public abstract void generateDefinition(OWLClass cls);
+    public abstract void generateDefinition(OWLClass cls, Set<RedundancyOptions> redundancyOptions);
 
     public Set<OWLClass> reduceClassSet(Set<OWLClass> inputClassSet) {
         Set<OWLClass> redundantClasses = new HashSet<OWLClass>();
