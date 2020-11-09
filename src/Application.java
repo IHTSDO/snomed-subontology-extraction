@@ -6,10 +6,16 @@ import ExceptionHandlers.ReasonerException;
 import Classification.OntologyReasoningService;
 import NamingApproach.PropertyValueNamer;
 import ResultsWriters.RF2Printer;
+import ResultsWriters.SnowstormConversion;
+import com.google.common.collect.Sets;
+import org.apache.commons.io.FileUtils;
+import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
+import org.snomed.otf.owltoolkit.service.RF2ExtractionService;
+import org.snomed.otf.owltoolkit.util.InputStreamSet;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,12 +23,11 @@ import java.util.*;
 
 public class Application {
 
-    public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException {
+    public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException, ReleaseImportException {
         //File inputOntologyFile = new File(args[0]);
-        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/limb-hand-thumb/";
-        File inputOntologyFile = new File(inputPath + "limb_hand_thumb_with_T.owl");
+        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/anatomy-module/";
+        File inputOntologyFile = new File(inputPath + "anatomy.owl");
         String defType = "NNF";
-
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLDataFactory df = man.getOWLDataFactory();
@@ -108,14 +113,24 @@ public class Application {
         man.saveOntology(definitionsOnt, new OWLXMLDocumentFormat(),
                 IRI.create(new File(inputPath + defType + "_definitions_" + inputOntologyFile.getName())));
 
-
+        ////////////////////////////
         //print in RF2 tuple format
+        ////////////////////////////
         RF2Printer rf2Printer = new RF2Printer(inputOntologyPath + defType);
         System.out.println(inputOntologyPath);
 
         rf2Printer.printNNFsAsFSNTuples(definitionsOnt);
         System.out.println("Num undefined classes: " + definitionGenerator.getUndefinedClassAxioms().size());
         System.out.println("Num defined classes:"  + definitionGenerator.getGeneratedDefinitions().size());
+
+        ////////////////////////////
+        //Extract data needed for SNOWSTORM
+        ////////////////////////////
+        Set<Long> entityIDs = SnowstormConversion.extractAllEntityIDsForOntology(definitionsOnt);
+
+        String outputDirectory = inputPath + "snowstorm-rf2-extracts/";
+
+        SnowstormConversion.runRF2Extraction(entityIDs, outputDirectory);
     }
 
 }
