@@ -17,8 +17,15 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         super(inputOntology, reasonerService, namer);
     }
 
+    //TODO: refactor, move to super (?)
     public void generateDefinition(OWLClass inputClass) {
-        this.generateDefinition(inputClass, new HashSet<RedundancyOptions>());
+        //default: all redundancy removed
+        Set<RedundancyOptions> defaultOptions = new HashSet<RedundancyOptions>();
+        defaultOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
+        defaultOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
+        defaultOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
+        this.generateDefinition(inputClass, defaultOptions);
+        this.generateDefinition(inputClass, defaultOptions);
     }
 
     public void generateDefinition(OWLClass inputClass, Set<RedundancyOptions> redundancyOptions) {

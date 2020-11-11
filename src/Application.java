@@ -6,16 +6,11 @@ import ExceptionHandlers.ReasonerException;
 import Classification.OntologyReasoningService;
 import NamingApproach.PropertyValueNamer;
 import ResultsWriters.RF2Printer;
-import ResultsWriters.SnowstormConversion;
-import com.google.common.collect.Sets;
-import org.apache.commons.io.FileUtils;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
-import org.snomed.otf.owltoolkit.service.RF2ExtractionService;
-import org.snomed.otf.owltoolkit.util.InputStreamSet;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +21,7 @@ public class Application {
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException, ReleaseImportException {
         //File inputOntologyFile = new File(args[0]);
         String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/anatomy-module/";
-        File inputOntologyFile = new File(inputPath + "anatomy.owl");
+        File inputOntologyFile = new File(inputPath + "anatomy-without-disjointness.owl");
         String defType = "NNF";
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
@@ -39,6 +34,7 @@ public class Application {
         //RENAMING TEST
         ///////////
         //for each PV in ontology, add a definition of the form PVCi == PVi
+        //TODO: refactor, should be part of DefinitionGenerator class
         PropertyValueNamer renamer = new PropertyValueNamer();
         OWLOntology inputOntologyWithRenamings = renamer.namePropertyValues(inputOntology);
 
@@ -59,14 +55,9 @@ public class Application {
         //////////
         //compute definitions using renames. TODO: NNF, abstract defs. So will need way to test if primitive or non-primitive
         Set<OWLClass> ontClasses = new HashSet<OWLClass>();
-
         ontClasses.addAll(inputOntology.getClassesInSignature());
+
         List<OWLClass> classesToDefine = new ArrayList<OWLClass>(ontClasses);
-        for(OWLClass cls:ontClasses) {
-            if(renamer.namingPvMap.containsKey(cls)) {
-                classesToDefine.remove(cls);
-            }
-        }
         classesToDefine.remove(df.getOWLThing());
         classesToDefine.remove(df.getOWLNothing());
 
@@ -74,7 +65,7 @@ public class Application {
 
         DefinitionGenerator definitionGenerator;
         if(defType.equals("abstract")) {
-            definitionGenerator = definitionGenerator = new DefinitionGeneratorAbstract(inputOntology, reasoningService, renamer);
+            definitionGenerator = new DefinitionGeneratorAbstract(inputOntology, reasoningService, renamer);
         }
         else {
             definitionGenerator = new DefinitionGeneratorNNF(inputOntology, reasoningService, renamer);
@@ -126,11 +117,11 @@ public class Application {
         ////////////////////////////
         //Extract data needed for SNOWSTORM
         ////////////////////////////
-        Set<Long> entityIDs = SnowstormConversion.extractAllEntityIDsForOntology(definitionsOnt);
+        Set<Long> entityIDs = SubontologyGenerator.extractAllEntityIDsForOntology(definitionsOnt);
 
         String outputDirectory = inputPath + "snowstorm-rf2-extracts/";
 
-        SnowstormConversion.runRF2Extraction(entityIDs, outputDirectory);
+        //ComputeSubontology.runRF2Extraction(entityIDs, outputDirectory);
     }
 
 }

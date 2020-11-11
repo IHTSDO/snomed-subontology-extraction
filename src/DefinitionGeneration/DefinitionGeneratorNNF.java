@@ -13,8 +13,14 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         //this.computeReflexiveProperties();
     }
     //TODO: make version of this for groups of signatures -- identify everything that can be done once, and only do it once (efficiency). Top down?
+    //TODO: refactor, move to super (?)
     public void generateDefinition(OWLClass inputClass) {
-        this.generateDefinition(inputClass, new HashSet<RedundancyOptions>());
+        //default: all redundancy elimination
+        Set<RedundancyOptions> defaultOptions = new HashSet<RedundancyOptions>();
+        defaultOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
+        defaultOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
+        defaultOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
+        this.generateDefinition(inputClass, defaultOptions);
     }
 
     public void generateDefinition(OWLClass inputClass, Set<RedundancyOptions> redundancyOptions) {
