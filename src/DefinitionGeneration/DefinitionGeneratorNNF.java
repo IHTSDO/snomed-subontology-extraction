@@ -37,10 +37,6 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
 
-        if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy) == true) {
-            Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
-            ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t
-        }
         if(redundancyOptions.contains(RedundancyOptions.eliminateLessSpecificRedundancy) == true) {
             reducedParentNamedClasses = reduceClassSet(parentNamedClasses);
             reducedAncestorPVs = replaceNamesWithPVs(reduceClassSet(ancestorRenamedPVs));
@@ -52,7 +48,12 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         if(redundancyOptions.contains(RedundancyOptions.eliminateRoleGroupRedundancy) == true) {
             reducedAncestorPVs = eliminateRoleGroupRedundancies(reducedAncestorPVs);
         }
-
+        //TODO: check this, why was this first before?
+        if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy) == true) {
+            //Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
+            //ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t
+            reducedAncestorPVs = eliminateReflexivePVRedundancies(reducedAncestorPVs, inputClass);
+        }
 
         Set<OWLClassExpression> nonRedundantAncestors = new HashSet<OWLClassExpression>();
         nonRedundantAncestors.addAll(reducedParentNamedClasses);

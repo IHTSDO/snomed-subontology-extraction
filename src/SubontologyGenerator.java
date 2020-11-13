@@ -5,10 +5,13 @@ import DefinitionGeneration.DefinitionGeneratorNNF;
 import DefinitionGeneration.RedundancyOptions;
 import ExceptionHandlers.ReasonerException;
 import NamingApproach.PropertyValueNamer;
+import ResultsWriters.RF2Printer;
+import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
+import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import org.snomed.otf.owltoolkit.conversion.OWLtoRF2Service;
 
 import java.io.*;
@@ -46,7 +49,7 @@ public class SubontologyGenerator {
 
     }
 
-    public void computeSubontologyAsRF2(Set<OWLClass> conceptsToDefine) throws OWLException, IOException {
+    public void computeSubontologyAsRF2(Set<OWLClass> conceptsToDefine) throws OWLException, IOException, ReleaseImportException, ConversionException {
         Set<RedundancyOptions> defaultOptions = new HashSet<RedundancyOptions>();
         defaultOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
         defaultOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
@@ -55,7 +58,7 @@ public class SubontologyGenerator {
     }
 
     //TODO: refactor, split
-    public void computeSubontologyAsRF2(Set<OWLClass> conceptsToDefine, Set<RedundancyOptions> redundancyOptions) throws OWLException, IOException {
+    public void computeSubontologyAsRF2(Set<OWLClass> conceptsToDefine, Set<RedundancyOptions> redundancyOptions) throws OWLException, IOException, ReleaseImportException, ConversionException {
         //Compute abstract (authoring) form definitions for concepts
         DefinitionGenerator abstractDefinitionsGenerator = new DefinitionGeneratorAbstract(backgroundOntology, reasoningService, namer);
 
@@ -89,9 +92,16 @@ public class SubontologyGenerator {
         File rf2Zip = new File(outputPath + "subOntology_rf2_" + new Date().getTime() + ".zip");
         owlToRF2Converter.writeToRF2(owlFileStream, new FileOutputStream(rf2Zip), new GregorianCalendar(2020, Calendar.SEPTEMBER, 3).getTime());
 
+        //Extract RF2 for NNFs TODO: bit redundant, fine for testing purposes.
+        man.saveOntology(subOntology, new OWLXMLDocumentFormat(), IRI.create(new File(outputPath + "NNF.owl")));
+        InputStream isNNF = new FileInputStream(outputPath + "nnf.owl");
+        InputStream owlFileStreamNNF = new BufferedInputStream(isNNF);
 
+        File rf2ZipNNF = new File(outputPath + "NNF_rf2_" + new Date().getTime() + ".zip");
+        owlToRF2Converter.writeToRF2(owlFileStreamNNF, new FileOutputStream(rf2ZipNNF), new GregorianCalendar(2020, Calendar.SEPTEMBER, 3).getTime());
 
-
+        //Filter RF2 (to extract relationship file) TODO: again, bit redundant. Improve.
+        printRelationshipRF2(nnfOntology, outputPath);
     }
 
     public static Set<Long> extractAllEntityIDsForOntology(OWLOntology ont) {
@@ -129,15 +139,24 @@ public class SubontologyGenerator {
         return gciAxioms;
     }
 
-    /*
-    public static void runRF2Extraction(Set<Long> entityIDs, String outputPath) throws IOException, ReleaseImportException {
-        File outputDirectory = new File(outputPath + "snowstorm-rf2-extracts/");
-        //FileUtils.deleteDirectory(outputDirectory);
-        new RF2ExtractionService().extractConcepts(
-                new InputStreamSet(new File("E:/Users/warren/Documents/aPostdoc/code/~test-code/SCT-files/SnomedCT_InternationalRF2_PRODUCTION_20200731T120000Z.zip")),
-                entityIDs, outputDirectory);
+
+    private static void printRelationshipRF2(OWLOntology nnfOntology, String outputPath) throws IOException, ReleaseImportException, ConversionException {
+        RF2Printer printer = new RF2Printer(outputPath);
+        printer.printRF2RelationshipFile(nnfOntology);
     }
-     */
+
+    public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
+        //test run
+        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/anatomy-module/";
+        File inputOntologyFile = new File(inputPath + "anatomy.owl");
+
+        OWLOntologyManager man = OWLManager.createOWLOntologyManager();
+        OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
+        Set<OWLClass> conceptsToDefine = inputOntology.getClassesInSignature();
+
+        SubontologyGenerator generator = new SubontologyGenerator(inputOntology);
+        generator.computeSubontologyAsRF2(conceptsToDefine);
+    }
 
 
 }

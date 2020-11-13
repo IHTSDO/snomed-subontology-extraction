@@ -26,11 +26,7 @@ public class RF2Printer extends Printer {
         this.outputDirectory = outputPath;
     }
 
-    //public void printNNFsAsRF2Tuples(Set<OWLAxiom> nnfAxioms) throws OWLOntologyCreationException, ConversionException, IOException {
-    //    this.printNNFsAsRF2Tuples(OWLManager.createOWLOntologyManager().createOntology(nnfAxioms));
-    //}
-
-    public static void printNNFsAsRF2Tuples(OWLOntology nnfOntology) throws ConversionException, IOException {
+    public void printNNFsAsRF2Tuples(OWLOntology nnfOntology) throws ConversionException, IOException {
         //get attributes (roles) from ontology to be provided to toolkit OntologyService. TODO: we don't actually need the ontology service to go from OWL --> RF2, so doesn't matter?
         String outputFilePath = outputDirectory + "_FSN_tuples" + ".txt";
 
@@ -44,10 +40,7 @@ public class RF2Printer extends Printer {
 
         Set<AxiomRepresentation> representations = representationsMap.get((long)1);
 
-        //FileWriter fw = new FileWriter(new File(outputFilePath));
-        //BufferedWriter writer =  new BufferedWriter(fw);
         BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
-
         StringBuilder sb = new StringBuilder();
 
         Map<Long, List<Relationship>> definedConceptRelationshipsMap = new HashMap<Long, List<Relationship>>();
@@ -84,34 +77,12 @@ public class RF2Printer extends Printer {
         Map<Long, Set<OWLAxiom>> axiomsMap = new HashMap<Long, Set<OWLAxiom>>();
         axiomsMap.put((long) 1, nnfOntology.getTBoxAxioms(Imports.fromBoolean(false))); //TODO: getAxioms or getTBoxAxioms?
 
-        System.out.println("AxiomsMap size: " + axiomsMap.entrySet());
-
-        /*
-        Map<Long, Set<AxiomRepresentation>> representationsMap = new HashMap<Long, Set<AxiomRepresentation>>();
-        for(OWLAxiom ax:nnfOntology.getTBoxAxioms(Imports.fromBoolean(false))) {
-            System.out.println("Ax string: " + ax.toString());
-            AxiomRepresentation rep = converter.convertAxiomToRelationships(ax);
-            if(rep == null) {
-                System.out.println("Null representation for axiom: " + ax);
-            }
-        }
-
-         */
-
         Map<Long, Set<AxiomRepresentation>> representationsMap = converter.convertAxiomsToRelationships(axiomsMap, false);
         Set<AxiomRepresentation> representations = representationsMap.get((long)1);
-        System.out.println("Representations map keys: " + representationsMap.keySet());
-
-        //System.out.println("representationsMap: " + representationsMap.toString());
-        System.out.println("representations size: " + representations.size());
 
         FileWriter fw = new FileWriter(new File(outputFilePath));
         //BufferedWriter writer =  new BufferedWriter(fw);
         BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
-
-        //OutputStream resultsOutputStream = new FileOutputStream(new File(outputFilePath));
-        //ZipOutputStream zipOutputStream = new ZipOutputStream(resultsOutputStream, UTF_8_CHARSET);
-        //BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(zipOutputStream));
 
         Map<Long, String> conceptDescriptionMap = getConceptDescriptionMapFromDescriptionRF2();
 
@@ -212,6 +183,92 @@ public class RF2Printer extends Printer {
         }
 
         return idToFSNMap;
+    }
+
+    public void printRF2RelationshipFile(OWLOntology nnfOntology) throws ConversionException, IOException {
+        String outputFilePath = outputDirectory + "Relationship_RF2" + ".txt";
+
+        System.out.println("Writing inferred relationships file for: " + outputFilePath);
+        AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<Long>());
+
+        Map<Long, Set<OWLAxiom>> axiomsMap = new HashMap<Long, Set<OWLAxiom>>();
+
+        axiomsMap.put((long) 1, nnfOntology.getAxioms());
+        Map<Long, Set<AxiomRepresentation>> representationsMap = converter.convertAxiomsToRelationships(axiomsMap, false);
+
+        Set<AxiomRepresentation> representations = representationsMap.get((long)1);
+
+        BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
+        StringBuilder sb = new StringBuilder();
+
+        Map<Long, List<Relationship>> definedConceptRelationshipsMap = new HashMap<Long, List<Relationship>>();
+        int i = 100;
+        int check = 0;
+        Random random = new Random();
+
+        //print header
+
+        for(AxiomRepresentation rep:representations) {
+            Long conceptID = rep.getLeftHandSideNamedConcept();
+            Map<Integer, List<Relationship>> rightHandSideRelationshipsMap = rep.getRightHandSideRelationships();
+
+            Map<Integer, List<Relationship>> rightHandSideRelationships = rep.getRightHandSideRelationships();
+            Iterator<Map.Entry<Integer, List<Relationship>>> iter = rightHandSideRelationshipsMap.entrySet().iterator();
+            while(iter.hasNext()) {
+                List<Relationship> currentConceptRelationships = iter.next().getValue();
+                i=i+1;
+                check = random.nextInt(10);//TODO: last digit should be checksum, implement
+
+                for (Relationship rel : currentConceptRelationships) {
+                    //id - generate number XXX02X
+                    String id = i+"02"+check;
+                    sb.append(id);
+                    sb.append("\t");
+
+                    //effectiveTime
+                    String effectiveTime = "20201113";
+                    sb.append(effectiveTime);
+                    sb.append("\t");
+
+                    //active
+                    sb.append("1");
+                    sb.append("\t");
+
+                    //moduleId
+                    sb.append("900000000000207008");
+                    sb.append("\t");
+
+                    //sourceId
+                    sb.append(conceptID);
+                    sb.append("\t");
+
+                    //destinationId
+                    sb.append(rel.getDestinationId());
+                    sb.append("\t");
+
+                    //relationshipGroup TODO: extract from nesting. Does getGroup do this sufficiently?
+                    sb.append(rel.getGroup());
+                    sb.append("\t");
+
+                    //typeId
+                    sb.append(rel.getTypeId());
+                    sb.append("\t");
+
+                    //charTypeId -- currently hardcoded + arbitrary
+                    sb.append("900000000000011006");
+                    sb.append("\t");
+
+                    //modifierId -- currently hardcoded + arbitrary
+                    sb.append("900000000000451002");
+                    sb.append("\t");
+
+                    writer.write(sb.toString());
+                    newline(writer);
+                    sb.setLength(0);
+                    writer.flush();
+                }
+            }
+        }
     }
 
     public String getDirectoryPath() {
