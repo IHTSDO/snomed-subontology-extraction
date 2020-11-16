@@ -207,6 +207,11 @@ public class RF2Printer extends Printer {
         Random random = new Random();
 
         //print header
+        sb.append("id\teffectiveTime\tactive\tmoduleId\tsourceId\tdestinationId\trelationshipGroup\ttypeId\tcharacteristicTypeId\tmodifierId");
+        writer.write(sb.toString());
+        newline(writer);
+        sb.setLength(0);
+        writer.flush();
 
         for(AxiomRepresentation rep:representations) {
             Long conceptID = rep.getLeftHandSideNamedConcept();

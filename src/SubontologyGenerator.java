@@ -58,6 +58,7 @@ public class SubontologyGenerator {
     }
 
     //TODO: refactor, split
+    //TODO: a lot of redundancy, fine for testing purposes but needs streamlining.
     public void computeSubontologyAsRF2(Set<OWLClass> conceptsToDefine, Set<RedundancyOptions> redundancyOptions) throws OWLException, IOException, ReleaseImportException, ConversionException {
         //Compute abstract (authoring) form definitions for concepts
         DefinitionGenerator abstractDefinitionsGenerator = new DefinitionGeneratorAbstract(backgroundOntology, reasoningService, namer);
@@ -73,6 +74,15 @@ public class SubontologyGenerator {
         man.addAxioms(subOntology, backgroundOntology.getRBoxAxioms(Imports.fromBoolean(false)));
         man.addAxioms(subOntology, gciAxioms);
 
+        //add annotation assertion axioms
+        Set<OWLEntity> subOntologyEntities = new HashSet<OWLEntity>();
+        subOntologyEntities.addAll(backgroundOntology.getClassesInSignature());
+        subOntologyEntities.addAll(backgroundOntology.getObjectPropertiesInSignature());
+        System.out.println("Adding annotations for entities in subontology");
+        for(OWLEntity ent:subOntologyEntities) {
+            man.addAxioms(subOntology, backgroundOntology.getAnnotationAssertionAxioms(ent.getIRI()));
+        }
+
         //Compute NNFs
         DefinitionGenerator nnfDefinitionsGenerator = new DefinitionGeneratorNNF(backgroundOntology, reasoningService, namer);
 
@@ -83,7 +93,7 @@ public class SubontologyGenerator {
         OWLOntology nnfOntology = man.createOntology(nnfDefinitionsGenerator.getGeneratedDefinitions());
 
         //Extract RF2 for subontology
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/code/computedSubOntology/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/computedSubOntology/";
         man.saveOntology(subOntology, new OWLXMLDocumentFormat(), IRI.create(new File(outputPath + "subOntology.owl")));
         OWLtoRF2Service owlToRF2Converter = new OWLtoRF2Service();
         InputStream is = new FileInputStream(outputPath + "subOntology.owl");
@@ -92,15 +102,16 @@ public class SubontologyGenerator {
         File rf2Zip = new File(outputPath + "subOntology_rf2_" + new Date().getTime() + ".zip");
         owlToRF2Converter.writeToRF2(owlFileStream, new FileOutputStream(rf2Zip), new GregorianCalendar(2020, Calendar.SEPTEMBER, 3).getTime());
 
-        //Extract RF2 for NNFs TODO: bit redundant, fine for testing purposes.
+        //Extract RF2 for NNFs
         man.saveOntology(subOntology, new OWLXMLDocumentFormat(), IRI.create(new File(outputPath + "NNF.owl")));
         InputStream isNNF = new FileInputStream(outputPath + "nnf.owl");
         InputStream owlFileStreamNNF = new BufferedInputStream(isNNF);
 
+        //TODO:  needed?
         File rf2ZipNNF = new File(outputPath + "NNF_rf2_" + new Date().getTime() + ".zip");
         owlToRF2Converter.writeToRF2(owlFileStreamNNF, new FileOutputStream(rf2ZipNNF), new GregorianCalendar(2020, Calendar.SEPTEMBER, 3).getTime());
 
-        //Filter RF2 (to extract relationship file) TODO: again, bit redundant. Improve.
+        //Filter RF2 (to extract relationship file)
         printRelationshipRF2(nnfOntology, outputPath);
     }
 
