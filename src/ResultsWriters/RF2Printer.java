@@ -3,6 +3,7 @@ package ResultsWriters;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
 import org.snomed.otf.owltoolkit.constants.Concepts;
+import org.snomed.otf.owltoolkit.constants.RF2Headers;
 import org.snomed.otf.owltoolkit.conversion.AxiomRelationshipConversionService;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import org.snomed.otf.owltoolkit.domain.AxiomRepresentation;
@@ -13,8 +14,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+
+import static java.lang.String.format;
 
 public class RF2Printer extends Printer {
 
@@ -141,8 +145,8 @@ public class RF2Printer extends Printer {
     private void writeRelationship(BufferedWriter writer, String status, String sourceTerm, String destinationTerm, String relationshipTypeTerm, String existentialRestrictionModifier) throws IOException {
         //add padding
         try {
-            writer.write(status);
-            writer.write(TAB);
+            //writer.write(status);
+            //writer.write(TAB);
 
             // sourceId
             writer.write(sourceTerm);
@@ -185,7 +189,7 @@ public class RF2Printer extends Printer {
         return idToFSNMap;
     }
 
-    public void printRF2RelationshipFile(OWLOntology nnfOntology) throws ConversionException, IOException {
+    public void printRelationshipRF2File(OWLOntology nnfOntology) throws ConversionException, IOException {
         String outputFilePath = outputDirectory + "Relationship_RF2" + ".txt";
 
         System.out.println("Writing inferred relationships file for: " + outputFilePath);
@@ -221,11 +225,11 @@ public class RF2Printer extends Printer {
             Iterator<Map.Entry<Integer, List<Relationship>>> iter = rightHandSideRelationshipsMap.entrySet().iterator();
             while(iter.hasNext()) {
                 List<Relationship> currentConceptRelationships = iter.next().getValue();
-                i=i+1;
-                check = random.nextInt(10);//TODO: last digit should be checksum, implement
 
                 for (Relationship rel : currentConceptRelationships) {
                     //id - generate number XXX02X
+                    i=i+1;
+                    check = random.nextInt(10);//TODO: last digit should be checksum, implement
                     String id = i+"02"+check;
                     sb.append(id);
                     sb.append("\t");
@@ -275,6 +279,39 @@ public class RF2Printer extends Printer {
             }
         }
     }
+
+    /*
+    public void printOWLRefsetRF2File(OWLOntology authoringFormOntology) throws ConversionException, IOException {
+        // Write OWL expression refset file
+        String outputFilePath = outputDirectory + "OWLAxiom_Refset_RF2" + ".txt";
+        BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
+        StringBuilder sb = new StringBuilder();
+
+        writer.write(RF2Headers.OWL_EXPRESSION_REFERENCE_SET_HEADER);
+        newline(writer);
+        for (Long conceptId : conceptAxioms.keySet()) {
+            for (OWLAxiom owlAxiom : conceptAxioms.get(conceptId)) {
+                // id	effectiveTime	active	moduleId	refsetId	referencedComponentId	owlExpression
+                String axiomString = owlAxiom.toString();
+                axiomString = axiomString.replace("<http://snomed.info/id/", ":");
+                axiomString = axiomString.replace(">", "");
+                writer.write(String.join("\t", UUID.randomUUID().toString(), "0", "1", Concepts.SNOMED_CT_CORE_MODULE,
+                        Concepts.OWL_AXIOM_REFERENCE_SET, conceptId.toString(), axiomString));
+                newline(writer);
+            }
+        }
+        //needed metadata - TODO: clean
+        writer.write(String.join("\t", UUID.randomUUID().toString(), "0", "1", Concepts.SNOMED_CT_CORE_MODULE, Concepts.OWL_AXIOM_REFERENCE_SET, "762705008", "SubClassOf(:762705008 :410662002)"));
+        newline(writer);
+        writer.write(String.join("\t", UUID.randomUUID().toString(), "0", "1", Concepts.SNOMED_CT_CORE_MODULE, Concepts.OWL_AXIOM_REFERENCE_SET, "410662002", "SubClassOf(:410662002 :900000000000441003)"));
+        newline(writer);
+        writer.write(String.join("\t", UUID.randomUUID().toString(), "0", "1", Concepts.SNOMED_CT_CORE_MODULE, Concepts.OWL_AXIOM_REFERENCE_SET, "900000000000441003", "SubClassOf(:900000000000441003 :138875005)"));
+        newline(writer);
+        writer.flush();
+
+    }
+     */
+
 
     public String getDirectoryPath() {
         return outputDirectory;

@@ -25,9 +25,9 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
 
     public void generateDefinition(OWLClass inputClass, Set<RedundancyOptions> redundancyOptions) {
         Set<OWLClass> ancestors = reasonerService.getAncestorClasses(inputClass);
-        System.out.println("Class: " + inputClass + ", ancestors: " + ancestors);
+        //System.out.println("Class: " + inputClass + ", ancestors: " + ancestors);
         Set<OWLClass> ancestorRenamedPVs = extractNamedPVs(ancestors);
-        System.out.println("Class: " + inputClass + ", ancestor PVs: " + ancestorRenamedPVs);
+        //System.out.println("Class: " + inputClass + ", ancestor PVs: " + ancestorRenamedPVs);
 
         Set<OWLClass> parentNamedClasses = new HashSet<OWLClass>();
         parentNamedClasses.addAll(reasonerService.getParentClasses(inputClass));
@@ -37,6 +37,11 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
 
+        //OLD reflexivity handling: before TODO: decide which is correct.
+        if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy) == true) {
+            Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
+            ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t
+        }
         if(redundancyOptions.contains(RedundancyOptions.eliminateLessSpecificRedundancy) == true) {
             reducedParentNamedClasses = reduceClassSet(parentNamedClasses);
             reducedAncestorPVs = replaceNamesWithPVs(reduceClassSet(ancestorRenamedPVs));
@@ -48,12 +53,12 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         if(redundancyOptions.contains(RedundancyOptions.eliminateRoleGroupRedundancy) == true) {
             reducedAncestorPVs = eliminateRoleGroupRedundancies(reducedAncestorPVs);
         }
-        //TODO: check this, why was this first before?
-        if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy) == true) {
-            //Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
-            //ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t
-            reducedAncestorPVs = eliminateReflexivePVRedundancies(reducedAncestorPVs, inputClass);
-        }
+        //TODO: decide which is correct.
+        //if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy) == true) {
+        //    //Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
+        //    //ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t
+        //    reducedAncestorPVs = eliminateReflexivePVRedundancies(reducedAncestorPVs, inputClass);
+        //}
 
         Set<OWLClassExpression> nonRedundantAncestors = new HashSet<OWLClassExpression>();
         nonRedundantAncestors.addAll(reducedParentNamedClasses);

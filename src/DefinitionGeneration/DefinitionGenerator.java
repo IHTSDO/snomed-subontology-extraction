@@ -120,7 +120,7 @@ public abstract class DefinitionGenerator {
             boolean isReflexiveProperty = checkIfReflexiveProperty(pv.getProperty().asOWLObjectProperty());
             if (isReflexiveProperty == true) {
                 if(reasonerService.getAncestorClasses(inputClass).contains(pv.getFiller()) || pv.getFiller().equals(inputClass)) {
-                    System.out.println("Is reflexive redundancy: " + pv);
+                    //System.out.println("Is reflexive redundancy: " + pv);
                     continue;
                 }
             }
@@ -174,10 +174,10 @@ public abstract class DefinitionGenerator {
         //Optional<OWLAxiom> definition = null;
         definingConditions.remove(df.getOWLThing());
         definingConditions.remove(df.getOWLNothing());
-        System.out.println("cls: " + definedClass);
-        System.out.println("definingConditions: " + definingConditions);
+        //System.out.println("cls: " + definedClass);
+        //System.out.println("definingConditions: " + definingConditions);
         if (definingConditions.size() == 0) {
-            System.out.println("No necessary conditions for class: " + definedClass);
+            //System.out.println("No necessary conditions for class: " + definedClass);
             //no necessary condition for class (it is "top level class". Return top <= class. TODO: better way?
             undefinedClasses.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
             return;

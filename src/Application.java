@@ -45,9 +45,9 @@ public class Application {
         String inputOntologyPath = inputOntologyFile.getAbsolutePath().substring(0, inputOntologyFile.getAbsolutePath().lastIndexOf(File.separator)+1);
 
         man.removeAxioms(inputOntologyWithRenamings, inputOntology.getAxioms());
-        man.saveOntology(inputOntologyWithRenamings, new OWLXMLDocumentFormat(), IRI.create(new File("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/" +
+        man.saveOntology(inputOntologyWithRenamings, IRI.create(new File("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/" +
                 "pv_test_renamings.owl")));
-        man.saveOntology(inputOntology, new OWLXMLDocumentFormat(), IRI.create(new File("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/" +
+        man.saveOntology(inputOntology, IRI.create(new File("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/" +
                 "input_test.owl")));
 
         //////////
@@ -80,6 +80,8 @@ public class Application {
 
         int i=0;
         for(OWLClass cls:classesToDefine) {
+        //for(int i=0; i<50; i++){
+            //OWLClass cls = classesToDefine.get(i);
             i++;
             System.out.println("Generating definition for class: " + cls.toString());
             System.out.println("Classes defined: " + i + " of: " + numClasses);
@@ -113,15 +115,6 @@ public class Application {
         rf2Printer.printNNFsAsFSNTuples(definitionsOnt);
         System.out.println("Num undefined classes: " + definitionGenerator.getUndefinedClassAxioms().size());
         System.out.println("Num defined classes:"  + definitionGenerator.getGeneratedDefinitions().size());
-
-        ////////////////////////////
-        //Extract data needed for SNOWSTORM
-        ////////////////////////////
-        Set<Long> entityIDs = SubontologyGenerator.extractAllEntityIDsForOntology(definitionsOnt);
-
-        String outputDirectory = inputPath + "snowstorm-rf2-extracts/";
-
-        //ComputeSubontology.runRF2Extraction(entityIDs, outputDirectory);
     }
 
 }
