@@ -169,7 +169,7 @@ public abstract class DefinitionGenerator {
     public Set<OWLClass> replacePVsWithNames(Set<OWLObjectSomeValuesFrom> pvs) {
         return namer.retrieveNamesForPVs(pvs);
     }
-
+    /* //TODO: old, uses only necessary conditions.
     protected void constructNecessaryDefinitionAxiom(OWLClass definedClass, Set<OWLClassExpression> definingConditions) {
         //Optional<OWLAxiom> definition = null;
         definingConditions.remove(df.getOWLThing());
@@ -189,6 +189,36 @@ public abstract class DefinitionGenerator {
         }
         //TODO: handle case with 1 necessary condition, no conjunction in superclass?
         generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
+    }
+     */
+    //TODO: detects equivalence, test run
+    protected void constructDefinitionAxiom(OWLClass definedClass, Set<OWLClassExpression> definingConditions) {
+        //Optional<OWLAxiom> definition = null;
+        definingConditions.remove(df.getOWLThing());
+        definingConditions.remove(df.getOWLNothing());
+        if (definingConditions.size() == 0) {
+            System.out.println("Undefined class: " + definedClass);
+            undefinedClasses.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
+            return;
+        } //TODO: handle single vs multiple conditions case better.
+        else if(definingConditions.size() == 1) {
+            OWLClassExpression definingCondition = (new ArrayList<OWLClassExpression>(definingConditions)).get(0);
+            if(!backgroundOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
+                System.out.println("Equivalent class axiom for class: " + definedClass);
+                generatedDefinitions.add(df.getOWLEquivalentClassesAxiom(definedClass, definingCondition));
+            }
+            else {
+                System.out.println("Necessary class axiom for class: " + definedClass);
+                generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, definingCondition));
+            }
+            return;
+        }
+        if(!backgroundOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
+            generatedDefinitions.add(df.getOWLEquivalentClassesAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
+        }
+        else {
+            generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
+        }
     }
 
     public Set<OWLAxiom> getGeneratedDefinitions() {

@@ -60,7 +60,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         nonRedundantAncestors.addAll(reducedParentNamedClasses);
         nonRedundantAncestors.addAll(reducedAncestorPVs);
 
-        constructNecessaryDefinitionAxiom(inputClass, nonRedundantAncestors);
+        constructDefinitionAxiom(inputClass, nonRedundantAncestors);
 
     }
 

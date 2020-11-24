@@ -34,7 +34,7 @@ public class PropertyValueNamer {
             if(exp instanceof OWLObjectSomeValuesFrom) {
                 OWLObjectSomeValuesFrom expExis = (OWLObjectSomeValuesFrom) exp;
                 String pvName = produceName(expExis);
-                System.out.println("pvName: " + pvName);
+                //System.out.println("pvName: " + pvName);
 
                 pvNamingMap.putIfAbsent(expExis, df.getOWLClass(IRI.create(IRIName, pvName)));
                 namingPvMap.putIfAbsent(df.getOWLClass(IRI.create(IRIName, pvName)), expExis);

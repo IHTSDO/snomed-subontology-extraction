@@ -20,7 +20,7 @@ public class Application {
 
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException, ReleaseImportException {
         //File inputOntologyFile = new File(args[0]);
-        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/anatomy-module/";
+        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/sct";
         File inputOntologyFile = new File(inputPath + "anatomy.owl");
         String defType = "NNF";
 

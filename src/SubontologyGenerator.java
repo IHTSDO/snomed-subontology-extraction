@@ -63,7 +63,6 @@ public class SubontologyGenerator {
         nnfDefinitions = new HashSet<OWLAxiom>(); //TODO: add "memory" of generated defs somewhere?
 
         this.outputPath = outputPath;
-
     }
 
     public void computeSubontologyAsRF2(Set<OWLClass> conceptsToDefine) throws OWLException, IOException, ReleaseImportException, ConversionException {
@@ -77,34 +76,15 @@ public class SubontologyGenerator {
     //TODO: refactor, split
     //TODO: a lot of redundancy, fine for testing purposes but needs streamlining.
     public void computeSubontologyAsRF2(Set<OWLClass> classesToDefine, Set<RedundancyOptions> redundancyOptions) throws OWLException, IOException, ReleaseImportException, ConversionException {
-        //Compute abstract (authoring) form definitions for concepts
+        //Compute abstract (authoring) form definitions for classes
         computeAuthoringFormDefinitions(classesToDefine, redundancyOptions);
 
         //Compute NNFs
         computeNNFDefinitions(classesToDefine, redundancyOptions);
         nnfOntology = man.createOntology(nnfDefinitions);
 
-        //include authoring definitions, role inclusions (rbox?), GCIs for defined concepts
-        populateSubOntology();
-        /*
-        OWLtoRF2Service owlToRF2Converter = new OWLtoRF2Service();
-        InputStream is = new FileInputStream(outputPath + "subOntologyWithNNFs.owl");
-        InputStream owlFileStream = new BufferedInputStream(is);
-         */
-        //File rf2ZipSubOntologyWithNNFs = new File(outputPath + "subOntologyWithNNFs_rf2_" + new Date().getTime() + ".zip");
-        //owlToRF2Converter.writeToRF2(owlFileStream, new FileOutputStream(rf2ZipSubOntologyWithNNFs), new GregorianCalendar(2020, Calendar.SEPTEMBER, 3).getTime());
-
-        //Extract RF2 for NNFs
-        /*
-        OntologySaver.saveOntology(nnfOntology, outputPath+"nnf.owl");
-
-        InputStream isNNF = new FileInputStream(outputPath + "nnf.owl");
-        InputStream owlFileStreamNNF = new BufferedInputStream(isNNF);
-        File rf2ZipNNF = new File(outputPath + "NNF_rf2_" + new Date().getTime() + ".zip");
-        owlToRF2Converter.writeToRF2(owlFileStreamNNF, new FileOutputStream(rf2ZipNNF), new GregorianCalendar(2020, Calendar.SEPTEMBER, 3).getTime());
-        */
-        //Combine RF2 files as necessary
-        //combineConceptAndTermRF2Files(rf2ZipSubOntology, rf2ZipNNF);
+        //include authoring definitions, role inclusions (rbox?), GCIs for defined classes
+        populateSubOntology(classesToDefine);
 
         //Extract RF2 for subontology
         OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
@@ -130,7 +110,7 @@ public class SubontologyGenerator {
         InputStream owlFileStreamAuthoring = new BufferedInputStream(isAuthoring);
         File rf2ZipAuthoring = new File(outputPath + "authoring_OWLRefset_RF2_" + new Date().getTime() + ".zip");
         owlToRF2Converter.writeToRF2(owlFileStreamAuthoring, new FileOutputStream(rf2ZipAuthoring), new GregorianCalendar(2020, Calendar.SEPTEMBER, 3).getTime());
-
+        System.out.println("Total defined classes: " + authoringFormDefinitions.size());
     }
 
     private void computeAuthoringFormDefinitions(Set<OWLClass> classesToDefine, Set<RedundancyOptions> redundancyOptions) {
@@ -140,6 +120,7 @@ public class SubontologyGenerator {
             abstractDefinitionsGenerator.generateDefinition(cls, redundancyOptions);
         }
         authoringFormDefinitions = abstractDefinitionsGenerator.getGeneratedDefinitions();
+
     }
 
     private void computeNNFDefinitions(Set<OWLClass> classesToDefine, Set<RedundancyOptions> redundancyOptions) {
@@ -151,10 +132,17 @@ public class SubontologyGenerator {
         nnfDefinitions = nnfDefinitionsGenerator.getGeneratedDefinitions();
     }
 
-    private void populateSubOntology() throws OWLOntologyCreationException {
+    private void populateSubOntology(Set<OWLClass> definedClasses) throws OWLOntologyCreationException {
         subOntology = man.createOntology(authoringFormDefinitions);
         Set<OWLClass> classesInSignature = subOntology.getClassesInSignature();
         Set<OWLObjectProperty> propertiesInSignature = subOntology.getObjectPropertiesInSignature();
+
+        //include hierarchy for non-defined classes
+        Set<OWLClass> nonDefinedClasses = new HashSet<OWLClass>();
+        nonDefinedClasses.addAll(subOntology.getClassesInSignature());
+        nonDefinedClasses.removeAll(definedClasses);
+        Set<OWLAxiom> nonDefinedClassHierarchy = returnInclusionsForNonDefinedConcepts(nonDefinedClasses);
+        man.addAxioms(subOntology, nonDefinedClassHierarchy);
 
         //add gci axioms for relevant classes
         System.out.println("Adding GCI axioms to subontology.");
@@ -169,6 +157,12 @@ public class SubontologyGenerator {
         }
         System.out.println("total gci axioms added: " + gciAxioms.size());
         man.addAxioms(subOntology, gciAxioms);
+        //add subclass inclusions for GCI related axioms //TODO: temporary, improve with above.
+        for(OWLSubClassOfAxiom ax:gciAxioms) {
+            OWLClassExpression cls = ax.getSuperClass();
+            man.addAxioms(subOntology, backgroundOntology.getSubClassAxiomsForSubClass((OWLClass)cls));
+        }
+
 
         //add relevant property inclusion axioms for properties
         System.out.println("Adding role inclusion axioms to subontology.");
@@ -197,6 +191,27 @@ public class SubontologyGenerator {
 
         System.out.println("total annotation assertions added: " + annotationAssertionAxioms.size());
         man.addAxioms(subOntology, annotationAssertionAxioms);
+    }
+
+    //returns all class inclusions for non-defined concepts, to retain the hierarchical information
+    //TODO: this computes them based on ELK taxonomy. Easier way to extract directly from background?
+    private Set<OWLAxiom> returnInclusionsForNonDefinedConcepts(Set<OWLClass> nonDefinedClasses) {
+        Set<OWLAxiom> inclusionsForNonDefinedConcepts = new HashSet<OWLAxiom>();
+
+        //extract parent classes from ELK taxonomy graph, remove PVs.
+        for(OWLClass cls:nonDefinedClasses) {
+            Set<OWLClass> parents = reasoningService.getParentClasses(cls);
+            //TODO: reduce redundancy here, bring over "extractRenamedPVs" functionality
+            for(OWLClass parentCls:parents) {
+                //System.out.println("Parentcls: " + parentCls + " for class: " + cls);
+                if (!namer.isNamedPV(parentCls) == true && subOntology.getClassesInSignature().contains(parentCls) == true) {
+                    OWLSubClassOfAxiom ax = df.getOWLSubClassOfAxiom(cls, parentCls);
+                    inclusionsForNonDefinedConcepts.add(ax);
+                }
+            }
+
+        }
+        return inclusionsForNonDefinedConcepts;
     }
 
     private static Set<Long> extractAllEntityIDsForOntology(OWLOntology ont) {
@@ -309,17 +324,18 @@ public class SubontologyGenerator {
         //Set<OWLClass> conceptsToDefine = inputOntology.getClassesInSignature();
 
         SubontologyGenerator generator = new SubontologyGenerator(inputOntology, "E:/Users/warren/Documents/aPostdoc/code/~test-code/computedSubOntology/");
-        Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/era-refset/era_edta_refset.txt");
+        //Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/era-refset/era_edta_refset.txt");
 
         //System.out.println("CONCEPTS BEING DEFINED: " + conceptsToDefine);
 
-        //Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
-        //OWLDataFactory df = man.getOWLDataFactory();
-        //conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "14669001")));
-        //conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "90688005")));
-        //conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "42399005")));
-        //conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "302233006")));
-        //conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "51292008")));
+        Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
+        OWLDataFactory df = man.getOWLDataFactory();
+        conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "14669001")));
+        conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "90688005")));
+        conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "42399005")));
+        conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "302233006")));
+        conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "51292008")));
+
 
         generator.computeSubontologyAsRF2(conceptsToDefine);
     }
