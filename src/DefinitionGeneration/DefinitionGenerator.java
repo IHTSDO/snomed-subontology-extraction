@@ -33,21 +33,7 @@ public abstract class DefinitionGenerator {
     public abstract void generateDefinition(OWLClass cls, Set<RedundancyOptions> redundancyOptions);
 
     public Set<OWLClass> reduceClassSet(Set<OWLClass> inputClassSet) {
-        Set<OWLClass> redundantClasses = new HashSet<OWLClass>();
-
-        Set<OWLClass> otherClasses = new HashSet<OWLClass>(inputClassSet);
-        for (OWLClass cls : inputClassSet) {
-            otherClasses.remove(cls);
-            if (reasonerService.weakerThanAtLeastOneOf(cls, otherClasses)) {
-                redundantClasses.add(cls);
-            }
-            otherClasses.add(cls); //retain redundancies to check against (?)
-            // TODO: check, would be problematic if we have equivalent named classes or PVs, since this will mean both are removed. Is this ever the case with SCT?
-        }   // TODO:...but if A |= B, then we have B |= C, via this approach we can safely remove them as we identify them? DOUBLE CHECK.
-
-        inputClassSet.removeAll(redundantClasses);
-        //inputClassSet.remove(df.getOWLThing());
-        //inputClassSet.remove(df.getOWLNothing());
+        inputClassSet = reasonerService.reduceClassSet(inputClassSet);
         return (inputClassSet); //TODO: return as list or set?
     }
 

@@ -20,7 +20,7 @@ public class Application {
 
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException, ReleaseImportException {
         //File inputOntologyFile = new File(args[0]);
-        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/sct";
+        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/anatomy-module/";
         File inputOntologyFile = new File(inputPath + "anatomy.owl");
         String defType = "NNF";
 
@@ -72,8 +72,8 @@ public class Application {
         }
 
         Set<RedundancyOptions> redundancyOptions = new HashSet<RedundancyOptions>();
-        redundancyOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
-        redundancyOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
+        //redundancyOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
+        //redundancyOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
         redundancyOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
 
         int numClasses = inputOntology.getClassesInSignature().size();

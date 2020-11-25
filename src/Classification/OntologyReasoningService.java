@@ -89,6 +89,41 @@ public class OntologyReasoningService {
         return reasoner.getSuperClasses(cls, true).getFlattened();
     }
 
+    public Set<OWLClass> getChildClasses(OWLClass cls) {
+        return reasoner.getSubClasses(cls, true).getFlattened();
+    }
+
+    public Set<OWLClass> getDescendentClasses(OWLClass cls) {
+        return reasoner.getSubClasses(cls, false).getFlattened();
+    }
+
+    public OWLClass getTopClassForHierarchy() {
+        ArrayList<OWLEntity> topEntities = new ArrayList<OWLEntity>(reasoner.getTopClassNode().getEntities());
+
+        //TODO: does it matter which one we use, if equivalent? Add functionality if so.
+        OWLClass topClass = topEntities.get(0).asOWLClass();
+        return topClass;
+    }
+
+    public Set<OWLClass> reduceClassSet(Set<OWLClass> inputClassSet) {
+        Set<OWLClass> redundantClasses = new HashSet<OWLClass>();
+
+        Set<OWLClass> otherClasses = new HashSet<OWLClass>(inputClassSet);
+        for (OWLClass cls : inputClassSet) {
+            otherClasses.remove(cls);
+            if (weakerThanAtLeastOneOf(cls, otherClasses)) {
+                redundantClasses.add(cls);
+            }
+            otherClasses.add(cls); //retain redundancies to check against (?)
+            // TODO: check, would be problematic if we have equivalent named classes or PVs, since this will mean both are removed. Is this ever the case with SCT?
+        }   // TODO:...but if A |= B, then we have B |= C, via this approach we can safely remove them as we identify them? DOUBLE CHECK.
+
+        inputClassSet.removeAll(redundantClasses);
+        //inputClassSet.remove(df.getOWLThing());
+        //inputClassSet.remove(df.getOWLNothing());
+        return (inputClassSet); //TODO: return as list or set?
+    }
+
     //public Set<OWLObjectPropertyExpression> getAncestorProperties(OWLObjectProperty r) {
         //TODO: for some reason this is "not implemented" in ELK? Doesn't ELK return a property graph also?
         //return reasoner.getSuperObjectProperties(prop, true).getFlattened();
