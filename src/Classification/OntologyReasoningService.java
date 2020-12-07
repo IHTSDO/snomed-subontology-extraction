@@ -155,4 +155,6 @@ public class OntologyReasoningService {
         return reasoner.isConsistent();
     }
 
+    public boolean entails(OWLAxiom ax) { return reasoner.isEntailed(ax);}
+
 }
