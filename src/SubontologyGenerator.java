@@ -205,11 +205,11 @@ public class SubontologyGenerator {
     }
 
     //TODO: should classesUsed be subontology + nnf classes, or just subontology (authoring form) classes?
+    //TODO: determine, do we really want to add atomic class hierarchy for all of the defined concepts in the subontology?
     private void addAtomicClassHierarchy(Set<OWLClass> classesUsedInSubontology) {
         classesUsedInSubontology.remove(sctTop);
         for(OWLClass cls:classesUsedInSubontology) {
-            if(subOntology.getEquivalentClassesAxioms(cls).isEmpty() && subOntology.getSubClassAxiomsForSubClass(cls).isEmpty()) {
-                //System.out.println("Class: " + cls);
+            //if(subOntology.getEquivalentClassesAxioms(cls).isEmpty() && subOntology.getSubClassAxiomsForSubClass(cls).isEmpty()) {
                 Set<OWLClass> ancestors = reasoningService.getAncestorClasses(cls);
                 //reduce ancestor set based on
                 Set<OWLClass> namedClassAncestorsInSignature = new HashSet<OWLClass>();
@@ -223,7 +223,7 @@ public class SubontologyGenerator {
                 for (OWLClass ancestor : reducedAncestors) {
                     man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(cls, ancestor));
                 }
-            }
+           // }
         }
         //add cls <= topClass for all "top-level" classes //TODO: currently hardcoded to SCT.
 
