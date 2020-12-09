@@ -19,7 +19,7 @@ public class PropertyValueNamer {
         namingPvMap = new HashMap<OWLClass, OWLObjectSomeValuesFrom>();
     }
 
-    public OWLOntology namePropertyValues(OWLOntology inputOntology) throws OWLOntologyCreationException {
+    public OWLOntology returnOntologyWithNamedPropertyValues(OWLOntology inputOntology) throws OWLOntologyCreationException {
         OWLOntologyManager man = inputOntology.getOWLOntologyManager();
         OWLDataFactory df = man.getOWLDataFactory();
 
@@ -29,26 +29,32 @@ public class PropertyValueNamer {
 
         //String IRIName = OntologyStringExtractor.extractIRI(inputOntology);
         String IRIName = "http://snomed.info/id/";
-        //TODO: is this best way? Seems fine for quantified role + fillers. Though note: this does *not* separate GCIs from non-GCI PVs. This might require scanning axioms instead.
-        for(OWLClassExpression exp:inputOntologyWithRenamings.getNestedClassExpressions()) {
-            if(exp instanceof OWLObjectSomeValuesFrom) {
-                OWLObjectSomeValuesFrom expExis = (OWLObjectSomeValuesFrom) exp;
-                String pvName = produceName(expExis);
+        //note: this does *not* separate GCIs from non-GCI PVs. This might require scanning axioms instead.
+        Set<OWLObjectSomeValuesFrom> pvsInInput = new HashSet<OWLObjectSomeValuesFrom>();
+        for (OWLClassExpression exp : inputOntology.getNestedClassExpressions()) {
+            if (exp instanceof OWLObjectSomeValuesFrom) {
+                OWLObjectSomeValuesFrom pv = (OWLObjectSomeValuesFrom) exp;
+                pvsInInput.add(pv);
+                String pvName = produceName(pv);
                 //System.out.println("pvName: " + pvName);
 
-                pvNamingMap.putIfAbsent(expExis, df.getOWLClass(IRI.create(IRIName, pvName)));
-                namingPvMap.putIfAbsent(df.getOWLClass(IRI.create(IRIName, pvName)), expExis);
+                pvNamingMap.putIfAbsent(pv, df.getOWLClass(IRI.create(IRIName, pvName)));
+                namingPvMap.putIfAbsent(df.getOWLClass(IRI.create(IRIName, pvName)), pv);
             }
         }
 
-        //TODO: add equivalent classes axioms to ontology.
+        //in case multiple ontologies have been named, only use PVs relevant to given input ontology
+        for(OWLObjectSomeValuesFrom pv:pvsInInput) {
+            man.addAxiom(inputOntologyWithRenamings, df.getOWLEquivalentClassesAxiom(pv, pvNamingMap.get(pv)));
+        }
+        /*
         for(Map.Entry<OWLObjectSomeValuesFrom, OWLClass> entry : pvNamingMap.entrySet()) {
             man.addAxiom(inputOntologyWithRenamings, df.getOWLEquivalentClassesAxiom(entry.getKey(), entry.getValue()));
         }
-
+         */
         return inputOntologyWithRenamings;
-    }
 
+    }
    // private void visitPropertyValues() {
    //     OWLObjectVisitor v = new OWLObjectVisitorAdapter() {
    //         public void visit(OWLObjectSomeValuesFrom pv) {
@@ -58,10 +64,7 @@ public class PropertyValueNamer {
    // }
 
     public boolean isNamedPV(OWLClass cls) {
-        if(namingPvMap.containsKey(cls)) {
-            return true;
-        }
-        return false;
+        return namingPvMap.containsKey(cls);
     }
 
     public Set<OWLObjectSomeValuesFrom> retrievePVsFromNames(Set<OWLClass> renamedPVs) {
@@ -81,8 +84,7 @@ public class PropertyValueNamer {
     }
 
     private String produceName(OWLObjectSomeValuesFrom subclass) {
-        String pvName = "PV_" + pvNamingMap.size();
-        return pvName;
+        return "PV_" + pvNamingMap.size();
     }
 
     public void resetNames() {

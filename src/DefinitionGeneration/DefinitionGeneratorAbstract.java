@@ -81,7 +81,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             for(OWLClass parent:parentClasses) {
                 //System.out.println("Checking if ancestor: " + parent + " is primitive");
                 //If is primitive, add to returned set
-                if(isPrimitive(parent) == true) {
+                if(reasonerService.isPrimitive(parent) == true) {
                     //System.out.println("...is primitive.");
                     closestPrimitives.add(parent);
                     continue;
@@ -96,15 +96,5 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
         return closestPrimitives;
     }
-
-    public boolean isPrimitive(OWLClass cls) {
-        //TODO: for full SCT, could do this using fullyDefined IDs as in toolkit? Quicker?
-        //System.out.println("equiv axioms for class: " + cls + " are: " + backgroundOntology.getEquivalentClassesAxioms(cls));
-        if(backgroundOntology.getEquivalentClassesAxioms(cls).isEmpty()) {
-            return true;
-        }
-        return false;
-    }
-
 }
 

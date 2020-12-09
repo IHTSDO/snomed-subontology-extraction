@@ -20,9 +20,9 @@ public class Application {
 
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException, ReleaseImportException {
         //File inputOntologyFile = new File(args[0]);
-        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/anatomy-module/";
-        File inputOntologyFile = new File(inputPath + "anatomy.owl");
-        String defType = "NNF";
+        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/neoplasms-gcis/";
+        File inputOntologyFile = new File(inputPath + "neoplasms_of_colon_or_rectum.owl");
+        String defType = "abstract";
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLDataFactory df = man.getOWLDataFactory();
@@ -35,8 +35,8 @@ public class Application {
         ///////////
         //for each PV in ontology, add a definition of the form PVCi == PVi
         //TODO: refactor, should be part of DefinitionGenerator class
-        PropertyValueNamer renamer = new PropertyValueNamer();
-        OWLOntology inputOntologyWithRenamings = renamer.namePropertyValues(inputOntology);
+        PropertyValueNamer namer = new PropertyValueNamer();
+        OWLOntology inputOntologyWithRenamings = namer.returnOntologyWithNamedPropertyValues(inputOntology);
 
         //perform classification using ELK
         OntologyReasoningService reasoningService = new OntologyReasoningService(inputOntologyWithRenamings);
@@ -65,10 +65,10 @@ public class Application {
 
         DefinitionGenerator definitionGenerator;
         if(defType.equals("abstract")) {
-            definitionGenerator = new DefinitionGeneratorAbstract(inputOntology, reasoningService, renamer);
+            definitionGenerator = new DefinitionGeneratorAbstract(inputOntology, reasoningService, namer);
         }
         else {
-            definitionGenerator = new DefinitionGeneratorNNF(inputOntology, reasoningService, renamer);
+            definitionGenerator = new DefinitionGeneratorNNF(inputOntology, reasoningService, namer);
         }
 
         Set<RedundancyOptions> redundancyOptions = new HashSet<RedundancyOptions>();

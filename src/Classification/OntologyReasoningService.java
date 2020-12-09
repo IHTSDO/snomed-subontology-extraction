@@ -129,6 +129,15 @@ public class OntologyReasoningService {
         //return reasoner.getSuperObjectProperties(prop, true).getFlattened();
    // }
 
+    public boolean isPrimitive(OWLClass cls) {
+        //TODO: for full SCT, could do this using fullyDefined IDs as in toolkit? Quicker?
+        //System.out.println("equiv axioms for class: " + cls + " are: " + backgroundOntology.getEquivalentClassesAxioms(cls));
+        if(reasoner.getRootOntology().getEquivalentClassesAxioms(cls).isEmpty()) {
+            return true;
+        }
+        return false;
+    }
+
     public boolean isStrongerThan(OWLClass classBeingChecked, OWLClass classCheckedAgainst) {
         if(this.getAncestorClasses(classBeingChecked).contains(classCheckedAgainst)) {
             return true;
