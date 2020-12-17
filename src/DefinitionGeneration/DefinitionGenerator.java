@@ -80,7 +80,7 @@ public abstract class DefinitionGenerator {
         ListIterator<OWLObjectPropertyExpression> reflexiveIterator = subPropertiesOfreflexiveProperties.listIterator();
         List<OWLObjectPropertyExpression> additionalReflexiveProperties = new ArrayList<OWLObjectPropertyExpression>();
 
-        //TODO: recursively add all subproperties of reflexive properties as reflexive (ELK does not support finding superproperties?
+        //recursively add all subproperties of reflexive properties as reflexive (ELK does not support finding superproperties)
         while(reflexiveIterator.hasNext()) {
             OWLObjectPropertyExpression prop = reflexiveIterator.next();
             System.out.println("Current prop: " + prop.toString());
@@ -104,7 +104,7 @@ public abstract class DefinitionGenerator {
         //retrieve reflexive PVs in definition
         for(OWLObjectSomeValuesFrom pv:inputPVs) {
             boolean isReflexiveProperty = checkIfReflexiveProperty(pv.getProperty().asOWLObjectProperty());
-            if (isReflexiveProperty == true) {
+            if (isReflexiveProperty) {
                 if(reasonerService.getAncestorClasses(inputClass).contains(pv.getFiller()) || pv.getFiller().equals(inputClass)) {
                     //System.out.println("Is reflexive redundancy: " + pv);
                     continue;
@@ -129,7 +129,7 @@ public abstract class DefinitionGenerator {
         Set<OWLClass> renamedPVs = new HashSet<OWLClass>();
 
         for (OWLClass cls : classes) {
-            if (namer.isNamedPV(cls) == true) {
+            if (namer.isNamedPV(cls)) {
                 renamedPVs.add(cls);
             }
         }
@@ -140,7 +140,7 @@ public abstract class DefinitionGenerator {
         Set<OWLClass> namedClasses = new HashSet<OWLClass>();
 
         for (OWLClass cls : classes) {
-            if (namer.isNamedPV(cls) == false) {
+            if (!namer.isNamedPV(cls)) {
                 namedClasses.add(cls);
             }
         }
@@ -155,29 +155,7 @@ public abstract class DefinitionGenerator {
     public Set<OWLClass> replacePVsWithNames(Set<OWLObjectSomeValuesFrom> pvs) {
         return namer.retrieveNamesForPVs(pvs);
     }
-    /* //TODO: old, uses only necessary conditions.
-    protected void constructNecessaryDefinitionAxiom(OWLClass definedClass, Set<OWLClassExpression> definingConditions) {
-        //Optional<OWLAxiom> definition = null;
-        definingConditions.remove(df.getOWLThing());
-        definingConditions.remove(df.getOWLNothing());
-        //System.out.println("cls: " + definedClass);
-        //System.out.println("definingConditions: " + definingConditions);
-        if (definingConditions.size() == 0) {
-            //System.out.println("No necessary conditions for class: " + definedClass);
-            //no necessary condition for class (it is "top level class". Return top <= class. TODO: better way?
-            undefinedClasses.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
-            return;
-        }
-        else if(definingConditions.size() == 1) {
-            OWLClassExpression definingCondition = (new ArrayList<OWLClassExpression>(definingConditions)).get(0);
-            generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, definingCondition));
-            return;
-        }
-        //TODO: handle case with 1 necessary condition, no conjunction in superclass?
-        generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
-    }
-     */
-    //TODO: detects equivalence, test run
+
     protected void constructDefinitionAxiom(OWLClass definedClass, Set<OWLClassExpression> definingConditions) {
         //Optional<OWLAxiom> definition = null;
         definingConditions.remove(df.getOWLThing());
@@ -186,7 +164,7 @@ public abstract class DefinitionGenerator {
             System.out.println("Undefined class: " + definedClass);
             undefinedClasses.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
             return;
-        } //TODO: handle single vs multiple conditions case better.
+        }
         else if(definingConditions.size() == 1) {
             OWLClassExpression definingCondition = (new ArrayList<OWLClassExpression>(definingConditions)).get(0);
             if(!backgroundOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {

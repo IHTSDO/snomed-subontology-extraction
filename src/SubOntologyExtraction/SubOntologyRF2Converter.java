@@ -26,6 +26,7 @@ public class SubOntologyRF2Converter {
         this.outputPath = outputPath;
     }
 
+    //TODO: reduce redundancy in file extraction, automatically construct RF2 zip file
     public void convertSubOntologytoRF2(OWLOntology subOntology, OWLOntology nnfOntology) throws OWLException, ReleaseImportException, ConversionException, IOException {
         Set<OWLEntity> entitiesInSubontologyAndNNFs = new HashSet<OWLEntity>();
         entitiesInSubontologyAndNNFs.addAll(subOntology.getClassesInSignature());
@@ -37,13 +38,12 @@ public class SubOntologyRF2Converter {
         //Extract relationship rf2 file from nnfs
         printRelationshipRF2(nnfOntology, outputPath);
 
-        //Extract refset rf2 file from authoring definitions TODO: this is only for the OWLAxiom Refset file. Reduce redundancy.
+        //Extract refset rf2 file from authoring definitions
         OWLtoRF2Service owlToRF2Converter = new OWLtoRF2Service();
         InputStream isAuthoring = new FileInputStream(outputPath + "subOntology.owl");
         InputStream owlFileStreamAuthoring = new BufferedInputStream(isAuthoring);
         File rf2ZipAuthoring = new File(outputPath + "authoring_OWLRefset_RF2_" + new Date().getTime() + ".zip");
         owlToRF2Converter.writeToRF2(owlFileStreamAuthoring, new FileOutputStream(rf2ZipAuthoring), new GregorianCalendar(2020, Calendar.SEPTEMBER, 3).getTime());
-        //System.out.println("Total defined classes: " + authoringFormDefinitions.size());
     }
 
     private static void printRelationshipRF2(OWLOntology nnfOntology, String outputPath) throws IOException, ReleaseImportException, ConversionException {

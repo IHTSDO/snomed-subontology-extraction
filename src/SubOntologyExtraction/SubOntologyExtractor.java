@@ -41,6 +41,9 @@ public class SubOntologyExtractor {
     private static String snomedIRIString = "http://snomed.info/id/";
     private String outputPath;
     private OWLClass sctTop;
+    //TODO: temp variable, implement stats handler
+    private int addedClassesSize = 0;
+    private List<OWLClass> addedClasses = new ArrayList<OWLClass>();
 
     public SubOntologyExtractor(OWLOntology backgroundOntology, String outputPath) throws OWLOntologyCreationException, ReasonerException {
         this.sourceOntology = backgroundOntology;
@@ -84,7 +87,9 @@ public class SubOntologyExtractor {
     private void computeAuthoringFormDefinitions(Set<OWLClass> classesToDefine, Set<RedundancyOptions> redundancyOptions) {
         System.out.println("Computing authoring form.");
         DefinitionGenerator abstractDefinitionsGenerator = new DefinitionGeneratorAbstract(sourceOntology, sourceOntologyReasoningService, namer);
+        classesToDefine.remove(df.getOWLNothing());
         for(OWLClass cls:classesToDefine) {
+            System.out.println("Authoring def for cls: " + cls);
             abstractDefinitionsGenerator.generateDefinition(cls, redundancyOptions);
         }
         authoringFormDefinitions = abstractDefinitionsGenerator.getGeneratedDefinitions();
@@ -94,7 +99,9 @@ public class SubOntologyExtractor {
     private void computeNNFDefinitions(Set<OWLClass> classesToDefine, Set<RedundancyOptions> redundancyOptions) {
         System.out.println("Computing necessary normal form (inferred relationships).");
         DefinitionGenerator nnfDefinitionsGenerator = new DefinitionGeneratorNNF(sourceOntology, sourceOntologyReasoningService, namer);
+        classesToDefine.remove(df.getOWLNothing());
         for(OWLClass cls:classesToDefine) {
+            System.out.println("NNF def for cls: " + cls);
             nnfDefinitionsGenerator.generateDefinition(cls, redundancyOptions);
         }
         nnfDefinitions = nnfDefinitionsGenerator.getGeneratedDefinitions();
@@ -122,6 +129,10 @@ public class SubOntologyExtractor {
 
         //add relevant annotation axioms
         addAnnotationAssertions();
+
+        //TODO: temp printing, get stats handler and remove.
+        System.out.println("Num added classes by incremental supp class code: " + addedClassesSize);
+        System.out.println("Added classes: " + addedClasses);
     }
 
     private void addGCIAxioms() {
@@ -207,34 +218,33 @@ public class SubOntologyExtractor {
         List<OWLClass> additionalSupportingClasses = new ArrayList<OWLClass>();
         Set<OWLEquivalentClassesAxiom> additionalClassDefinitions = new HashSet<OWLEquivalentClassesAxiom>();
 
-        //TODO: recursively add all subproperties of reflexive properties as reflexive (ELK does not support finding superproperties?
         while(suppClassIterator.hasNext()) {
             OWLClass suppCls = suppClassIterator.next();
-           // System.out.println("Supporting class: " + suppCls);
 
-            if (!sourceOntologyReasoningService.isPrimitive(suppCls) && subOntology.getEquivalentClassesAxioms(suppCls).isEmpty()) {
+            //TODO: add option to add supporting defs for defined only, or primitive & defined?
+            //if (!sourceOntologyReasoningService.isPrimitive(suppCls) && subOntology.getEquivalentClassesAxioms(suppCls).isEmpty()) {
+            //if(subOntology.getEquivalentClassesAxioms(suppCls).isEmpty()) {
                 Set<OWLClass> descendents = sourceOntologyReasoningService.getDescendentClasses(suppCls);
                 if (!Collections.disjoint(inputClasses, descendents)) {
                     Set<OWLEquivalentClassesAxiom> suppClsDefinitions = sourceOntology.getEquivalentClassesAxioms(suppCls);
-                    //System.out.println("Adding definitions for suppCls: " + suppClsDefinitions);
                     for (OWLEquivalentClassesAxiom ax : suppClsDefinitions) {
                         Set<OWLClass> defClasses = ax.getClassesInSignature();
                         for (OWLClass defClass : defClasses) {
-                            //System.out.println("defClass: " + defClass);
                             if (!subOntology.getClassesInSignature().contains(defClass)) {
                                 suppClassIterator.add(defClass);
                                 additionalSupportingClasses.add(defClass);
                                 suppClassIterator.previous();
-                                //System.out.println("defClass added to check set");
                             }
                         }
                     }
                     additionalClassDefinitions.addAll(suppClsDefinitions);
                 }
-            }
+            //}
         }
         man.addAxioms(subOntology, additionalClassDefinitions);
 
+        addedClassesSize = additionalSupportingClasses.size();
+        addedClasses = additionalSupportingClasses;
         System.out.println("Supporting class definitions added " + additionalSupportingClasses.size() + " new classes.");
         System.out.println("Added classes: " + additionalSupportingClasses);
     }
@@ -251,8 +261,8 @@ public class SubOntologyExtractor {
         OntologyReasoningService subOntologyReasoningService = new OntologyReasoningService(subOntology);
 
         for(OWLClass cls:classesUsedInSubontology) {
-            subOntologyReasoningService.classifyOntology(); //TODO: expensive and not best solution, check why some ancestors missed in this loop.
-                                                            //TODO: may need to be done as a postprocessing step?
+            subOntologyReasoningService.classifyOntology(); //TODO: expensive and not best solution. May need to be done as a postprocessing step?
+                                                            //TODO:
             //if(subOntology.getEquivalentClassesAxioms(cls).isEmpty() && subOntology.getSubClassAxiomsForSubClass(cls).isEmpty()) {
             Set<OWLClass> sourceOntologyAncestors = sourceOntologyReasoningService.getAncestorClasses(cls);
             Set<OWLClass> subOntologyAncestors = subOntologyReasoningService.getAncestorClasses(cls);
@@ -287,8 +297,7 @@ public class SubOntologyExtractor {
     }
 
     /*
-    //TODO: semantically minimal subontologies, not necessarily user-preferred
-    //TODO: some overlap with NNFs here, refactor/reuse if so
+    //TODO: semantically minimal subontologies, not necessarily user-preferred, some overlap with NNFs here, refactor/reuse
     private void addMinimalSupportingClassDefinitions() throws OWLOntologyCreationException {
         Set<OWLClass> supportingClasses = subOntology.getClassesInSignature();
         supportingClasses.removeAll(inputClasses);

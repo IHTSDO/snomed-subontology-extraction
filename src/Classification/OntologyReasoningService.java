@@ -18,10 +18,7 @@ public class OntologyReasoningService {
 
     private OWLReasoner reasoner;
     private final OWLReasonerConfiguration configuration = new SimpleConfiguration(new ConsoleProgressMonitor());
-    //private OWLOntology inputOntology;
 
-    //TODO 03-08-20: add all exceptions to one exception.
-    //TODO " "     : check - return OWLOntology, or just precompute inferences and use this class to navigate graph?
     public OntologyReasoningService(OWLOntology inputOntology) throws ReasonerException {
         this(inputOntology, "org.semanticweb.elk.owlapi.ElkReasonerFactory");
     }
@@ -81,7 +78,6 @@ public class OntologyReasoningService {
     }
 
     public Set<OWLClass> getAncestorClasses(OWLClass cls) {
-        //System.out.println("RES: " + reasoner.getSuperClasses(cls, false));
         return reasoner.getSuperClasses(cls, false).getFlattened();
     }
 
@@ -116,22 +112,19 @@ public class OntologyReasoningService {
             }
             otherClasses.add(cls); //retain redundancies to check against (?)
             // TODO: check, would be problematic if we have equivalent named classes or PVs, since this will mean both are removed. Is this ever the case with SCT?
-        }   // TODO:...but if A |= B, then we have B |= C, via this approach we can safely remove them as we identify them? DOUBLE CHECK.
+        }   // TODO:...but if A |= B, then we have B |= C, via this approach we can safely remove them as we identify them? Check.
 
         inputClassSet.removeAll(redundantClasses);
-        //inputClassSet.remove(df.getOWLThing());
-        //inputClassSet.remove(df.getOWLNothing());
-        return (inputClassSet); //TODO: return as list or set?
+        return (inputClassSet);
     }
 
     //public Set<OWLObjectPropertyExpression> getAncestorProperties(OWLObjectProperty r) {
-        //TODO: for some reason this is "not implemented" in ELK? Doesn't ELK return a property graph also?
+        //"not implemented" in ELK
         //return reasoner.getSuperObjectProperties(prop, true).getFlattened();
    // }
 
     public boolean isPrimitive(OWLClass cls) {
         //TODO: for full SCT, could do this using fullyDefined IDs as in toolkit? Quicker?
-        //System.out.println("equiv axioms for class: " + cls + " are: " + backgroundOntology.getEquivalentClassesAxioms(cls));
         if(reasoner.getRootOntology().getEquivalentClassesAxioms(cls).isEmpty()) {
             return true;
         }
@@ -147,10 +140,7 @@ public class OntologyReasoningService {
 
     public boolean weakerThanAtLeastOneOf(OWLClass classBeingChecked, Set<OWLClass> setCheckedAgainst) {
         for(OWLClass classCheckedAgainst:setCheckedAgainst) {
-            //System.out.println("Class being checked: " + classBeingChecked);
-           // System.out.println("Class checked against: " + classCheckedAgainst);
             if(this.getAncestorClasses(classCheckedAgainst).contains(classBeingChecked)) {
-               // System.out.println("Class: " + classCheckedAgainst + " stronger than: " + classBeingChecked);
                 return true;
             }
         }

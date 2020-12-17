@@ -1,5 +1,6 @@
 package SubOntologyExtraction;
 
+import Classification.OntologyReasoningService;
 import ExceptionHandlers.ReasonerException;
 import ResultsWriters.OntologySaver;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
@@ -12,6 +13,7 @@ import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 
 public class SubOntologyExtractionTest {
@@ -21,6 +23,8 @@ public class SubOntologyExtractionTest {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/SCT-files/";
         File inputOntologyFile = new File(inputPath + "sct-july-2020.owl");
+        //String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/SCT-files/";
+        //File inputOntologyFile = new File(inputPath + "anatomy.owl");
 
         String outputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/computedSubOntology/";
 
@@ -39,6 +43,22 @@ public class SubOntologyExtractionTest {
         conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "302233006")));
         conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "51292008")));
          */
+
+        //Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
+        //OntologyReasoningService service = new OntologyReasoningService(inputOntology);
+        //service.classifyOntology();
+        /*
+        for(OWLClass cls:inputOntology.getClassesInSignature()) {
+            //if(cls.toString().equals("http://snomed.info/id/48075008")) {
+            if(cls.toString().contains("48075008")) {
+                System.out.println("Cls: " + cls.toString());
+                conceptsToDefine.addAll(service.getDescendentClasses(cls));
+            }
+        }
+
+         */
+        System.out.println("Classes being defined num: " + conceptsToDefine.size());
+
         generator.computeSubontology(conceptsToDefine);
 
         OWLOntology subOntology = generator.getSubOntology();
@@ -53,7 +73,6 @@ public class SubOntologyExtractionTest {
         man.addAxioms(nnfsWithSubOntology, subOntology.getAxioms());
         man.addAxioms(nnfsWithSubOntology, nnfOntology.getAxioms());
         OntologySaver.saveOntology(nnfsWithSubOntology, outputPath+"subOntologyWithNNFs.owl");
-
 
         SubOntologyRF2Converter converter = new SubOntologyRF2Converter(outputPath);
         converter.convertSubOntologytoRF2(subOntology, nnfOntology);

@@ -45,14 +45,14 @@ public class CheckComplexNesting {
             if(ax instanceof OWLEquivalentClassesAxiom) {
                 Set<OWLSubClassOfAxiom> axs = ((OWLEquivalentClassesAxiom)ax).asOWLSubClassOfAxioms();
                 for(OWLSubClassOfAxiom subAxiom:axs) {
-                    if(superClassContainsComplexNesting(subAxiom) == true) {
+                    if(superClassContainsComplexNesting(subAxiom)) {
                         axiomsWithNestedPVs.add(ax);
                         break;
                     }
                 }
             }
             else if(ax instanceof OWLSubClassOfAxiom) {
-                if(superClassContainsComplexNesting((OWLSubClassOfAxiom)ax) == true) {
+                if(superClassContainsComplexNesting((OWLSubClassOfAxiom)ax)) {
                     axiomsWithNestedPVs.add(ax);
                 }
             }
@@ -82,14 +82,14 @@ public class CheckComplexNesting {
                 // (b) Otherwise, if statement has form R some C, just check the statement itself for complex nesting.
                 if(prop.equals(roleGroup)) {
                     for(OWLClassExpression subExp:filler.asConjunctSet()) {
-                        if(expressionContainsComplexNesting(subExp) == true) {
+                        if(expressionContainsComplexNesting(subExp)) {
                             return true;
                         }
                     }
                 }
                 else {
                     System.out.println("Performing non role group check.");
-                    if(expressionContainsComplexNesting(conj) == true) {
+                    if(expressionContainsComplexNesting(conj)) {
                         return true;
                     }
                 }
