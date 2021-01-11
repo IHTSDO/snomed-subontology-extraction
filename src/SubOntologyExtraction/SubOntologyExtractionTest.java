@@ -1,19 +1,13 @@
 package SubOntologyExtraction;
 
-import Classification.OntologyReasoningService;
 import ExceptionHandlers.ReasonerException;
 import ResultsWriters.OntologySaver;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.model.OWLClass;
-import org.semanticweb.owlapi.model.OWLException;
-import org.semanticweb.owlapi.model.OWLOntology;
-import org.semanticweb.owlapi.model.OWLOntologyManager;
+import org.semanticweb.owlapi.model.*;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
+import java.io.*;
 import java.util.Set;
 
 public class SubOntologyExtractionTest {
@@ -33,32 +27,13 @@ public class SubOntologyExtractionTest {
         //Set<OWLClass> conceptsToDefine = inputOntology.getClassesInSignature();
 
         SubOntologyExtractor generator = new SubOntologyExtractor(inputOntology, outputPath);
-        Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/era-refset/era_edta_refset.txt");
-        /*
-        Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
-        OWLDataFactory df = man.getOWLDataFactory();
-        conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "14669001")));
-        conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "90688005")));
-        conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "42399005")));
-        conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "302233006")));
-        conceptsToDefine.add(df.getOWLClass(IRI.create(snomedIRIString + "51292008")));
-         */
+        Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/example-refsets/era-refset/era_edta_refset.txt");
+        //Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/example-refsets/era-refset/era_edta_refset.txt");
+        //Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/example-refsets/medicinal_products_demo_refset.txt");
 
-        //Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
-        //OntologyReasoningService service = new OntologyReasoningService(inputOntology);
-        //service.classifyOntology();
-        /*
-        for(OWLClass cls:inputOntology.getClassesInSignature()) {
-            //if(cls.toString().equals("http://snomed.info/id/48075008")) {
-            if(cls.toString().contains("48075008")) {
-                System.out.println("Cls: " + cls.toString());
-                conceptsToDefine.addAll(service.getDescendentClasses(cls));
-            }
-        }
+        String snomedIRIString = "http://snomed.info/id/";
 
-         */
         System.out.println("Classes being defined num: " + conceptsToDefine.size());
-
         generator.computeSubontology(conceptsToDefine);
 
         OWLOntology subOntology = generator.getSubOntology();
@@ -76,5 +51,16 @@ public class SubOntologyExtractionTest {
 
         SubOntologyRF2Converter converter = new SubOntologyRF2Converter(outputPath);
         converter.convertSubOntologytoRF2(subOntology, nnfOntology);
+        System.out.println("Input ontology num axioms: " + inputOntology.getLogicalAxiomCount());
+        System.out.println("Input ontology num classes: " + inputOntology.getClassesInSignature().size() + " and properties: " + inputOntology.getObjectPropertiesInSignature().size());
+        System.out.println("Subontology Stats");
+        System.out.println("Num axioms: " + subOntology.getLogicalAxiomCount());
+        System.out.println("Num classes: " + subOntology.getClassesInSignature().size() + " and properties: " + subOntology.getObjectPropertiesInSignature().size());
+        System.out.println("---------------------");
+        System.out.println("Other stats: ");
+        System.out.println("Number of definitions added for supporting classes: " + generator.getNumberOfAdditionalSupportingClassDefinitionsAdded());
+        System.out.println("Num supporting classes added by incremental signature expansion: " + generator.getNumberOfClassesAddedDuringSignatureExpansion());
+        System.out.println("Supporting classes with incrementally added definitions: " + generator.getSupportingClassesWithAddedDefinitions().toString());
     }
+
 }

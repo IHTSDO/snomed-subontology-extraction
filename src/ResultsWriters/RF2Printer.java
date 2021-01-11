@@ -221,7 +221,6 @@ public class RF2Printer extends Printer {
             Long conceptID = rep.getLeftHandSideNamedConcept();
             Map<Integer, List<Relationship>> rightHandSideRelationshipsMap = rep.getRightHandSideRelationships();
 
-            Map<Integer, List<Relationship>> rightHandSideRelationships = rep.getRightHandSideRelationships();
             Iterator<Map.Entry<Integer, List<Relationship>>> iter = rightHandSideRelationshipsMap.entrySet().iterator();
             while(iter.hasNext()) {
                 List<Relationship> currentConceptRelationships = iter.next().getValue();

@@ -89,7 +89,7 @@ public class OntologyReasoningService {
         return reasoner.getSubClasses(cls, true).getFlattened();
     }
 
-    public Set<OWLClass> getDescendentClasses(OWLClass cls) {
+    public Set<OWLClass> getDescendantClasses(OWLClass cls) {
         return reasoner.getSubClasses(cls, false).getFlattened();
     }
 
