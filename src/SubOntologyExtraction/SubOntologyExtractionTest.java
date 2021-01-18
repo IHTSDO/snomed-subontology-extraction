@@ -27,13 +27,11 @@ public class SubOntologyExtractionTest {
         //Set<OWLClass> conceptsToDefine = inputOntology.getClassesInSignature();
 
         SubOntologyExtractor generator = new SubOntologyExtractor(inputOntology, outputPath);
-        Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/example-refsets/era-refset/era_edta_refset.txt");
-        //Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/example-refsets/era-refset/era_edta_refset.txt");
-        //Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/example-refsets/medicinal_products_demo_refset.txt");
+        //Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/refsets/flumazenil_refset.txt");
+        Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/refsets/era-refset/era_edta_refset.txt");
+        //Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/refsets/medicinal_products_demo_refset.txt");
 
-        String snomedIRIString = "http://snomed.info/id/";
 
-        System.out.println("Classes being defined num: " + conceptsToDefine.size());
         generator.computeSubontology(conceptsToDefine);
 
         OWLOntology subOntology = generator.getSubOntology();
@@ -56,11 +54,15 @@ public class SubOntologyExtractionTest {
         System.out.println("Subontology Stats");
         System.out.println("Num axioms: " + subOntology.getLogicalAxiomCount());
         System.out.println("Num classes: " + subOntology.getClassesInSignature().size() + " and properties: " + subOntology.getObjectPropertiesInSignature().size());
+        System.out.println("Focus classes: " + conceptsToDefine.size());
+        System.out.println("Supporting classes: " + (subOntology.getClassesInSignature().size()-conceptsToDefine.size()));
         System.out.println("---------------------");
         System.out.println("Other stats: ");
         System.out.println("Number of definitions added for supporting classes: " + generator.getNumberOfAdditionalSupportingClassDefinitionsAdded());
         System.out.println("Num supporting classes added by incremental signature expansion: " + generator.getNumberOfClassesAddedDuringSignatureExpansion());
         System.out.println("Supporting classes with incrementally added definitions: " + generator.getSupportingClassesWithAddedDefinitions().toString());
+
+
     }
 
 }

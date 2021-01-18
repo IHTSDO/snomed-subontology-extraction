@@ -92,7 +92,6 @@ public class SubOntologyExtractor {
             abstractDefinitionsGenerator.generateDefinition(cls, redundancyOptions);
         }
         authoringFormDefinitions = abstractDefinitionsGenerator.getGeneratedDefinitions();
-
     }
 
     private void computeNNFDefinitions(Set<OWLClass> classesToDefine, Set<RedundancyOptions> redundancyOptions) {
@@ -108,7 +107,7 @@ public class SubOntologyExtractor {
 
     private void populateSubOntology() throws OWLOntologyCreationException, ReasonerException {
         subOntology = man.createOntology(authoringFormDefinitions);
-
+        //TODO: check ordering of these steps.
         //add gci axioms for relevant classes
         addGCIAxioms();
 
@@ -127,10 +126,10 @@ public class SubOntologyExtractor {
         //add top level classes
         addTopLevelClasses();
 
-        //add top level roles
+        //add top level roles -- //TODO: 12-01-2021, add role hierarchy needed. Initial: drag in all subobjectproperty, chains wrt to signature.
         //addTopLevelRoles();
 
-        //add necessary metadata //TODO: needed?
+        //add necessary metadata
 
         //add relevant annotation axioms
         addAnnotationAssertions();
@@ -186,7 +185,7 @@ public class SubOntologyExtractor {
         topLevelSCTGroupers.remove(sctTop);
         for(OWLClass cls:topLevelSCTGroupers) {
             if(!Collections.disjoint(subOntology.getClassesInSignature(), sourceOntologyReasoningService.getDescendantClasses(cls))) {
-                //System.out.println("Added additional grouper class: " + cls);
+                System.out.println("Added additional grouper class: " + cls);
                 man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(cls, sctTop));
             }
         }
@@ -232,22 +231,29 @@ public class SubOntologyExtractor {
         List<OWLClass> additionalSupportingClasses = new ArrayList<OWLClass>();
         Set<OWLAxiom> additionalClassDefinitions = new HashSet<OWLAxiom>();
 
+        //Set<OWLClass> currentlyDefinedClasses = new HashSet<OWLClass>(focusClasses);
         while(supportingClassIterator.hasNext()) {
             OWLClass suppCls = supportingClassIterator.next();
 
             //TODO: add option to add supporting defs for defined only, or primitive & defined?
-            //if (!sourceOntologyReasoningService.isPrimitive(suppCls) && subOntology.getEquivalentClassesAxioms(suppCls).isEmpty()) {
-            //if(subOntology.getEquivalentClassesAxioms(suppCls).isEmpty()) {
-                Set<OWLClass> descendents = sourceOntologyReasoningService.getDescendantClasses(suppCls);
-                //if the supporting class has a focus class as a descendant, add the full definition
+            Set<OWLClass> descendents = sourceOntologyReasoningService.getDescendantClasses(suppCls); //TODO: descendents, or children? CHECK
+            //Set<OWLClass> descendents = sourceOntologyReasoningService.getChildClasses(suppCls);
+            //if the supporting class has a focus class as a descendant, add the full definition
+            //if(!sourceOntologyReasoningService.isPrimitive(suppCls)) {
                 if (!Collections.disjoint(focusClasses, descendents)) {
-                    Set<OWLEquivalentClassesAxiom> suppClsDefinitions = sourceOntology.getEquivalentClassesAxioms(suppCls);
-                    for (OWLEquivalentClassesAxiom ax : suppClsDefinitions) {
+                    //Set<OWLEquivalentClassesAxiom> suppClsDefinitions = sourceOntology.getEquivalentClassesAxioms(suppCls);
+                    Set<OWLAxiom> suppClsDefinitions = new HashSet<OWLAxiom>();
+                    suppClsDefinitions.addAll(sourceOntology.getSubClassAxiomsForSubClass(suppCls));
+                    suppClsDefinitions.addAll(sourceOntology.getEquivalentClassesAxioms(suppCls)); //both?
+
+                    definedSupportingClasses.add(suppCls);
+
+                    System.out.println("Adding definitions for supporting class: " + suppCls.toString() + " (" + suppClsDefinitions.size() + " axioms)");
+                    for (OWLAxiom ax : suppClsDefinitions) {
                         Set<OWLClass> defClasses = ax.getClassesInSignature();
                         for (OWLClass defClass : defClasses) {
-                            if (!subOntology.getClassesInSignature().contains(defClass)) {
+                            if (!subOntology.getClassesInSignature().contains(defClass) && !definedSupportingClasses.contains(defClass)) {
                                 supportingClassIterator.add(defClass);
-                                definedSupportingClasses.add(suppCls);
                                 additionalSupportingClasses.add(defClass);
                                 supportingClassIterator.previous();
                             }
@@ -255,7 +261,7 @@ public class SubOntologyExtractor {
                     }
                     additionalClassDefinitions.addAll(suppClsDefinitions);
                 }
-            //}
+           // }
         }
         man.addAxioms(subOntology, additionalClassDefinitions);
 
@@ -264,25 +270,7 @@ public class SubOntologyExtractor {
         System.out.println("Supporting class definitions added " + additionalSupportingClasses.size() + " new classes.");
         System.out.println("Added classes: " + additionalSupportingClasses);
     }
-    /*    //11-01-21 commented out //TODO: test vs below
-    private void addAtomicClassHierarchy() {
-        Set<OWLClass> classesUsedInSubontology = subOntology.getClassesInSignature();
-        //do not need to consider focus classes and classes for which full definition has been added.
-        classesUsedInSubontology.removeAll(focusClasses);
-        classesUsedInSubontology.removeAll(definedSupportingClasses);
-        classesUsedInSubontology.remove(sctTop);
 
-        for(OWLClass cls:classesUsedInSubontology) {
-            Set<OWLClass> sourceOntologyAncestors = sourceOntologyReasoningService.getAncestorClasses(cls);
-            Set<OWLClass> reducedAncestors = sourceOntologyReasoningService.reduceClassSet(sourceOntologyAncestors);
-            for(OWLClass ancestor:reducedAncestors) {
-                if(subOntology.getClassesInSignature().contains(ancestor)) {
-                    man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(cls, ancestor));
-                }
-            }
-        }
-    }
-     */
     private void addAtomicClassHierarchy() throws ReasonerException, OWLOntologyCreationException {
         Set<OWLClass> partiallyDefinedSupportingClasses = subOntology.getClassesInSignature();
         partiallyDefinedSupportingClasses.removeAll(focusClasses);
@@ -290,8 +278,7 @@ public class SubOntologyExtractor {
         partiallyDefinedSupportingClasses.remove(sctTop);
 
         //TODO: used in checking what is already entailed by subontology (ancestor search), do we need this?
-        //System.out.println("Renaming subontology pvs.");
-        OWLOntology subOntologyWithRenamings = namer.returnOntologyWithNamedPropertyValues(subOntology);
+        //OWLOntology subOntologyWithRenamings = namer.returnOntologyWithNamedPropertyValues(subOntology);
         System.out.println("classifying ontology.");
         //OntologyReasoningService subOntologyReasoningService = new OntologyReasoningService(subOntologyWithRenamings);
         OntologyReasoningService subOntologyReasoningService = new OntologyReasoningService(subOntology);

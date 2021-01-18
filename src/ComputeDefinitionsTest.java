@@ -16,12 +16,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class Application {
+public class ComputeDefinitionsTest {
 
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException, ReleaseImportException {
         //File inputOntologyFile = new File(args[0]);
-        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/neoplasms-gcis/";
-        File inputOntologyFile = new File(inputPath + "neoplasms_of_colon_or_rectum.owl");
+        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/SCT-files/";
+        File inputOntologyFile = new File(inputPath + "sct-july-2020.owl");
         String defType = "abstract";
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
