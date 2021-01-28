@@ -1,7 +1,7 @@
-package SubOntologyExtraction;
-
 import ExceptionHandlers.ReasonerException;
 import ResultsWriters.OntologySaver;
+import SubOntologyExtraction.SubOntologyExtractor;
+import SubOntologyExtraction.SubOntologyRF2Converter;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
@@ -16,8 +16,7 @@ public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-july-2020.owl");
-        //String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/SCT-files/";
+        File inputOntologyFile = new File(inputPath + "anatomy.owl");
         //File inputOntologyFile = new File(inputPath + "anatomy.owl");
 
         String outputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/computedSubOntology/";
@@ -26,11 +25,8 @@ public class SubOntologyExtractionTest {
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
         //Set<OWLClass> conceptsToDefine = inputOntology.getClassesInSignature();
 
-        SubOntologyExtractor generator = new SubOntologyExtractor(inputOntology, outputPath);
-        //Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/refsets/flumazenil_refset.txt");
-        Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/refsets/era-refset/era_edta_refset.txt");
-        //Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/refsets/medicinal_products_demo_refset.txt");
-
+        SubOntologyExtractor generator = new SubOntologyExtractor(inputOntology);
+        Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/refsets/anatomy-skin-structure/skin-structure.txt");
 
         generator.computeSubontology(conceptsToDefine);
 
@@ -61,8 +57,6 @@ public class SubOntologyExtractionTest {
         System.out.println("Number of definitions added for supporting classes: " + generator.getNumberOfAdditionalSupportingClassDefinitionsAdded());
         System.out.println("Num supporting classes added by incremental signature expansion: " + generator.getNumberOfClassesAddedDuringSignatureExpansion());
         System.out.println("Supporting classes with incrementally added definitions: " + generator.getSupportingClassesWithAddedDefinitions().toString());
-
-
     }
 
 }

@@ -16,7 +16,7 @@ public abstract class DefinitionGenerator {
     private OWLOntologyManager man;
     protected OWLDataFactory df;
     //protected List<OWLObjectPropertyExpression> subPropertiesOfreflexiveProperties;
-    protected Set<OWLAxiom> generatedDefinitions;
+    protected List<OWLAxiom> generatedDefinitions;
     protected Set<OWLAxiom> undefinedClasses;
 
     public DefinitionGenerator(OWLOntology inputOntology, OntologyReasoningService reasonerService, PropertyValueNamer namer) {
@@ -26,7 +26,7 @@ public abstract class DefinitionGenerator {
         man = OWLManager.createOWLOntologyManager();
         df = man.getOWLDataFactory();
         //subPropertiesOfreflexiveProperties = new ArrayList<OWLObjectPropertyExpression>();
-        generatedDefinitions = new HashSet<OWLAxiom>();
+        generatedDefinitions = new ArrayList<OWLAxiom>();
         undefinedClasses = new HashSet<OWLAxiom>(); //TODO: add "memory" of generated defs somewhere?
     }
 
@@ -38,7 +38,7 @@ public abstract class DefinitionGenerator {
     }
 
     //TODO: max nesting is RG(R some C ...) correct? If so, no "depth" parameter needed here.
-    Set<OWLObjectSomeValuesFrom> eliminateRoleGroupRedundancies(Set<OWLObjectSomeValuesFrom> inputPVs) {
+    public Set<OWLObjectSomeValuesFrom> eliminateRoleGroupRedundancies(Set<OWLObjectSomeValuesFrom> inputPVs) {
         Set<OWLObjectSomeValuesFrom> reducedInputPVs = new HashSet<OWLObjectSomeValuesFrom>();
 
         for(OWLObjectSomeValuesFrom pv:inputPVs) {
@@ -157,7 +157,6 @@ public abstract class DefinitionGenerator {
     }
 
     protected void constructDefinitionAxiom(OWLClass definedClass, Set<OWLClassExpression> definingConditions) {
-        //Optional<OWLAxiom> definition = null;
         definingConditions.remove(df.getOWLThing());
         definingConditions.remove(df.getOWLNothing());
         if (definingConditions.size() == 0) {
@@ -185,8 +184,16 @@ public abstract class DefinitionGenerator {
         }
     }
 
-    public Set<OWLAxiom> getGeneratedDefinitions() {
+    public List<OWLAxiom> getGeneratedDefinitions() {
         return this.generatedDefinitions;
+    }
+
+    public OWLAxiom getLastDefinitionGenerated() {
+        OWLAxiom latestDefinition = null;
+        if (generatedDefinitions != null && !generatedDefinitions.isEmpty()) {
+             latestDefinition = generatedDefinitions.get(generatedDefinitions.size()-1);
+        }
+        return latestDefinition;
     }
 
     public Set<OWLAxiom> getUndefinedClassAxioms() { return this.undefinedClasses; }

@@ -21,8 +21,10 @@ public class ComputeDefinitionsTest {
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException, ReleaseImportException {
         //File inputOntologyFile = new File(args[0]);
         String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/SCT-files/";
+        //String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/left-facet-module-new/";
         File inputOntologyFile = new File(inputPath + "sct-july-2020.owl");
-        String defType = "abstract";
+        //File inputOntologyFile = new File(inputPath + "module_left_facet_joint.owl");
+        String defType = "NNF";
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLDataFactory df = man.getOWLDataFactory();
@@ -72,8 +74,8 @@ public class ComputeDefinitionsTest {
         }
 
         Set<RedundancyOptions> redundancyOptions = new HashSet<RedundancyOptions>();
-        //redundancyOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
-        //redundancyOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
+        redundancyOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
+        redundancyOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
         redundancyOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
 
         int numClasses = inputOntology.getClassesInSignature().size();

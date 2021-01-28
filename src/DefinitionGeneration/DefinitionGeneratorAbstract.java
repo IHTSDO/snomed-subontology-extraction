@@ -37,6 +37,10 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
         Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
+        //if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
+        //    Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
+        //    ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t
+        //}
         if(redundancyOptions.contains(RedundancyOptions.eliminateLessSpecificRedundancy)) {
             reducedParentNamedClasses = reduceClassSet(primitiveAncestors);
             reducedAncestorPVs = replaceNamesWithPVs(reduceClassSet(ancestorRenamedPVs));
@@ -46,8 +50,6 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         }
         //TODO: needs to be done before rest of redundancy removal, due also to transitivity?
         if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
-            //Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
-            //ancestorRenamedPVs = replacePVsWithNames(ancestorPVs);
             reducedAncestorPVs = eliminateReflexivePVRedundancies(reducedAncestorPVs, inputClass);
         }
 
