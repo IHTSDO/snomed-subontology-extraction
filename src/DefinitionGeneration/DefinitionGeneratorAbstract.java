@@ -58,7 +58,6 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         nonRedundantAncestors.addAll(reducedAncestorPVs);
 
         constructDefinitionAxiom(inputClass, nonRedundantAncestors);
-
     }
 
     //possibly quicker than taking all primitive ancestors & redundancy checking?

@@ -6,6 +6,7 @@ import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
+import tools.RefsetHandler;
 
 import java.io.*;
 import java.util.Set;
@@ -16,17 +17,17 @@ public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "anatomy.owl");
-        //File inputOntologyFile = new File(inputPath + "anatomy.owl");
+        //String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/examples/";
+        File inputOntologyFile = new File(inputPath + "sct-july-2020.owl");
 
         String outputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/computedSubOntology/";
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
-        //Set<OWLClass> conceptsToDefine = inputOntology.getClassesInSignature();
 
         SubOntologyExtractor generator = new SubOntologyExtractor(inputOntology);
-        Set<OWLClass> conceptsToDefine = generator.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/refsets/anatomy-skin-structure/skin-structure.txt");
+        Set<OWLClass> conceptsToDefine = RefsetHandler.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/refsets/medicinal_products_demo_refset.txt");
+        //Set<OWLClass> conceptsToDefine = inputOntology.getClassesInSignature();
 
         generator.computeSubontology(conceptsToDefine);
 

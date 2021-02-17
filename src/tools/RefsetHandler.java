@@ -11,6 +11,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class RefsetHandler {
+    private static String snomedIRIString = "http://snomed.info/id/";
+
     public static Set<OWLClass> extractRefsetClassesFromDescendents(OWLOntology inputOntology, OWLClass rootClass, boolean excludePrimitives) throws ReasonerException {
         OntologyReasoningService service = new OntologyReasoningService(inputOntology);
         service.classifyOntology();
@@ -43,6 +45,51 @@ public abstract class RefsetHandler {
             writer.newLine();
         }
         writer.close();
+    }
+
+    public static Set<OWLClass> readRefset(String refsetPath) {
+        if(refsetPath.substring(refsetPath.lastIndexOf(".")).equals("json")) {
+            return readRefsetJson(refsetPath);
+        }
+        return readRefsetTxt(refsetPath);
+    }
+
+    private static Set<OWLClass> readRefsetJson(String refsetPath) {
+        OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
+        Set<OWLClass> classes = new HashSet<OWLClass>();
+        try (BufferedReader br = new BufferedReader(new FileReader(new File(refsetPath)))) {
+            String inLine = "";
+            br.readLine();
+            while ((inLine = br.readLine()) != null) {
+                // process the line.
+                System.out.println("Adding class: " + inLine + " to input");
+                classes.add(df.getOWLClass(IRI.create(snomedIRIString + inLine)));
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return classes;
+    }
+
+    private static Set<OWLClass> readRefsetTxt(String refsetPath) {
+        OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
+        Set<OWLClass> classes = new HashSet<OWLClass>();
+        try (BufferedReader br = new BufferedReader(new FileReader(new File(refsetPath)))) {
+            String inLine = "";
+            br.readLine();
+            while ((inLine = br.readLine()) != null) {
+                // process the line.
+                System.out.println("Adding class: " + inLine + " to input");
+                classes.add(df.getOWLClass(IRI.create(snomedIRIString + inLine)));
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return classes;
     }
 
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException {

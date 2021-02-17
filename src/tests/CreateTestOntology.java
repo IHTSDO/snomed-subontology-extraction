@@ -29,41 +29,30 @@ public class CreateTestOntology {
 
         //System.out.println("ont1 axioms count: " + ont.getAxiomCount());
         //System.out.println("ont2 axioms count: " + ont2.getAxiomCount());
-
-
-
         OWLClass A = df.getOWLClass(IRI.create(IRIName + "A"));
-        OWLClass B = df.getOWLClass(IRI.create(IRIName + "B"));
+        OWLClass A0 = df.getOWLClass(IRI.create(IRIName + "A0"));
+        OWLClass A1 = df.getOWLClass(IRI.create(IRIName + "A1"));
+        OWLClass A11 = df.getOWLClass(IRI.create(IRIName + "A11"));
+        OWLClass A12 = df.getOWLClass(IRI.create(IRIName + "A12"));
         OWLClass C = df.getOWLClass(IRI.create(IRIName + "C"));
-        OWLClass E = df.getOWLClass(IRI.create(IRIName + "E"));
-        OWLClass F = df.getOWLClass(IRI.create(IRIName + "F"));
-        OWLClass G = df.getOWLClass(IRI.create(IRIName + "G"));
-        OWLClass H = df.getOWLClass(IRI.create(IRIName + "H"));
-        OWLClass I = df.getOWLClass(IRI.create(IRIName + "I"));
+        OWLClass C1 = df.getOWLClass(IRI.create(IRIName + "C1"));
+        OWLClass D = df.getOWLClass(IRI.create(IRIName + "D"));
+        OWLClass D1 = df.getOWLClass(IRI.create(IRIName + "D1"));
         OWLObjectProperty r = df.getOWLObjectProperty(IRI.create(IRIName + "r"));
         OWLObjectProperty s = df.getOWLObjectProperty(IRI.create(IRIName + "s"));
 
-        OWLNamedIndividual a = df.getOWLNamedIndividual(IRI.create(IRIName + "a"));
+        OWLEquivalentClassesAxiom ax1 = df.getOWLEquivalentClassesAxiom(A, df.getOWLObjectIntersectionOf(A0, df.getOWLObjectSomeValuesFrom(r, C)));
+        OWLSubClassOfAxiom ax2 = df.getOWLSubClassOfAxiom(A1, df.getOWLObjectIntersectionOf(A, df.getOWLObjectSomeValuesFrom(r, C)));
+        OWLSubClassOfAxiom ax3 = df.getOWLSubClassOfAxiom(df.getOWLObjectIntersectionOf(A0, df.getOWLObjectSomeValuesFrom(r, D)), A1);
+        OWLSubClassOfAxiom ax4 = df.getOWLSubClassOfAxiom(A11, df.getOWLObjectIntersectionOf(A0, df.getOWLObjectSomeValuesFrom(r, D1)));
+        OWLSubClassOfAxiom ax5 = df.getOWLSubClassOfAxiom(D1, D);
+        OWLSubClassOfAxiom ax6 = df.getOWLSubClassOfAxiom(A12, df.getOWLObjectIntersectionOf(A1, df.getOWLObjectSomeValuesFrom(r, C1)));
 
-        OWLSubClassOfAxiom ax1 = df.getOWLSubClassOfAxiom(A, C);
-        OWLSubClassOfAxiom ax2 = df.getOWLSubClassOfAxiom(df.getOWLObjectSomeValuesFrom(r, B), C);
-        OWLSubClassOfAxiom ax3 = df.getOWLSubClassOfAxiom(F, G);
-        OWLDisjointClassesAxiom ax4 = df.getOWLDisjointClassesAxiom(A, H);
-        OWLSubClassOfAxiom ax5 = df.getOWLSubClassOfAxiom(C, I);
-        OWLClassAssertionAxiom as1 = df.getOWLClassAssertionAxiom(df.getOWLObjectAllValuesFrom(r, df.getOWLObjectComplementOf(B)), a);
-        OWLClassAssertionAxiom as2 = df.getOWLClassAssertionAxiom(H, a);
+        OWLOntology ont = man.createOntology();
+        man.addAxioms(ont, new HashSet<OWLAxiom>(Arrays.asList(ax1,ax2,ax3,ax4,ax5,ax6)));
 
-        OWLSubClassOfAxiom obs1 = df.getOWLSubClassOfAxiom(df.getOWLObjectSomeValuesFrom(s, F), df.getOWLObjectSomeValuesFrom(s, E));
-        OWLClassAssertionAxiom obs2 = df.getOWLClassAssertionAxiom(C, a);
-
-        OWLOntology backOnt = man.createOntology();
-        OWLOntology obsOnt = man.createOntology();
-        man.addAxioms(backOnt, new HashSet<OWLAxiom>(Arrays.asList(ax1,ax2,ax3,ax4,ax5,as2)));
-        man.addAxioms(obsOnt, new HashSet<OWLAxiom>(Arrays.asList(obs1,obs2)));
-
-        String outputPath = "E:/Users/warren/Documents/aPhD/THESIS-EXAMPLES/kb-illustrative";
-        man.saveOntology(backOnt, new OWLXMLDocumentFormat(), IRI.create(new File(outputPath + "_background.owl")));
-        man.saveOntology(obsOnt, new OWLXMLDocumentFormat(), IRI.create(new File(outputPath + "_obs.owl")));
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/examples/authoring_GCI";
+        man.saveOntology(ont, new OWLXMLDocumentFormat(), IRI.create(new File(outputPath + ".owl")));
 
     }
 }

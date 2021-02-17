@@ -38,7 +38,6 @@ public class SubOntologyExtractor {
     private Set<OWLClass> focusClasses;
     private OWLOntology subOntology;
     private OWLOntology nnfOntology;
-    private static String snomedIRIString = "http://snomed.info/id/";
     private OWLClass sctTop;
     //TODO: temp variable, implement stats handler
     //classes and definitions added during signature expansion
@@ -72,7 +71,7 @@ public class SubOntologyExtractor {
     public void computeSubontology(Set<OWLClass> classesToDefine) throws OWLException, ReasonerException {
         Set<RedundancyOptions> defaultOptions = new HashSet<RedundancyOptions>();
         defaultOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
-        //defaultOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy); //TODO: should this be default, or not?
+        defaultOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy); //TODO: should this be default, or not?
         defaultOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
         this.computeSubontology(classesToDefine, defaultOptions);
     }
@@ -204,71 +203,16 @@ public class SubOntologyExtractor {
         }
     }
 
-    //11-01-21 -- temp
-    private void addTopLevelRoles() {
-        System.out.println("Adding top level roles.");
-        for(OWLObjectProperty prop:subOntology.getObjectPropertiesInSignature()) {
-            if(subOntology.getObjectSubPropertyAxiomsForSubProperty(prop).isEmpty()) {
-                man.addAxiom(subOntology, df.getOWLSubObjectPropertyOfAxiom(prop, df.getOWLObjectProperty(IRI.create(snomedIRIString + "762705008"))));
-            }
-        }
-    }
+//    //11-01-21 -- temp
+//    private void addTopLevelRoles() {
+//        System.out.println("Adding top level roles.");
+//        for(OWLObjectProperty prop:subOntology.getObjectPropertiesInSignature()) {
+//            if(subOntology.getObjectSubPropertyAxiomsForSubProperty(prop).isEmpty()) {
+//                man.addAxiom(subOntology, df.getOWLSubObjectPropertyOfAxiom(prop, df.getOWLObjectProperty(IRI.create(snomedIRIString + "762705008"))));
+//            }
+//        }
+//    }
 
-    //TODO: should classesUsed be subontology + nnf classes, or just subontology (authoring form) classes?
-    //TODO: determine, do we really want to add atomic class hierarchy for all of the defined concepts in the subontology?
-    //currently, do not add hierarchy for PVs, classes outside subontology or classes that have already been defined
-    //the latter can be inferred within the subontology, so no explicit statement needed.
-    /*
-    private void addSupportingClassesInformation() throws ReasonerException, OWLOntologyCreationException {
-        //TODO: which approach?
-        //addPartialSupportingClassDefinitions();
-        ArrayList<OWLClass> supportingClasses = new ArrayList<OWLClass>(subOntology.getClassesInSignature());
-        supportingClasses.removeAll(focusClasses);
-
-        ListIterator<OWLClass> supportingClassIterator = supportingClasses.listIterator();
-        List<OWLClass> additionalSupportingClasses = new ArrayList<OWLClass>();
-        Set<OWLAxiom> additionalClassDefinitions = new HashSet<OWLAxiom>();
-
-        //Set<OWLClass> currentlyDefinedClasses = new HashSet<OWLClass>(focusClasses);
-        while(supportingClassIterator.hasNext()) {
-            OWLClass suppCls = supportingClassIterator.next();
-
-            //TODO: add option to add supporting defs for defined only, or primitive & defined?
-            Set<OWLClass> descendents = sourceOntologyReasoningService.getDescendantClasses(suppCls); //TODO: descendents, or children? CHECK
-            //Set<OWLClass> descendents = sourceOntologyReasoningService.getChildClasses(suppCls);
-            //if the supporting class has a focus class as a descendant, add the full definition
-            //if(!sourceOntologyReasoningService.isPrimitive(suppCls)) {
-                if (!Collections.disjoint(focusClasses, descendents)) {
-                    //Set<OWLEquivalentClassesAxiom> suppClsDefinitions = sourceOntology.getEquivalentClassesAxioms(suppCls);
-                    Set<OWLAxiom> suppClsDefinitions = new HashSet<OWLAxiom>();
-                    suppClsDefinitions.addAll(sourceOntology.getSubClassAxiomsForSubClass(suppCls));
-                    suppClsDefinitions.addAll(sourceOntology.getEquivalentClassesAxioms(suppCls)); //both? //TODO: REPLACE, COMPUTE AUTHORING FORM?
-
-                    definedSupportingClasses.add(suppCls);
-
-                    System.out.println("Adding definitions for supporting class: " + suppCls.toString() + " (" + suppClsDefinitions.size() + " axioms)");
-                    for (OWLAxiom ax : suppClsDefinitions) {
-                        Set<OWLClass> defClasses = ax.getClassesInSignature();
-                        for (OWLClass defClass : defClasses) {
-                            if (!subOntology.getClassesInSignature().contains(defClass) && !definedSupportingClasses.contains(defClass)) {
-                                supportingClassIterator.add(defClass);
-                                additionalSupportingClasses.add(defClass);
-                                supportingClassIterator.previous();
-                            }
-                        }
-                    }
-                    additionalClassDefinitions.addAll(suppClsDefinitions);
-                }
-           // }
-        }
-        man.addAxioms(subOntology, additionalClassDefinitions);
-
-        additionalClassesInExpandedSignature = additionalSupportingClasses;
-        additionalSupportingClassDefinitionsAdded = additionalClassDefinitions;
-        System.out.println("Supporting class definitions added " + additionalSupportingClasses.size() + " new classes.");
-        System.out.println("Added classes: " + additionalSupportingClasses);
-    }
-     */
     private void computeRequiredSupportingClassDefinitions() {
         ArrayList<OWLClass> supportingClasses = new ArrayList<OWLClass>(subOntology.getClassesInSignature());
         supportingClasses.removeAll(focusClasses);
@@ -279,7 +223,7 @@ public class SubOntologyExtractor {
         while(supportingClassIterator.hasNext()) {
             OWLClass suppCls = supportingClassIterator.next();
 
-            //TODO: add option to add supporting defs for defined only, or primitive & defined?
+            //TODO: check possible avenues of subsumption for each language feature (role chains, hierarchies...)
             Set<OWLClass> descendents = sourceOntologyReasoningService.getDescendantClasses(suppCls); //TODO: descendents, or children? CHECK
             if (!Collections.disjoint(focusClasses, descendents)) {
                 //Set<OWLAxiom> suppClsDefinitions = new HashSet<OWLAxiom>();
@@ -300,7 +244,6 @@ public class SubOntologyExtractor {
                 }
             }
         }
-
         additionalClassesInExpandedSignature = additionalSupportingClasses;
         System.out.println("Supporting class definitions added " + additionalSupportingClasses.size() + " new classes.");
         System.out.println("Added classes: " + additionalSupportingClasses);
@@ -406,49 +349,6 @@ public class SubOntologyExtractor {
             entityIDs.add(entID);
         }
         return entityIDs;
-    }
-
-    public Set<OWLClass> readRefset(String refsetPath) {
-        if(refsetPath.substring(refsetPath.lastIndexOf(".")).equals("json")) {
-            return readRefsetJson(refsetPath);
-        }
-        return readRefsetTxt(refsetPath);
-    }
-
-    private Set<OWLClass> readRefsetJson(String refsetPath) {
-        Set<OWLClass> classes = new HashSet<OWLClass>();
-        try (BufferedReader br = new BufferedReader(new FileReader(new File(refsetPath)))) {
-            String inLine = "";
-            br.readLine();
-            while ((inLine = br.readLine()) != null) {
-                // process the line.
-                System.out.println("Adding class: " + inLine + " to input");
-                classes.add(df.getOWLClass(IRI.create(snomedIRIString + inLine)));
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return classes;
-    }
-
-    private Set<OWLClass> readRefsetTxt(String refsetPath) {
-        Set<OWLClass> classes = new HashSet<OWLClass>();
-        try (BufferedReader br = new BufferedReader(new FileReader(new File(refsetPath)))) {
-            String inLine = "";
-            br.readLine();
-            while ((inLine = br.readLine()) != null) {
-                // process the line.
-                System.out.println("Adding class: " + inLine + " to input");
-                classes.add(df.getOWLClass(IRI.create(snomedIRIString + inLine)));
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return classes;
     }
 
     public OWLOntology getSubOntology() {

@@ -10,7 +10,6 @@ import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
-import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,7 +17,7 @@ import java.util.*;
 
 public class ComputeDefinitionsTest {
 
-    public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException, ReleaseImportException {
+    public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException {
         //File inputOntologyFile = new File(args[0]);
         String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/SCT-files/";
         //String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/left-facet-module-new/";
@@ -114,7 +113,7 @@ public class ComputeDefinitionsTest {
         RF2Printer rf2Printer = new RF2Printer(inputOntologyPath + defType);
         System.out.println(inputOntologyPath);
 
-        rf2Printer.printNNFsAsFSNTuples(definitionsOnt);
+        //rf2Printer.printNNFsAsFSNTuples(definitionsOnt);
         System.out.println("Num undefined classes: " + definitionGenerator.getUndefinedClassAxioms().size());
         System.out.println("Num defined classes:"  + definitionGenerator.getGeneratedDefinitions().size());
     }
