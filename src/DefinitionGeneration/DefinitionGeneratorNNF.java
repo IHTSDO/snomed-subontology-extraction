@@ -36,10 +36,10 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
 
         //OLD reflexivity handling: before TODO: decide which is correct.
-        if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
-            Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
-            ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t
-        }
+        //if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
+        //    Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
+        //    ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t
+        //}
         if(redundancyOptions.contains(RedundancyOptions.eliminateLessSpecificRedundancy)) {
             reducedParentNamedClasses = reduceClassSet(parentNamedClasses);
             reducedAncestorPVs = replaceNamesWithPVs(reduceClassSet(ancestorRenamedPVs));
@@ -52,11 +52,9 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
             reducedAncestorPVs = eliminateRoleGroupRedundancies(reducedAncestorPVs);
         }
         //TODO: decide which is correct.
-        //if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
-        //    //Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
-        //    //ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t
-        //    reducedAncestorPVs = eliminateReflexivePVRedundancies(reducedAncestorPVs, inputClass);
-        //}
+        if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
+            reducedAncestorPVs = eliminateReflexivePVRedundancies(reducedAncestorPVs, inputClass);
+        }
 
         Set<OWLClassExpression> nonRedundantAncestors = new HashSet<OWLClassExpression>();
         nonRedundantAncestors.addAll(reducedParentNamedClasses);

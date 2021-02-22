@@ -230,16 +230,33 @@ public class SubOntologyExtractor {
                 abstractDefinitionsGenerator.generateDefinition(suppCls, redundancyOptions);
                 OWLAxiom suppClsDefinition = abstractDefinitionsGenerator.getLastDefinitionGenerated();
 
-                definedSupportingClasses.add(suppCls);
-                additionalSupportingClassDefinitionsAdded.add(suppClsDefinition);
+                //TODO: 22-02-21, change to remove simple "atomic class only" hierarchies -- see TM subontology example, concept 272743000
+                //TODO: possibly change to include checking for equivalence between atomic concepts(??)
 
-                System.out.println("Adding definition for supporting class: " + suppCls.toString());
-                Set<OWLClass> defClasses = suppClsDefinition.getClassesInSignature();
-                for (OWLClass defClass : defClasses) {
-                    if (!subOntology.getClassesInSignature().contains(defClass) && !definedSupportingClasses.contains(defClass)) {
-                        supportingClassIterator.add(defClass);
-                        additionalSupportingClasses.add(defClass);
-                        supportingClassIterator.previous();
+                boolean nonAtomicInclusionOrInvolvesFocus = false;
+                if(suppClsDefinition instanceof OWLSubClassOfAxiom) {
+                    for(OWLClassExpression conj:((OWLSubClassOfAxiom) suppClsDefinition).getSuperClass().asConjunctSet()) {
+                        if(conj instanceof OWLObjectSomeValuesFrom || focusClasses.contains(conj)) {
+                           nonAtomicInclusionOrInvolvesFocus = true;  
+                        }
+                    }
+                }
+                else {
+                    nonAtomicInclusionOrInvolvesFocus = true;
+                }
+
+                if(nonAtomicInclusionOrInvolvesFocus) {
+                    definedSupportingClasses.add(suppCls);
+                    additionalSupportingClassDefinitionsAdded.add(suppClsDefinition);
+                    System.out.println("Adding definition for supporting class: " + suppCls.toString());
+
+                    Set<OWLClass> defClasses = suppClsDefinition.getClassesInSignature();
+                    for (OWLClass defClass : defClasses) {
+                        if (!subOntology.getClassesInSignature().contains(defClass) && !definedSupportingClasses.contains(defClass)) {
+                            supportingClassIterator.add(defClass);
+                            additionalSupportingClasses.add(defClass);
+                            supportingClassIterator.previous();
+                        }
                     }
                 }
             }

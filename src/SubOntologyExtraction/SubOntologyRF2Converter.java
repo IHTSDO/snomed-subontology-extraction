@@ -1,9 +1,7 @@
 package SubOntologyExtraction;
 
-import ResultsWriters.OntologySaver;
 import ResultsWriters.RF2Printer;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
-import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import org.snomed.otf.owltoolkit.conversion.OWLtoRF2Service;
@@ -21,9 +19,11 @@ Converted to RF2 as follows
 public class SubOntologyRF2Converter {
 
     private String outputPath;
+    private String backgroundFilePath;
 
-    public SubOntologyRF2Converter(String outputPath) {
+    public SubOntologyRF2Converter(String outputPath, String backgroundFilePath) {
         this.outputPath = outputPath;
+        this.backgroundFilePath = backgroundFilePath;
     }
 
     //TODO: reduce redundancy in file extraction, automatically construct RF2 zip file
@@ -66,7 +66,7 @@ public class SubOntologyRF2Converter {
         entityIDs.addAll(Arrays.asList(Long.parseLong("116680003"), Long.parseLong("410662002"), Long.parseLong("900000000000441003"), Long.parseLong("138875005")));
 
         new RF2ExtractionService().extractConcepts(
-                new InputStreamSet(new File(outputPath + "SnomedCT_InternationalRF2_PRODUCTION_20200731T120000Z.zip")),
+                new InputStreamSet(new File(backgroundFilePath)),
                 entityIDs, new File(outputPath + "conceptAndTermRF2"));
     }
 

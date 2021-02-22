@@ -3,21 +3,17 @@ package ResultsWriters;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
 import org.snomed.otf.owltoolkit.constants.Concepts;
-import org.snomed.otf.owltoolkit.constants.RF2Headers;
 import org.snomed.otf.owltoolkit.conversion.AxiomRelationshipConversionService;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import org.snomed.otf.owltoolkit.domain.AxiomRepresentation;
 import org.snomed.otf.owltoolkit.domain.Relationship;
-import org.snomed.otf.owltoolkit.conversion.*;
 
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 import static java.lang.String.format;
 
@@ -173,13 +169,12 @@ public class RF2Printer extends Printer {
         Map<Long, String> idToFSNMap = new HashMap<Long, String>();
 
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-        InputStream is = classloader.getResourceAsStream("sct2_Description_Snapshot-en_INT_20200731.zip");
+        InputStream is = classloader.getResourceAsStream("resources/sct2_Description_Snapshot-en_INT_20210131.zip");
         ZipInputStream zipStream = new ZipInputStream(is);
         zipStream.getNextEntry();
 
         BufferedReader descriptionFileReader = new BufferedReader(new InputStreamReader(zipStream, StandardCharsets.UTF_8));//.lines().collect(Collectors.toList());
 
-        Set<String> descriptionFileLines = new HashSet<String>();
         for(String line:descriptionFileReader.lines().collect(Collectors.toList())) {
             String[] cols = line.split(TAB);
             if(cols[2].contains("1") && line.contains("900000000000003001")) {

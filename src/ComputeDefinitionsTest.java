@@ -10,6 +10,7 @@ import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
+import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,11 +18,10 @@ import java.util.*;
 
 public class ComputeDefinitionsTest {
 
-    public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException {
+    public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException {
         //File inputOntologyFile = new File(args[0]);
-        String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/SCT-files/";
-        //String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/left-facet-module-new/";
-        File inputOntologyFile = new File(inputPath + "sct-july-2020.owl");
+        String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
+        File inputOntologyFile = new File(inputPath + "anatomy.owl");
         //File inputOntologyFile = new File(inputPath + "module_left_facet_joint.owl");
         String defType = "NNF";
 
@@ -39,6 +39,7 @@ public class ComputeDefinitionsTest {
         PropertyValueNamer namer = new PropertyValueNamer();
         OWLOntology inputOntologyWithRenamings = namer.returnOntologyWithNamedPropertyValues(inputOntology);
 
+
         //perform classification using ELK
         OntologyReasoningService reasoningService = new OntologyReasoningService(inputOntologyWithRenamings);
         reasoningService.classifyOntology();
@@ -46,10 +47,8 @@ public class ComputeDefinitionsTest {
         String inputOntologyPath = inputOntologyFile.getAbsolutePath().substring(0, inputOntologyFile.getAbsolutePath().lastIndexOf(File.separator)+1);
 
         man.removeAxioms(inputOntologyWithRenamings, inputOntology.getAxioms());
-        man.saveOntology(inputOntologyWithRenamings, IRI.create(new File("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/" +
-                "pv_test_renamings.owl")));
-        man.saveOntology(inputOntology, IRI.create(new File("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/" +
-                "input_test.owl")));
+        //man.saveOntology(inputOntologyWithRenamings, IRI.create(new File(inputPath + "pv_test_renamings.owl")));
+        //man.saveOntology(inputOntology, IRI.create(new File(inputPath + "input_test.owl")));
 
         //////////
         //NNF TEST
@@ -58,9 +57,11 @@ public class ComputeDefinitionsTest {
         Set<OWLClass> ontClasses = new HashSet<OWLClass>();
         ontClasses.addAll(inputOntology.getClassesInSignature());
 
-        List<OWLClass> classesToDefine = new ArrayList<OWLClass>(ontClasses);
-        classesToDefine.remove(df.getOWLThing());
-        classesToDefine.remove(df.getOWLNothing());
+        List<OWLClass> classesToDefine = new ArrayList<OWLClass>();
+        classesToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/1063000")));
+       // List<OWLClass> classesToDefine = new ArrayList<OWLClass>(ontClasses);
+       // classesToDefine.remove(df.getOWLThing());
+        //classesToDefine.remove(df.getOWLNothing());
 
         Set<OWLAxiom> definitions = new HashSet<OWLAxiom>();
 
@@ -104,8 +105,8 @@ public class ComputeDefinitionsTest {
         //man.saveOntology(definitionsOnt, new OWLXMLDocumentFormat(),
         //        IRI.create(new File("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/NNF_definitions_" + inputOntologyFile.getName())));
 
-        man.saveOntology(definitionsOnt, new OWLXMLDocumentFormat(),
-                IRI.create(new File(inputPath + defType + "_definitions_" + inputOntologyFile.getName())));
+        //man.saveOntology(definitionsOnt, new OWLXMLDocumentFormat(),
+        //        IRI.create(new File(inputPath + defType + "_definitions_" + inputOntologyFile.getName())));
 
         ////////////////////////////
         //print in RF2 tuple format
@@ -113,9 +114,13 @@ public class ComputeDefinitionsTest {
         RF2Printer rf2Printer = new RF2Printer(inputOntologyPath + defType);
         System.out.println(inputOntologyPath);
 
-        //rf2Printer.printNNFsAsFSNTuples(definitionsOnt);
+        rf2Printer.printNNFsAsFSNTuples(definitionsOnt);
         System.out.println("Num undefined classes: " + definitionGenerator.getUndefinedClassAxioms().size());
         System.out.println("Num defined classes:"  + definitionGenerator.getGeneratedDefinitions().size());
+
+        System.out.println("Printing pv map.");
+        namer.printNameAndPvPairs(inputPath);
+
     }
 
 }

@@ -45,6 +45,10 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             reducedParentNamedClasses = reduceClassSet(primitiveAncestors);
             reducedAncestorPVs = replaceNamesWithPVs(reduceClassSet(ancestorRenamedPVs));
         }
+        else {
+            reducedParentNamedClasses = primitiveAncestors;
+            reducedAncestorPVs = replaceNamesWithPVs(ancestorRenamedPVs);
+        }
         if(redundancyOptions.contains(RedundancyOptions.eliminateRoleGroupRedundancy)) {
             reducedAncestorPVs = eliminateRoleGroupRedundancies(reducedAncestorPVs);
         }

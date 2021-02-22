@@ -1,7 +1,9 @@
 package NamingApproach;
 
+import ResultsWriters.MapPrinter;
 import org.semanticweb.owlapi.model.*;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -96,5 +98,10 @@ public class PropertyValueNamer {
     }
     public Map<OWLObjectSomeValuesFrom, OWLClass> getPvNamingMap() {
         return pvNamingMap;
+    }
+    public void printNameAndPvPairs(String outputPath) throws IOException {
+        MapPrinter printer = new MapPrinter(outputPath);
+        System.out.println("Printing naming map.");
+        printer.printNamingsForPVs(pvNamingMap);
     }
 }

@@ -105,5 +105,4 @@ public abstract class RefsetHandler {
         String outputFilePath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/refsets/flumazenil_refset.txt";
         RefsetHandler.printRefset(new HashSet<OWLEntity>(classes), outputFilePath);
     }
-
 }

@@ -167,11 +167,11 @@ public abstract class DefinitionGenerator {
         else if(definingConditions.size() == 1) {
             OWLClassExpression definingCondition = (new ArrayList<OWLClassExpression>(definingConditions)).get(0);
             if(!backgroundOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
-                System.out.println("Equivalent class axiom for class: " + definedClass);
+                //System.out.println("Equivalent class axiom for class: " + definedClass);
                 generatedDefinitions.add(df.getOWLEquivalentClassesAxiom(definedClass, definingCondition));
             }
             else {
-                System.out.println("Necessary class axiom for class: " + definedClass);
+                //System.out.println("Necessary class axiom for class: " + definedClass);
                 generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, definingCondition));
             }
             return;
