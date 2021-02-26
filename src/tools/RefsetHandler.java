@@ -47,17 +47,17 @@ public abstract class RefsetHandler {
         writer.close();
     }
 
-    public static Set<OWLClass> readRefset(String refsetPath) {
-        if(refsetPath.substring(refsetPath.lastIndexOf(".")).equals("json")) {
-            return readRefsetJson(refsetPath);
+    public static Set<OWLClass> readRefset(File refsetFile) {
+        if(refsetFile.getName().substring(refsetFile.getName().lastIndexOf(".")).equals("json")) {
+            return readRefsetJson(refsetFile);
         }
-        return readRefsetTxt(refsetPath);
+        return readRefsetTxt(refsetFile);
     }
 
-    private static Set<OWLClass> readRefsetJson(String refsetPath) {
+    private static Set<OWLClass> readRefsetJson(File refsetFile) {
         OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
         Set<OWLClass> classes = new HashSet<OWLClass>();
-        try (BufferedReader br = new BufferedReader(new FileReader(new File(refsetPath)))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(refsetFile))) {
             String inLine = "";
             br.readLine();
             while ((inLine = br.readLine()) != null) {
@@ -73,15 +73,16 @@ public abstract class RefsetHandler {
         return classes;
     }
 
-    private static Set<OWLClass> readRefsetTxt(String refsetPath) {
+    private static Set<OWLClass> readRefsetTxt(File refsetFile) {
         OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
         Set<OWLClass> classes = new HashSet<OWLClass>();
-        try (BufferedReader br = new BufferedReader(new FileReader(new File(refsetPath)))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(refsetFile))) {
             String inLine = "";
             br.readLine();
             while ((inLine = br.readLine()) != null) {
                 // process the line.
                 System.out.println("Adding class: " + inLine + " to input");
+                //if()
                 classes.add(df.getOWLClass(IRI.create(snomedIRIString + inLine)));
             }
         } catch (FileNotFoundException e) {

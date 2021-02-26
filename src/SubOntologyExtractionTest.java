@@ -18,43 +18,23 @@ public class SubOntologyExtractionTest {
 
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
-        String inputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/TM-subontology/";
-        //String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/examples/";
-        File inputOntologyFile = new File(inputPath + "TM_demo.owl");
+        String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
+        File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/era/era_edta_refset.txt");
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/TM-subontology/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/";
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
         SubOntologyExtractor generator = new SubOntologyExtractor(inputOntology);
-        //Set<OWLClass> conceptsToDefine = RefsetHandler.readRefset("E:/Users/warren/Documents/aPostdoc/code/~test-code/refsets/medicinal_products_demo_refset.txt");
-        //Set<OWLClass> conceptsToDefine = inputOntology.getClassesInSignature();
-
-        Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
-        OWLDataFactory df = man.getOWLDataFactory();
-
-        conceptsToDefine = RefsetHandler.readRefset("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/TM_refset_edit.txt");
-
-        //OntologyReasoningService reasoner = new OntologyReasoningService(inputOntology);
-        //reasoner.classifyOntology();
-        /*
-        Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>(conceptsToDefineInitial);
-        for(OWLClass cls:conceptsToDefineInitial) {
-            if(cls.toString().contains("431591009") || cls.toString().contains("78564009")) {
-                conceptsToDefine.removeAll(reasoner.getDescendantClasses(cls));
-            }
-        }
-         */
-
-        //RefsetHandler.printRefset(new HashSet<OWLEntity>(conceptsToDefine), inputPath+"TM_refset_edit.txt");
+        Set<OWLClass> conceptsToDefine = RefsetHandler.readRefset(inputRefsetFile);
 
         generator.computeSubontology(conceptsToDefine);
 
         OWLOntology subOntology = generator.getSubOntology();
         OWLOntology nnfOntology = generator.getNnfOntology();
 
-        //Extract RF2 for subontology
         OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
 
         //Create temporary ontology for nnfs + subOntology, use this to extract everything except the Refset and Relationship files
@@ -66,6 +46,7 @@ public class SubOntologyExtractionTest {
 
         //TODO: make background file path more understandable (should always be latest SCT release)
         String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2021.zip";
+        //Extract RF2 for subontology
         SubOntologyRF2Converter converter = new SubOntologyRF2Converter(outputPath, backgroundFilePath);
         converter.convertSubOntologytoRF2(subOntology, nnfOntology);
         System.out.println("Input ontology num axioms: " + inputOntology.getLogicalAxiomCount());

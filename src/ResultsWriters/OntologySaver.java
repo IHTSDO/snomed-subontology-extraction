@@ -10,6 +10,9 @@ import java.io.File;
 
 public class OntologySaver {
     public static void saveOntology(OWLOntology ont, String outputFilePath) throws OWLOntologyStorageException {
+        if(!outputFilePath.endsWith(".owl")) {
+            outputFilePath += ".owl";
+        }
         OWLOntologyManager man = ont.getOWLOntologyManager();
         FunctionalSyntaxDocumentFormat owlDocumentFormat = new FunctionalSyntaxDocumentFormat();
         ont.getOWLOntologyManager().setOntologyFormat(ont, owlDocumentFormat);

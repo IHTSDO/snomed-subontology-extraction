@@ -140,9 +140,7 @@ public class OntologyReasoningService {
 
     public boolean weakerThanAtLeastOneOf(OWLClass classBeingChecked, Set<OWLClass> setCheckedAgainst) {
         for(OWLClass classCheckedAgainst:setCheckedAgainst) {
-            System.out.println("Checking cls: " + classBeingChecked);
             if(this.getAncestorClasses(classCheckedAgainst).contains(classBeingChecked)) {
-                System.out.println("Cls: " + classBeingChecked + " redundant (weaker) wrt to: " + classCheckedAgainst);
                 return true;
             }
         }
