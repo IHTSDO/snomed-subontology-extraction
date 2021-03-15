@@ -15,8 +15,8 @@ public abstract class DefinitionGenerator {
     private PropertyValueNamer namer;
     private OWLOntologyManager man;
     protected OWLDataFactory df;
-    //protected List<OWLObjectPropertyExpression> subPropertiesOfreflexiveProperties;
     protected List<OWLAxiom> generatedDefinitions;
+    protected Set<OWLClassExpression> latestNecessaryConditions;
     protected Set<OWLAxiom> undefinedClasses;
 
     public DefinitionGenerator(OWLOntology inputOntology, OntologyReasoningService reasonerService, PropertyValueNamer namer) {
@@ -182,6 +182,7 @@ public abstract class DefinitionGenerator {
         else {
             generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
         }
+        latestNecessaryConditions = definingConditions;
     }
 
     public List<OWLAxiom> getGeneratedDefinitions() {
@@ -194,6 +195,10 @@ public abstract class DefinitionGenerator {
              latestDefinition = generatedDefinitions.get(generatedDefinitions.size()-1);
         }
         return latestDefinition;
+    }
+
+    public Set<OWLClassExpression> getLatestNecessaryConditions() {
+        return this.latestNecessaryConditions;
     }
 
     public Set<OWLAxiom> getUndefinedClassAxioms() { return this.undefinedClasses; }

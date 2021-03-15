@@ -39,7 +39,6 @@ public class ComputeDefinitionsTest {
         PropertyValueNamer namer = new PropertyValueNamer();
         OWLOntology inputOntologyWithRenamings = namer.returnOntologyWithNamedPropertyValues(inputOntology);
 
-
         //perform classification using ELK
         OntologyReasoningService reasoningService = new OntologyReasoningService(inputOntologyWithRenamings);
         reasoningService.classifyOntology();
@@ -57,11 +56,11 @@ public class ComputeDefinitionsTest {
         Set<OWLClass> ontClasses = new HashSet<OWLClass>();
         ontClasses.addAll(inputOntology.getClassesInSignature());
 
+        //List<OWLClass> classesToDefine = new ArrayList<OWLClass>(ontClasses);
         List<OWLClass> classesToDefine = new ArrayList<OWLClass>();
-        classesToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/1063000")));
-       // List<OWLClass> classesToDefine = new ArrayList<OWLClass>(ontClasses);
-       // classesToDefine.remove(df.getOWLThing());
-        //classesToDefine.remove(df.getOWLNothing());
+        classesToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/108350001")));
+        classesToDefine.remove(df.getOWLThing());
+        classesToDefine.remove(df.getOWLNothing());
 
         Set<OWLAxiom> definitions = new HashSet<OWLAxiom>();
 
@@ -82,8 +81,6 @@ public class ComputeDefinitionsTest {
 
         int i=0;
         for(OWLClass cls:classesToDefine) {
-        //for(int i=0; i<50; i++){
-            //OWLClass cls = classesToDefine.get(i);
             i++;
             System.out.println("Generating definition for class: " + cls.toString());
             System.out.println("Classes defined: " + i + " of: " + numClasses);

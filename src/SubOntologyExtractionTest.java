@@ -1,7 +1,6 @@
-import Classification.OntologyReasoningService;
 import ExceptionHandlers.ReasonerException;
 import ResultsWriters.OntologySaver;
-import SubOntologyExtraction.SubOntologyExtractor;
+import SubOntologyExtraction.SubOntologyExtractionHandler;
 import SubOntologyExtraction.SubOntologyRF2Converter;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
@@ -10,29 +9,27 @@ import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import tools.RefsetHandler;
 
 import java.io.*;
-import java.util.HashSet;
 import java.util.Set;
 
 public class SubOntologyExtractionTest {
-
-
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
         File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
         File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/era/era_edta_refset.txt");
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/era/";
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
-        SubOntologyExtractor generator = new SubOntologyExtractor(inputOntology);
         Set<OWLClass> conceptsToDefine = RefsetHandler.readRefset(inputRefsetFile);
 
-        generator.computeSubontology(conceptsToDefine);
+        SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
 
-        OWLOntology subOntology = generator.getSubOntology();
+        generator.computeSubontology();
+
+        OWLOntology subOntology = generator.getCurrentSubOntology();
         OWLOntology nnfOntology = generator.getNnfOntology();
 
         OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");

@@ -17,10 +17,10 @@ public class ExtractModuleTest {
 
     public static void main(String[] args) throws OWLOntologyCreationException, OWLOntologyStorageException {
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
-        OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(new File("E:/Users/warren/Documents/aPostdoc/SCT-files/TM_demo.owl"));
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/";
+        OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-jan-2020.owl"));
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/modules/orphanet/";
 
-        File inputRefset = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/traditional-medicine/tm_input_signatures.txt");
+        File inputRefset = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/orphanet_refset.txt");
 
         Set<OWLEntity> signature = new HashSet<OWLEntity>(RefsetHandler.readRefset(inputRefset));
 
