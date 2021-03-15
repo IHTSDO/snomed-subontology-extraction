@@ -161,12 +161,11 @@ public class SubOntologyExtractionHandler {
         System.out.println("total role inclusions added: " + roleAxioms.size());
         man.addAxioms(subOntology, roleAxioms);
 
-        /*//TODO: does RBox check automatically include transitive & reflexive axioms?
+        //TODO: does RBox check automatically include transitive & reflexive axioms?
         for(OWLObjectProperty prop:inputProperties) {
             man.addAxioms(subOntology, sourceOntology.getTransitiveObjectPropertyAxioms(prop));
             man.addAxioms(subOntology, sourceOntology.getReflexiveObjectPropertyAxioms(prop));
         }
-         */
     }
 
     private void addGrouperClasses() {
@@ -234,21 +233,28 @@ public class SubOntologyExtractionHandler {
         //DefinitionExpansionChecker expansionChecker = new DefinitionExpansionChecker(this);
         while(checkingIterator.hasNext()) {
             OWLClass clsBeingChecked = checkingIterator.next();
+            boolean newDefinitionAdded = false;
+            System.out.println("Checking required definition status for class: " + clsBeingChecked);
             if(sourceOntologyNamer.isNamedPV(clsBeingChecked)) { //pv case
                 //add filler as defined supporting class
                 OWLObjectSomeValuesFrom pv = sourceOntologyNamer.getNamingPvMap().get(clsBeingChecked);
                 if(pv.getFiller() instanceof OWLClass) {
+                    System.out.println("Filler is class");
                     abstractDefinitionsGenerator.generateDefinition((OWLClass) pv.getFiller(), redundancyOptions);
                     if(supportingDefinitionRequired(pv, abstractDefinitionsGenerator.getLatestNecessaryConditions())) {
                         definedSupportingClasses.add((OWLClass) pv.getFiller());
                         //generate and add authoring form def for cls, + iterate
                         additionalSupportingClassDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
+                        newDefinitionAdded = true;
                     }
                 }
                 else if(pv.getFiller() instanceof OWLObjectSomeValuesFrom) {
+                    System.out.println("Filler is R some");
                     checkingIterator.add(sourceOntologyNamer.getPvNamingMap().get(pv.getFiller()));
+                    checkingIterator.previous();
                 }
                 else if(pv.getFiller() instanceof OWLObjectIntersectionOf) {
+                    System.out.println("Filler is RG some");
                     for(OWLClassExpression conj:pv.getFiller().asConjunctSet()) {
                         if(conj instanceof OWLClass) {
                             //break into separate cases to be checked
@@ -269,33 +275,35 @@ public class SubOntologyExtractionHandler {
                     //generate and add authoring form def for cls, + iterate
                     abstractDefinitionsGenerator.generateDefinition(clsBeingChecked, redundancyOptions);
                     additionalSupportingClassDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
+                    newDefinitionAdded = true;
                 }
             }
 
             //TODO: add any new classes to the set to be checked, do the same for PVs. Add RBox axioms where necessary.
             //new classes
             //Set<OWLClass> classesInNewDefinition = abstractDefinitionsGenerator.getLastDefinitionGenerated().getClassesInSignature();
-            Set<OWLClassExpression> expressionsInNewDefinition =  abstractDefinitionsGenerator.getLatestNecessaryConditions();
-            for (OWLClassExpression defExp : expressionsInNewDefinition) {
-                //new classes
-                if(defExp instanceof OWLClass) {
-                    if (!subOntology.getClassesInSignature().contains(defExp) && !definedSupportingClasses.contains(defExp)) { //TODO: should be ancestor of focus concept?
-                        checkingIterator.add((OWLClass) defExp);
-                        additionalSupportingClasses.add((OWLClass) defExp);
-                        checkingIterator.previous();
+            if(newDefinitionAdded) {
+                Set<OWLClassExpression> expressionsInNewDefinition = abstractDefinitionsGenerator.getLatestNecessaryConditions();
+                for (OWLClassExpression defExp : expressionsInNewDefinition) {
+                    //new classes
+                    if (defExp instanceof OWLClass) {
+                        if (!subOntology.getClassesInSignature().contains(defExp) && !definedSupportingClasses.contains(defExp)) { //TODO: should be ancestor of focus concept?
+                            checkingIterator.add((OWLClass) defExp);
+                            additionalSupportingClasses.add((OWLClass) defExp);
+                            checkingIterator.previous();
+                        }
+                    }
+                    //new pvs
+                    else if (defExp instanceof OWLObjectSomeValuesFrom) { //TODO: should be ancestor of focus concept?
+                        OWLClass pvName = sourceOntologyNamer.getPvNamingMap().get(defExp);
+                        if (!Collections.disjoint(sourceOntologyReasoningService.getDescendantClasses(pvName), focusClasses)) {
+                            checkingIterator.add(pvName);
+                            checkingIterator.previous();
+                        }
                     }
                 }
-                //new pvs
-                else if(defExp instanceof OWLObjectSomeValuesFrom) { //TODO: should be ancestor of focus concept?
-                    OWLClass pvName = sourceOntologyNamer.getPvNamingMap().get(defExp);
-                    if(!Collections.disjoint(sourceOntologyReasoningService.getDescendantClasses(pvName), focusClasses)) {
-                        checkingIterator.add(pvName);
-                        checkingIterator.previous();
-                    }
-                }
+                additionalSupportingClassDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
             }
-
-            additionalSupportingClassDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
 
         }
 
