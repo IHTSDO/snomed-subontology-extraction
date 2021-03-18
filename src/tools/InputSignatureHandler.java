@@ -10,7 +10,7 @@ import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract class RefsetHandler {
+public abstract class InputSignatureHandler {
     private static String snomedIRIString = "http://snomed.info/id/";
 
     public static Set<OWLClass> extractRefsetClassesFromDescendents(OWLOntology inputOntology, OWLClass rootClass, boolean excludePrimitives) throws ReasonerException {
@@ -93,6 +93,26 @@ public abstract class RefsetHandler {
         return classes;
     }
 
+    public static Set<OWLClass> readClassesNonSCTFile(File signatureFile, String inputIRI) {
+        OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
+        Set<OWLClass> classes = new HashSet<OWLClass>();
+        try (BufferedReader br = new BufferedReader(new FileReader(signatureFile))) {
+            String inLine = "";
+            br.readLine();
+            while ((inLine = br.readLine()) != null) {
+                // process the line.
+                System.out.println("Adding class: " + inLine + " to input");
+                //if()
+                classes.add(df.getOWLClass(IRI.create(inputIRI + inLine)));
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return classes;
+    }
+
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException {
         String inputPath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/SCT-files/";
         File inputOntologyFile = new File(inputPath + "anatomy.owl");
@@ -102,8 +122,8 @@ public abstract class RefsetHandler {
         String snomedIRIString = "http://snomed.info/id/";
         OWLClass skin = df.getOWLClass(IRI.create(snomedIRIString + "48075008"));
 
-        Set<OWLClass> classes = RefsetHandler.extractRefsetClassesFromDescendents(man.loadOntologyFromOntologyDocument(inputOntologyFile), skin, false);
+        Set<OWLClass> classes = InputSignatureHandler.extractRefsetClassesFromDescendents(man.loadOntologyFromOntologyDocument(inputOntologyFile), skin, false);
         String outputFilePath = "E:/Users/warren/Documents/aPostdoc/code/~test-code/refsets/flumazenil_refset.txt";
-        RefsetHandler.printRefset(new HashSet<OWLEntity>(classes), outputFilePath);
+        InputSignatureHandler.printRefset(new HashSet<OWLEntity>(classes), outputFilePath);
     }
 }

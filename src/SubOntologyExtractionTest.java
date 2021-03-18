@@ -6,7 +6,7 @@ import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
-import tools.RefsetHandler;
+import tools.InputSignatureHandler;
 
 import java.io.*;
 import java.util.Set;
@@ -16,14 +16,14 @@ public class SubOntologyExtractionTest {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
         File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/era/era_edta_refset.txt");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal_products_demo_refset.txt");
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/era/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/medicinal-products/";
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
-        Set<OWLClass> conceptsToDefine = RefsetHandler.readRefset(inputRefsetFile);
+        Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
 
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
 

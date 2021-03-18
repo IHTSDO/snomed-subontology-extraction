@@ -4,6 +4,7 @@ import org.semanticweb.owlapi.model.*;
 
 import java.util.*;
 
+/*
 public class DefinitionExpansionChecker {
     private static SubOntologyExtractionHandler extractor;
 
@@ -28,5 +29,5 @@ public class DefinitionExpansionChecker {
 
         return definitionRequired;
     }
-
 }
+ */

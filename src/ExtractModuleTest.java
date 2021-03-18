@@ -1,11 +1,9 @@
 import ResultsWriters.OntologySaver;
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
 import tools.ModuleExtractionHandler;
-import tools.RefsetHandler;
+import tools.InputSignatureHandler;
 import uk.ac.manchester.cs.owlapi.modularity.ModuleType;
-import uk.ac.manchester.cs.owlapi.modularity.SyntacticLocalityModuleExtractor;
 
 import java.io.File;
 import java.util.Arrays;
@@ -17,18 +15,19 @@ public class ExtractModuleTest {
 
     public static void main(String[] args) throws OWLOntologyCreationException, OWLOntologyStorageException {
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
-        OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-jan-2020.owl"));
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/modules/orphanet/";
+        //OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2020.owl"));
+        //String outputPath = "E:/Users/warren/Documents/aPostdoc/modules/gps/";
+        OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(new File("E:/Users/warren/Documents/aPostdoc/module-vs-subontology-tests/example2.owl"));
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/module-vs-subontology-tests/";
 
-        File inputRefset = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/orphanet_refset.txt");
+        File signatureFile = new File("E:/Users/warren/Documents/aPostdoc/module-vs-subontology-tests/sig2.txt");
+        Set<OWLEntity> signature = new HashSet<OWLEntity>(InputSignatureHandler.readClassesNonSCTFile(signatureFile, "example.com/#"));
 
-        Set<OWLEntity> signature = new HashSet<OWLEntity>(RefsetHandler.readRefset(inputRefset));
-
-        Set<ModuleType> typesToExtract = new HashSet<ModuleType>(Arrays.asList(ModuleType.BOT, ModuleType.STAR));
+        Set<ModuleType> typesToExtract = new HashSet<ModuleType>(Arrays.asList(ModuleType.BOT, ModuleType.STAR, ModuleType.TOP));
         Map<ModuleType, OWLOntology> moduleMap = ModuleExtractionHandler.extractMultipleModuleTypes(inputOntology, signature, typesToExtract);
 
 
-        String refsetName = inputRefset.getName().substring(0, inputRefset.getName().lastIndexOf("."));
+        String refsetName = signatureFile.getName().substring(0, signatureFile.getName().lastIndexOf("."));
         for(Map.Entry<ModuleType, OWLOntology> entry: moduleMap.entrySet()) {
             OntologySaver.saveOntology(entry.getValue(), outputPath+entry.getKey()+"_"+refsetName);
         }

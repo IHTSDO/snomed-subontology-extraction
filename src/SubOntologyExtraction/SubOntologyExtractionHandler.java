@@ -106,7 +106,7 @@ public class SubOntologyExtractionHandler {
         subOntology = man.createOntology(focusConceptDefinitions);
         //TODO: check ordering of these steps.
         //add gci axioms for relevant classes
-        addGCIAxioms();
+        addGCIAxioms(); //TODO: move below supporting class expansion since this will increase number of GCIs to include?
 
         //add property inclusion axioms for properties
         addRBoxAxiomsFromSourceOntology(subOntology.getObjectPropertiesInSignature());
@@ -209,7 +209,8 @@ public class SubOntologyExtractionHandler {
         //concepts to be checked - all supporting concepts that are ancestors of focus concepts
         Set<OWLClass> supportingClasses = new HashSet<OWLClass>(subOntology.getClassesInSignature());
         supportingClasses.removeAll(focusClasses);
-        for(OWLClass cls:subOntology.getClassesInSignature()) {
+        //for(OWLClass cls:subOntology.getClassesInSignature()) {
+        for(OWLClass cls:supportingClasses) {
             if(!Collections.disjoint(focusClasses, sourceOntologyReasoningService.getDescendantClasses(cls))) {
                 expressionsToCheck.add(cls);
             }
@@ -219,7 +220,7 @@ public class SubOntologyExtractionHandler {
         //this includes A <= R some C as well as A <= RG some (R some C and S some D), which can be expanded out during loop.
         for(OWLClassExpression exp:subOntology.getNestedClassExpressions()) {
             if(exp instanceof OWLObjectSomeValuesFrom) {
-                OWLClass pvName = sourceOntologyNamer.getPvNamingMap().get((OWLObjectSomeValuesFrom)exp);
+                OWLClass pvName = sourceOntologyNamer.getPvNamingMap().get(exp);
                 if(!Collections.disjoint(sourceOntologyReasoningService.getDescendantClasses(pvName), focusClasses)) {
                     expressionsToCheck.add(pvName);
                 }
@@ -227,7 +228,7 @@ public class SubOntologyExtractionHandler {
         }
 
         ListIterator<OWLClass> checkingIterator = expressionsToCheck.listIterator();
-        Set<OWLClass> additionalSupportingClasses = new HashSet<OWLClass>();
+        Set<OWLClass> additionalSupportingClasses = new HashSet<>();
 
         //check for each supporting class & pv if a definition is required
         //DefinitionExpansionChecker expansionChecker = new DefinitionExpansionChecker(this);
@@ -250,7 +251,7 @@ public class SubOntologyExtractionHandler {
                 }
                 else if(pv.getFiller() instanceof OWLObjectSomeValuesFrom) {
                     System.out.println("Filler is R some");
-                    checkingIterator.add(sourceOntologyNamer.getPvNamingMap().get(pv.getFiller()));
+                    checkingIterator.add(sourceOntologyNamer.getPvNamingMap().get((OWLObjectSomeValuesFrom) pv.getFiller()));
                     checkingIterator.previous();
                 }
                 else if(pv.getFiller() instanceof OWLObjectIntersectionOf) {
@@ -308,7 +309,7 @@ public class SubOntologyExtractionHandler {
         }
 
         //check for new roles, add RBox axioms where needed
-        Set<OWLObjectProperty> newRoles = new HashSet<OWLObjectProperty>();
+        Set<OWLObjectProperty> newRoles = new HashSet<>();
         man.addAxioms(subOntology, additionalSupportingClassDefinitions);
         for(OWLAxiom newAx:additionalSupportingClassDefinitions) {
             for(OWLObjectProperty prop:newAx.getObjectPropertiesInSignature()) {
@@ -337,7 +338,7 @@ public class SubOntologyExtractionHandler {
     //TODO: make clear, only checks cases with class as filler, not complex filler.
     private boolean supportingDefinitionRequired(OWLObjectSomeValuesFrom pv, Set<OWLClassExpression> fillerNecessaryConditions) {
         boolean definitionRequired = false;
-        Set<OWLObjectPropertyExpression> topLevelPropertiesInFillerDefinition = new HashSet<OWLObjectPropertyExpression>();
+        Set<OWLObjectPropertyExpression> topLevelPropertiesInFillerDefinition = new HashSet<>();
         for(OWLClassExpression exp:fillerNecessaryConditions) {
             if(exp instanceof OWLObjectSomeValuesFrom) {
                 topLevelPropertiesInFillerDefinition.add(((OWLObjectSomeValuesFrom) exp).getProperty());
@@ -345,7 +346,7 @@ public class SubOntologyExtractionHandler {
         }
         for(OWLSubPropertyChainOfAxiom chainAx:sourceOntology.getAxioms(AxiomType.SUB_PROPERTY_CHAIN_OF)) {
             if(chainAx.getSuperProperty().equals(pv.getProperty())) {
-                Set<OWLObjectPropertyExpression> otherPropertiesInChain = new HashSet<OWLObjectPropertyExpression>(chainAx.getPropertyChain());
+                Set<OWLObjectPropertyExpression> otherPropertiesInChain = new HashSet<>(chainAx.getPropertyChain());
                 otherPropertiesInChain.remove(pv.getProperty());
                 //r o s <= r case
                 if(!Collections.disjoint(topLevelPropertiesInFillerDefinition, otherPropertiesInChain)) {
@@ -360,151 +361,7 @@ public class SubOntologyExtractionHandler {
         return definitionRequired;
     }
 
-    /*TODO: old, pre-update 12-03-21
-    private void computeRequiredSupportingClassDefinitions() throws OWLOntologyCreationException {
-        ArrayList<OWLClass> supportingClasses = new ArrayList<OWLClass>(subOntology.getClassesInSignature());
-        supportingClasses.removeAll(focusClasses);
-
-        //gathering PVs occurring in the subontology, required for role chain issue //TODO: improve code here, rough.
-        //start by adding the names of all PVs in definitions of focus concepts to the supportingClass set
-        //in this way, up to checking fillers etc, can treat concepts and PVs in exactly the same way?
-        Set<OWLObjectSomeValuesFrom> pvsInFocusDefinitions = new HashSet<OWLObjectSomeValuesFrom>();
-        for(OWLAxiom ax:focusConceptDefinitions) {
-            if(ax instanceof OWLSubClassOfAxiom) {
-                Set<OWLClassExpression> conjuncts = new HashSet<OWLClassExpression>(((OWLSubClassOfAxiom) ax).getSuperClass().asConjunctSet());
-                for(OWLClassExpression conj:conjuncts) {
-                    if(conj instanceof OWLObjectSomeValuesFrom) {
-                        pvsInFocusDefinitions.add((OWLObjectSomeValuesFrom) conj);
-                    }
-                }
-            }
-            else if(ax instanceof OWLEquivalentClassesAxiom) {
-                Set<OWLSubClassOfAxiom> axs = ((OWLEquivalentClassesAxiom) ax).asOWLSubClassOfAxioms();
-                for(OWLSubClassOfAxiom subAx:axs) { //should only contain A == B and C and R some C and R some D, so can just add all ObjectSomeValueOfs
-                    if(subAx.getSubClass().asConjunctSet().size() == 1) {
-                        Set<OWLClassExpression> conjuncts = new HashSet<OWLClassExpression>(subAx.getSuperClass().asConjunctSet());
-                        for(OWLClassExpression conj:conjuncts) {
-                            if(conj instanceof OWLObjectSomeValuesFrom) {
-                                pvsInFocusDefinitions.add((OWLObjectSomeValuesFrom)conj);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Set<OWLObjectProperty> chainProperties = new HashSet<OWLObjectProperty>();
-        for(OWLSubPropertyChainOfAxiom chainAx:sourceOntology.getAxioms(AxiomType.SUB_PROPERTY_CHAIN_OF)) {
-            chainProperties.addAll(chainAx.getObjectPropertiesInSignature()); //TODO: check this isn't too much! May only need some of r o s <= r cases?
-        }
-        for(OWLTransitiveObjectPropertyAxiom transAx:sourceOntology.getAxioms(AxiomType.TRANSITIVE_OBJECT_PROPERTY)) {
-            chainProperties.addAll(transAx.getObjectPropertiesInSignature());
-        }
-
-        for(OWLObjectSomeValuesFrom pv:pvsInFocusDefinitions) {
-            //if(sourceOntologyNamer.getPvNamingMap().containsKey(pv) && chainProperties.contains(pv.getProperty())) {
-                OWLClass pvName = sourceOntologyNamer.getPvNamingMap().get(pv);
-                supportingClasses.add(pvName);
-                System.out.println("pvName: " + pvName);
-            //}
-        }
-
-        System.out.println("FOCUS DEF PVS NUM: " + pvsInFocusDefinitions.size());
-        System.out.println("CHAIN PROPERTIES NUM: " + chainProperties.size());
-
-        ListIterator<OWLClass> supportingClassIterator = supportingClasses.listIterator();
-        Set<OWLClass> additionalSupportingClasses = new HashSet<OWLClass>();
-        Set<OWLAxiom> additionalSupportingClassDefinitionsAdded = new HashSet<OWLAxiom>();
-        while(supportingClassIterator.hasNext()) {
-            OWLClass suppCls = supportingClassIterator.next();
-            System.out.println("Checking cls: " + suppCls.toString());
-
-            //TODO: check possible avenues of subsumption for each language feature (role chains, hierarchies...)
-            Set<OWLClass> descendents = sourceOntologyReasoningService.getDescendantClasses(suppCls);
-                //pv case
-
-                if (sourceOntologyNamer.isNamedPV(suppCls)) {
-                    System.out.println("checking pv case.");
-                    OWLObjectSomeValuesFrom pv = sourceOntologyNamer.getNamingPvMap().get(suppCls);
-
-                    //TODO: handle rolegroup better 609096000
-                    System.out.println("PV property: " + pv.getProperty());
-                    //System.out.println("Chain properties: " + chainProperties);
-                    if(chainProperties.contains(pv.getProperty()) || pv.getProperty().toString().contains("609096000")) {
-                    //if(pv.getProperty().toString().contains("609096000") || pv.getProperty().toString().contains("246075003") || pv.getProperty().toString().contains("738774007") || pv.getProperty().toString().contains("127489000")) {
-                        System.out.println("Chain property detected, adding filler supporting concept definition.");
-                        OWLClassExpression filler = pv.getFiller();
-                        for(OWLClassExpression conj:filler.asConjunctSet()) {
-                            if(conj instanceof OWLClass) {
-                                definedSupportingClasses.add((OWLClass)conj);
-                                abstractDefinitionsGenerator.generateDefinition((OWLClass)conj, redundancyOptions);
-                                additionalSupportingClassDefinitionsAdded.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
-
-                                //TODO: refactor, repeated
-                                Set<OWLClass> defClasses = abstractDefinitionsGenerator.getLastDefinitionGenerated().getClassesInSignature();
-                                for (OWLClass defClass : defClasses) {
-                                    if (!subOntology.getClassesInSignature().contains(defClass) && !definedSupportingClasses.contains(defClass)) {
-                                        supportingClassIterator.add(defClass);
-                                        additionalSupportingClasses.add(defClass);
-                                        supportingClassIterator.previous();
-                                    }
-                                }
-                            }
-                            else if(conj instanceof OWLObjectSomeValuesFrom) {
-                                supportingClassIterator.add(sourceOntologyNamer.getPvNamingMap().get(conj));
-                                supportingClassIterator.previous();
-                            }
-                        }
-                    }
-               } else { //concept case
-
-                    if (!Collections.disjoint(focusClasses, descendents)) {
-
-                        abstractDefinitionsGenerator.generateDefinition(suppCls, redundancyOptions);
-                    OWLAxiom suppClsDefinition = abstractDefinitionsGenerator.getLastDefinitionGenerated();
-
-                    //TODO: possibly change to include checking for equivalence between atomic concepts(??)
-                    boolean nonAtomicInclusionOrInvolvesFocus = false;
-                    if (suppClsDefinition instanceof OWLSubClassOfAxiom) {
-                        for (OWLClassExpression conj : ((OWLSubClassOfAxiom) suppClsDefinition).getSuperClass().asConjunctSet()) {
-                            if (conj instanceof OWLObjectSomeValuesFrom || focusClasses.contains(conj)) {
-                                nonAtomicInclusionOrInvolvesFocus = true;
-                            }
-                        }
-                    } else {
-                        nonAtomicInclusionOrInvolvesFocus = true;
-                    }
-                    if (nonAtomicInclusionOrInvolvesFocus) {
-                        definedSupportingClasses.add(suppCls);
-                        additionalSupportingClassDefinitionsAdded.add(suppClsDefinition);
-                        System.out.println("Adding definition for supporting class: " + suppCls.toString());
-
-                        Set<OWLClass> defClasses = suppClsDefinition.getClassesInSignature();
-                        for (OWLClass defClass : defClasses) {
-                            if (!subOntology.getClassesInSignature().contains(defClass) && !definedSupportingClasses.contains(defClass)) {
-                                supportingClassIterator.add(defClass);
-                                additionalSupportingClasses.add(defClass);
-                                supportingClassIterator.previous();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        additionalClassesInExpandedSignature = additionalSupportingClasses;
-        System.out.println("Supporting class definitions added " + additionalSupportingClasses.size() + " new classes.");
-        System.out.println("Added classes: " + additionalSupportingClasses);
-
-        man.addAxioms(subOntology, additionalSupportingClassDefinitionsAdded);
-
-        additionalClassesInExpandedSignature = additionalSupportingClasses;
-        System.out.println("Supporting class definitions added " + additionalSupportingClasses.size() + " new classes.");
-        System.out.println("Added classes: " + additionalSupportingClasses);
-    }
-     */
-
-
-    private void addAtomicClassHierarchy() throws ReasonerException, OWLOntologyCreationException {
+    private void addAtomicClassHierarchy() throws ReasonerException {
         Set<OWLClass> partiallyDefinedSupportingClasses = subOntology.getClassesInSignature();
         partiallyDefinedSupportingClasses.removeAll(focusClasses);
         partiallyDefinedSupportingClasses.removeAll(definedSupportingClasses);
@@ -523,7 +380,7 @@ public class SubOntologyExtractionHandler {
             Set<OWLClass> sourceOntologyAncestors = sourceOntologyReasoningService.getAncestorClasses(cls);
             Set<OWLClass> subOntologyAncestors = subOntologyReasoningService.getAncestorClasses(cls);
             //reduce ancestor set based on whether or not it is an atomic class in the subontology signature
-            Set<OWLClass> namedClassAncestorsInSignature = new HashSet<OWLClass>(subOntologyAncestors);
+            Set<OWLClass> namedClassAncestorsInSignature = new HashSet<>(subOntologyAncestors);
 
             for (OWLClass ancestor : sourceOntologyAncestors) {
                 if (!sourceOntologyNamer.isNamedPV(ancestor) && subOntology.getClassesInSignature().contains(ancestor) && !subOntologyAncestors.contains(ancestor)) {
@@ -565,16 +422,15 @@ public class SubOntologyExtractionHandler {
 
     private void addAnnotationAssertions() {
         System.out.println("Adding annotation assertion axioms to subontology: ");
-        Set<OWLEntity> subOntologyEntities = new HashSet<OWLEntity>();
+        Set<OWLEntity> subOntologyEntities = new HashSet<>();
+
         subOntologyEntities.addAll(subOntology.getClassesInSignature());
-        subOntologyEntities.addAll(subOntology.getObjectPropertiesInSignature()); //TODO: check, subontology or background entities?
-        //TODO: are nnf entities needed?
+        subOntologyEntities.addAll(subOntology.getObjectPropertiesInSignature());
+
         subOntologyEntities.addAll(nnfOntology.getClassesInSignature());
         subOntologyEntities.addAll(nnfOntology.getObjectPropertiesInSignature());
-        Set<OWLAnnotationAssertionAxiom> annotationAssertionAxioms = new HashSet<OWLAnnotationAssertionAxiom>();
+        Set<OWLAnnotationAssertionAxiom> annotationAssertionAxioms = new HashSet<>();
         for (OWLEntity ent : subOntologyEntities) {
-            //if ("skos:prefLabel".equals(as.getProperty().toString()) || "rdfs:label".equals(as.getProperty().toString())) {
-            //}
             annotationAssertionAxioms.addAll(sourceOntology.getAnnotationAssertionAxioms(ent.getIRI()));
         }
 
@@ -583,11 +439,11 @@ public class SubOntologyExtractionHandler {
     }
 
     private static Set<Long> extractAllEntityIDsForOntology(OWLOntology ont) {
-        Set<OWLEntity> entitiesInOnt = new HashSet<OWLEntity>();
+        Set<OWLEntity> entitiesInOnt = new HashSet<>();
         entitiesInOnt.addAll(ont.getClassesInSignature());
-        entitiesInOnt.addAll(ont.getObjectPropertiesInSignature()); //TODO: only need classes and properties?
+        entitiesInOnt.addAll(ont.getObjectPropertiesInSignature());
 
-        Set<Long> entityIDs = new HashSet<Long>();
+        Set<Long> entityIDs = new HashSet<>();
         for(OWLEntity ent:entitiesInOnt) {
             String entIDString = ent.toStringID().replace("http://snomed.info/id/","");
             Long entID = Long.valueOf(entIDString);
@@ -597,11 +453,7 @@ public class SubOntologyExtractionHandler {
     }
 
     public OWLOntology getNnfOntology() {return nnfOntology;}
-    public Set<OWLClass> getFocusClasses() {return focusClasses;}
     public OWLOntology getCurrentSubOntology() {return subOntology;}
-    public OWLOntology getSourceOntology() {return sourceOntology;}
-    public OntologyReasoningService getSourceOntologyReasoner() {return sourceOntologyReasoningService;}
-    public PropertyValueNamer getSourceOntologyNamer() {return sourceOntologyNamer;}
     public Set<OWLClass> getSupportingClassesWithAddedDefinitions() {return definedSupportingClasses;}
     public int getNumberOfClassesAddedDuringSignatureExpansion() { return additionalClassesInExpandedSignature.size();}
     public int getNumberOfAdditionalSupportingClassDefinitionsAdded() {return additionalSupportingClassDefinitions.size();}
