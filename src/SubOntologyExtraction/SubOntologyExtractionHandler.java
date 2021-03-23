@@ -123,7 +123,7 @@ public class SubOntologyExtractionHandler {
         //add top level classes
         addTopLevelClasses();
 
-        //add top level roles -- //TODO: 12-01-2021, add role hierarchy needed. Initial: drag in all subobjectproperty, chains wrt to signature.
+        //add top level roles
         //addTopLevelRoles();
 
         //TODO: temp printing, get stats handler and remove.
@@ -331,11 +331,12 @@ public class SubOntologyExtractionHandler {
         System.out.println("Added roles: " + newRoles);
     }
 
+    //Expansion rule 1
     private boolean supportingDefinitionRequired(OWLClass cls) {
         return !Collections.disjoint(sourceOntologyReasoningService.getDescendantClasses(cls), focusClasses);
     }
 
-    //TODO: make clear, only checks cases with class as filler, not complex filler.
+    //Expansion rule 2
     private boolean supportingDefinitionRequired(OWLObjectSomeValuesFrom pv, Set<OWLClassExpression> fillerNecessaryConditions) {
         boolean definitionRequired = false;
         Set<OWLObjectPropertyExpression> topLevelPropertiesInFillerDefinition = new HashSet<>();
@@ -392,9 +393,19 @@ public class SubOntologyExtractionHandler {
             Set<OWLClass> reducedAncestors = sourceOntologyReasoningService.reduceClassSet(namedClassAncestorsInSignature);
 
             //reduce ancestor set based on what is already entailed by subontology
+            Set<OWLClass> nonRedundantAncestors = new HashSet<OWLClass>();
             for (OWLClass ancestor : reducedAncestors) {
                 if (!subOntologyReasoningService.getAncestorClasses(cls).contains(ancestor)) {
-                    man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(cls, ancestor));
+                    //man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(cls, ancestor));
+                    nonRedundantAncestors.add(ancestor);
+                }
+            }
+            if(!nonRedundantAncestors.isEmpty()) {
+                if(nonRedundantAncestors.size() == 1) {
+                    man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(cls, new ArrayList<OWLClass>(nonRedundantAncestors).get(0)));
+                }
+                else {
+                    man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(cls, df.getOWLObjectIntersectionOf(nonRedundantAncestors)));
                 }
             }
         }
