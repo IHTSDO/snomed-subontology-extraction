@@ -31,6 +31,7 @@ public abstract class InputSignatureHandler {
                 conceptsInRefset.add(childCls);
             }
         }
+        System.out.println("Total classes in refset: " + conceptsInRefset);
 
         return conceptsInRefset;
     }

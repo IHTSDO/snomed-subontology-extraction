@@ -9,21 +9,26 @@ import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import tools.InputSignatureHandler;
 
 import java.io.*;
+import java.util.HashSet;
 import java.util.Set;
 
 public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-jan-2020.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/gps/global_patient_refset.txt");
+        File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal_products_demo_refset.txt");
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/gps/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/medicinal-products/";
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
         Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+       // OWLClass cls = man.getOWLDataFactory().getOWLClass(IRI.create("http://snomed.info/id/763158003"));
+        //Set<OWLClass> conceptsToDefine = InputSignatureHandler.extractRefsetClassesFromDescendents(inputOntology, cls, true);
+
+        //InputSignatureHandler.printRefset(new HashSet<OWLEntity>(conceptsToDefine), "E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal_products_demo_refset.txt");
 
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
 

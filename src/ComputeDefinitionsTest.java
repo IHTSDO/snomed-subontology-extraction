@@ -36,8 +36,8 @@ public class ComputeDefinitionsTest {
         ///////////
         //for each PV in ontology, add a definition of the form PVCi == PVi
         //TODO: refactor, should be part of DefinitionGenerator class
-        PropertyValueNamer namer = new PropertyValueNamer();
-        OWLOntology inputOntologyWithRenamings = namer.returnOntologyWithNamedPropertyValues(inputOntology);
+        PropertyValueNamer namer = new PropertyValueNamer(inputOntology);
+        OWLOntology inputOntologyWithRenamings = namer.returnOntologyWithNamings();
 
         //perform classification using ELK
         OntologyReasoningService reasoningService = new OntologyReasoningService(inputOntologyWithRenamings);

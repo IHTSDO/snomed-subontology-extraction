@@ -60,8 +60,8 @@ public class SubOntologyExtractionHandler {
     }
 
     private void renamePVsAndClassify() throws OWLOntologyCreationException, ReasonerException {
-        sourceOntologyNamer = new PropertyValueNamer();
-        OWLOntology backgroundOntologyWithRenamings = sourceOntologyNamer.returnOntologyWithNamedPropertyValues(sourceOntology);
+        sourceOntologyNamer = new PropertyValueNamer(sourceOntology);
+        OWLOntology backgroundOntologyWithRenamings = sourceOntologyNamer.returnOntologyWithNamings();
         sourceOntologyReasoningService = new OntologyReasoningService(backgroundOntologyWithRenamings);
         sourceOntologyReasoningService.classifyOntology();
     }
@@ -106,7 +106,7 @@ public class SubOntologyExtractionHandler {
         subOntology = man.createOntology(focusConceptDefinitions);
         //TODO: check ordering of these steps.
         //add gci axioms for relevant classes
-        addGCIAxioms(); //TODO: move below supporting class expansion since this will increase number of GCIs to include?
+        //addGCIAxioms();
 
         //add property inclusion axioms for properties
         addRBoxAxiomsFromSourceOntology(subOntology.getObjectPropertiesInSignature());
@@ -130,12 +130,21 @@ public class SubOntologyExtractionHandler {
         System.out.println("Added classes: " + additionalClassesInExpandedSignature);
     }
 
+    private void addRequiredGCIAxioms() {
+        //TODO: insert this check into sig expansion
+        //general layout: check if class in subontology signature has GCI axioms associated
+        //OR
+        //if there are any classes in the subontology such that they are a subclass of a GCI (RHS) concept e.g. A <= ... <= B, P1 and R some C <= B ??
+
+
+    }
+    /*
     private void addGCIAxioms() {
         Set<OWLClass> classesInSignature = subOntology.getClassesInSignature();
         System.out.println("Adding GCI axioms to subontology.");
         Set<OWLSubClassOfAxiom> gciAxioms = new HashSet<OWLSubClassOfAxiom>();
         for (OWLClass cls : classesInSignature) {
-            //gciAxioms.addAll(backgroundOntology.getSubClassAxiomsForSuperClass(cls)); //TODO: check this works.
+            //gciAxioms.addAll(backgroundOntology.getSubClassAxiomsForSuperClass(cls));
             for (OWLSubClassOfAxiom ax : sourceOntology.getSubClassAxiomsForSuperClass(cls)) {
                 if (ax.getSubClass() instanceof OWLObjectSomeValuesFrom || ax.getSubClass() instanceof OWLObjectIntersectionOf) {
                     gciAxioms.add(ax);
@@ -144,12 +153,13 @@ public class SubOntologyExtractionHandler {
         }
         System.out.println("total gci axioms added: " + gciAxioms.size());
         man.addAxioms(subOntology, gciAxioms);
-        //add subclass inclusions for GCI related axioms //TODO: temporary, improve with above.
+        //add subclass inclusions for GCI related axioms
         for(OWLSubClassOfAxiom ax:gciAxioms) {
             OWLClassExpression cls = ax.getSuperClass();
             man.addAxioms(subOntology, sourceOntology.getSubClassAxiomsForSubClass((OWLClass)cls));
         }
     }
+     */
 
     private void addRBoxAxiomsFromSourceOntology(Set<OWLObjectProperty> inputProperties) {
         Set<OWLAxiom> roleAxioms = new HashSet<OWLAxiom>();
@@ -174,7 +184,7 @@ public class SubOntologyExtractionHandler {
         for(OWLSubClassOfAxiom ax: sourceOntology.getSubClassAxiomsForSuperClass(sctTop)) {
             OWLClassExpression subClass = ax.getSubClass();
             //System.out.println("subClass: " + subClass);
-            if(subClass instanceof OWLClass) { // TODO: fix
+            if(subClass instanceof OWLClass) { // TODO: check
                 topLevelSCTGroupers.add((OWLClass) ax.getSubClass());
             }
         }
@@ -189,12 +199,12 @@ public class SubOntologyExtractionHandler {
     }
 
     private void addTopLevelClasses() {
-        //add cls <= topClass for all "top-level" classes //TODO: currently hardcoded to SCT.
+        //add cls <= topClass for all "top-level" classes //currently hardcoded to SCT.
         System.out.println("Adding top level classes.");
         Set<OWLClass> classesUsedInSubontology = subOntology.getClassesInSignature();
         classesUsedInSubontology.remove(sctTop);
 
-        for(OWLClass cls:classesUsedInSubontology) { //TODO: inefficient top-down, but no link to df.getOWLThing() yet?
+        for(OWLClass cls:classesUsedInSubontology) { //TODO: inefficient top-down, but no link to OWLThing yet?
             List<OWLClass> parentClasses = new ArrayList<OWLClass>(sourceOntologyReasoningService.getParentClasses(cls));
             if(Collections.disjoint(parentClasses, classesUsedInSubontology)
                     && subOntology.getSubClassAxiomsForSubClass(cls).isEmpty()
@@ -222,10 +232,13 @@ public class SubOntologyExtractionHandler {
             if(exp instanceof OWLObjectSomeValuesFrom) {
                 OWLClass pvName = sourceOntologyNamer.getPvNamingMap().get(exp);
                 if(!Collections.disjoint(sourceOntologyReasoningService.getDescendantClasses(pvName), focusClasses)) {
+                    //TODO: 09/04/21 this check not needed? All PVs at this point will be in authoring defs of focus concepts anyway.
                     expressionsToCheck.add(pvName);
                 }
             }
         }
+        
+        //do the same for anonymous classes representing LHS of GCIs
 
         ListIterator<OWLClass> checkingIterator = expressionsToCheck.listIterator();
         Set<OWLClass> additionalSupportingClasses = new HashSet<>();
@@ -418,11 +431,13 @@ public class SubOntologyExtractionHandler {
      */
 
     private void computeNNFDefinitions(Set<OWLClass> classes, Set<RedundancyOptions> redundancyOptions) throws ReasonerException, OWLOntologyCreationException {
+        //TODO: 08-04-21 check if using separate namer to sourceOntologyNamer works as intended.
         System.out.println("Computing necessary normal form (inferred relationships).");
-        OWLOntology subOntologyWithRenamings = sourceOntologyNamer.returnOntologyWithNamedPropertyValues(subOntology);
-        OntologyReasoningService subOntologyReasoningService = new OntologyReasoningService(subOntologyWithRenamings);
+        PropertyValueNamer subOntologyNamer = new PropertyValueNamer(subOntology);
+        OWLOntology subOntologyWithNamings = subOntologyNamer.returnOntologyWithNamings();
+        OntologyReasoningService subOntologyReasoningService = new OntologyReasoningService(subOntologyWithNamings);
         subOntologyReasoningService.classifyOntology();
-        DefinitionGenerator nnfDefinitionsGenerator = new DefinitionGeneratorNNF(subOntology, subOntologyReasoningService, sourceOntologyNamer);
+        DefinitionGenerator nnfDefinitionsGenerator = new DefinitionGeneratorNNF(subOntology, subOntologyReasoningService, subOntologyNamer);
 
         classes.remove(df.getOWLNothing());
         for(OWLClass cls:classes) {

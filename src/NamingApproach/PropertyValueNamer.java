@@ -13,50 +13,81 @@ public class PropertyValueNamer {
 
     public Map<OWLObjectSomeValuesFrom, OWLClass> pvNamingMap;
     public Map<OWLClass, OWLObjectSomeValuesFrom> namingPvMap;
-    //private OWLOntologyManager man;
-    //private OWLDataFactory df;
+    public Map<OWLClass, OWLClassExpression> namedGCIMap;
+    private OWLOntology originalOntology;
+    private OWLDataFactory df;
+    private OWLOntologyManager man;
+    private String IRIName = "http://snomed.info/id/";
 
-    public PropertyValueNamer() {
+    public PropertyValueNamer(OWLOntology inputOntology) {
         pvNamingMap = new HashMap<OWLObjectSomeValuesFrom, OWLClass>();
         namingPvMap = new HashMap<OWLClass, OWLObjectSomeValuesFrom>();
+        namedGCIMap  = new HashMap<OWLClass, OWLClassExpression>();
+        originalOntology = inputOntology;
+        man = originalOntology.getOWLOntologyManager();
+        df = man.getOWLDataFactory();
     }
 
-    public OWLOntology returnOntologyWithNamedPropertyValues(OWLOntology inputOntology) throws OWLOntologyCreationException {
-        OWLOntologyManager man = inputOntology.getOWLOntologyManager();
-        OWLDataFactory df = man.getOWLDataFactory();
+    public OWLOntology returnOntologyWithNamings() throws OWLOntologyCreationException {
+        OWLOntology inputOntologyWithNamings = man.createOntology();
 
-        OWLOntology inputOntologyWithRenamings = man.createOntology(inputOntology.getAxioms());
-        //TODO: separate into GCI and non-GCI object properties? Do we need this?
-        //Map<OWLObjectSomeValuesFrom, String> propertyValueMapNonGCIs = new HashMap<OWLObjectSomeValuesFrom, String>();
+        //name property values, add equiv axioms for names
+        namePropertyValuesInOntology();
 
-        //String IRIName = OntologyStringExtractor.extractIRI(inputOntology);
-        String IRIName = "http://snomed.info/id/";
-        //note: this does *not* separate GCIs from non-GCI PVs. This might require scanning axioms instead.
-        Set<OWLObjectSomeValuesFrom> pvsInInput = new HashSet<OWLObjectSomeValuesFrom>();
-        for (OWLClassExpression exp : inputOntology.getNestedClassExpressions()) {
+        Set<OWLAxiom> pvNamingAxioms = new HashSet<OWLAxiom>();
+        for(Map.Entry<OWLObjectSomeValuesFrom, OWLClass> entry:pvNamingMap.entrySet()) {
+            OWLObjectSomeValuesFrom pv = entry.getKey();
+            OWLClass pvName = entry.getValue();
+            pvNamingAxioms.add(df.getOWLEquivalentClassesAxiom(pv, pvName));
+        }
+
+        //name LHS of GCI axioms, add equiv axioms for names
+        nameGCIs();
+
+        Set<OWLAxiom> gciNamingAxioms = new HashSet<OWLAxiom>();
+        for(Map.Entry<OWLClass, OWLClassExpression> entry:namedGCIMap.entrySet()) {
+            gciNamingAxioms.add(df.getOWLEquivalentClassesAxiom(entry.getValue(), entry.getKey()));
+        }
+
+        man.addAxioms(inputOntologyWithNamings, originalOntology.getAxioms());
+        man.addAxioms(inputOntologyWithNamings, pvNamingAxioms);
+        man.addAxioms(inputOntologyWithNamings, gciNamingAxioms);
+
+        return inputOntologyWithNamings;
+    }
+
+    private void namePropertyValuesInOntology() {
+        //note: this does *not* separate GCIs from non-GCI PVs.
+        for (OWLClassExpression exp : originalOntology.getNestedClassExpressions()) {
             if (exp instanceof OWLObjectSomeValuesFrom) {
                 OWLObjectSomeValuesFrom pv = (OWLObjectSomeValuesFrom) exp;
-                pvsInInput.add(pv);
-                String pvName = produceName(pv);
-                //System.out.println("pvName: " + pvName);
+                String pvName = producePVName();
 
                 pvNamingMap.putIfAbsent(pv, df.getOWLClass(IRI.create(IRIName, pvName)));
                 namingPvMap.putIfAbsent(df.getOWLClass(IRI.create(IRIName, pvName)), pv);
             }
         }
-
-        //in case multiple ontologies have been named, only use PVs relevant to given input ontology
-        for(OWLObjectSomeValuesFrom pv:pvsInInput) {
-            man.addAxiom(inputOntologyWithRenamings, df.getOWLEquivalentClassesAxiom(pv, pvNamingMap.get(pv)));
-        }
-        /*
-        for(Map.Entry<OWLObjectSomeValuesFrom, OWLClass> entry : pvNamingMap.entrySet()) {
-            man.addAxiom(inputOntologyWithRenamings, df.getOWLEquivalentClassesAxiom(entry.getKey(), entry.getValue()));
-        }
-         */
-        return inputOntologyWithRenamings;
-
     }
+
+    private void nameGCIs() {
+        Set<OWLSubClassOfAxiom> gciAxioms = new HashSet<OWLSubClassOfAxiom>();
+        for(OWLClass cls:originalOntology.getClassesInSignature()) {
+            //in SCT, GCI axioms are of form B and R some C <= A, i.e., no GCIs with anonymous superclass.
+            for(OWLSubClassOfAxiom ax:originalOntology.getSubClassAxiomsForSuperClass(cls)) {
+                if(ax.isGCI()) {
+                    gciAxioms.add(ax);
+                }
+            }
+        }
+
+        for(OWLSubClassOfAxiom gci:gciAxioms) {
+            OWLClassExpression gciExpression = gci.getSubClass();
+            String gciName = produceGCIName();
+
+            namedGCIMap.putIfAbsent(df.getOWLClass(IRI.create(IRIName, gciName)), gciExpression);
+        }
+    }
+
    // private void visitPropertyValues() {
    //     OWLObjectVisitor v = new OWLObjectVisitorAdapter() {
    //         public void visit(OWLObjectSomeValuesFrom pv) {
@@ -85,8 +116,11 @@ public class PropertyValueNamer {
         return names;
     }
 
-    private String produceName(OWLObjectSomeValuesFrom subclass) {
+    private String producePVName() {
         return "PV_" + pvNamingMap.size();
+    }
+    private String produceGCIName() {
+        return "GCI_" + namedGCIMap.size();
     }
 
     public void resetNames() {

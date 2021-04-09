@@ -93,6 +93,10 @@ public class OntologyReasoningService {
         return reasoner.getSubClasses(cls, false).getFlattened();
     }
 
+    public Set<OWLClass> getDescendantClasses(OWLClass cls, boolean getSelf) {
+        return reasoner.getSubClasses(cls, getSelf).getFlattened();
+    }
+
     public OWLClass getTopClassForHierarchy() {
         ArrayList<OWLEntity> topEntities = new ArrayList<OWLEntity>(reasoner.getTopClassNode().getEntities());
 
