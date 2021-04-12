@@ -1,7 +1,9 @@
 import ExceptionHandlers.ReasonerException;
+import ResultsWriters.MapPrinter;
 import ResultsWriters.OntologySaver;
 import SubOntologyExtraction.SubOntologyExtractionHandler;
 import SubOntologyExtraction.SubOntologyRF2Converter;
+import Verification.VerificationChecker;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
@@ -17,9 +19,10 @@ public class SubOntologyExtractionTest {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
         File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/era/era_edta_refset.txt");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal_products_demo_refset.txt");
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/era/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/medicinal-products/";
+        boolean verifySubontology = true;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
@@ -63,6 +66,20 @@ public class SubOntologyExtractionTest {
         System.out.println("Number of definitions added for supporting classes: " + generator.getNumberOfAdditionalSupportingClassDefinitionsAdded());
         System.out.println("Num supporting classes added by incremental signature expansion: " + generator.getNumberOfClassesAddedDuringSignatureExpansion());
         System.out.println("Supporting classes with incrementally added definitions: " + generator.getSupportingClassesWithAddedDefinitions().toString());
+
+        if(verifySubontology) {
+            VerificationChecker checker = new VerificationChecker();
+            System.out.println("==========================");
+            System.out.println("VERIFICATION: ");
+            System.out.println("==========================");
+            boolean satisfiesTransitiveClosureReq = checker.satisfiesTransitiveClosureRequirement(subOntology, inputOntology);
+            System.out.println("Satisfies transitive closure requirement?" + satisfiesTransitiveClosureReq);
+            MapPrinter printer = new MapPrinter(outputPath);
+            printer.printGeneralMap(checker.getLatestSubOntologyClosureDiffs(), "subOntDiffMap.txt");
+            printer.printGeneralMap(checker.getLatestSourceOntologyClosureDiffs(), "sourceOntDiffMap.txt");
+
+        }
+
     }
 
 }

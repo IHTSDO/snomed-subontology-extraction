@@ -33,7 +33,7 @@ public abstract class DefinitionGenerator {
     public abstract void generateDefinition(OWLClass cls, Set<RedundancyOptions> redundancyOptions);
 
     public Set<OWLClass> reduceClassSet(Set<OWLClass> inputClassSet) {
-        inputClassSet = reasonerService.reduceClassSet(inputClassSet);
+        inputClassSet = reasonerService.eliminateWeakerClasses(inputClassSet);
         return (inputClassSet); //TODO: return as list or set?
     }
 

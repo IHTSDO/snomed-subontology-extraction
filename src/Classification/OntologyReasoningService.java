@@ -105,7 +105,7 @@ public class OntologyReasoningService {
         return topClass;
     }
 
-    public Set<OWLClass> reduceClassSet(Set<OWLClass> inputClassSet) {
+    public Set<OWLClass> eliminateWeakerClasses(Set<OWLClass> inputClassSet) {
         Set<OWLClass> redundantClasses = new HashSet<OWLClass>();
 
         Set<OWLClass> otherClasses = new HashSet<OWLClass>(inputClassSet);
@@ -122,10 +122,22 @@ public class OntologyReasoningService {
         return (inputClassSet);
     }
 
-    //public Set<OWLObjectPropertyExpression> getAncestorProperties(OWLObjectProperty r) {
-        //"not implemented" in ELK
-        //return reasoner.getSuperObjectProperties(prop, true).getFlattened();
-   // }
+    public Set<OWLClass> eliminateStrongerClasses(Set<OWLClass> inputClassSet) {
+        Set<OWLClass> redundantClasses = new HashSet<OWLClass>();
+
+        Set<OWLClass> otherClasses = new HashSet<OWLClass>(inputClassSet);
+        for (OWLClass cls : inputClassSet) {
+            otherClasses.remove(cls);
+            if (strongerThanAtLeastOneOf(cls, otherClasses)) {
+                redundantClasses.add(cls);
+            }
+            otherClasses.add(cls); //retain redundancies to check against (?)
+            // TODO: check, would be problematic if we have equivalent named classes or PVs, since this will mean both are removed. Is this ever the case with SCT?
+        }   // TODO:...but if A |= B, then we have B |= C, via this approach we can safely remove them as we identify them? Check.
+
+        inputClassSet.removeAll(redundantClasses);
+        return (inputClassSet);
+    }
 
     public boolean isPrimitive(OWLClass cls) {
         //TODO: for full SCT, could do this using fullyDefined IDs as in toolkit? Quicker?
@@ -145,15 +157,24 @@ public class OntologyReasoningService {
     public boolean weakerThanAtLeastOneOf(OWLClass classBeingChecked, Set<OWLClass> setCheckedAgainst) {
         for(OWLClass classCheckedAgainst:setCheckedAgainst) {
             if(this.getAncestorClasses(classCheckedAgainst).contains(classBeingChecked)) {
-                //System.out.println("Cls: " + classBeingChecked + " weaker than: " + classCheckedAgainst);
                 return true;
             }
         }
-        //if(!Collections.disjoint(this.getAncestorClasses(classBeingChecked), setCheckedAgainst)) {
-        //    return true;
-        //}
         return false;
     }
+    public boolean strongerThanAtLeastOneOf(OWLClass classBeingChecked, Set<OWLClass> setCheckedAgainst) {
+        for(OWLClass classCheckedAgainst:setCheckedAgainst) {
+            if(this.getDescendantClasses(classCheckedAgainst).contains(classBeingChecked)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //public Set<OWLObjectPropertyExpression> getAncestorProperties(OWLObjectProperty r) {
+    //"not implemented" in ELK
+    //return reasoner.getSuperObjectProperties(prop, true).getFlattened();
+    // }
 
     public boolean isConsistent() {
         return reasoner.isConsistent();

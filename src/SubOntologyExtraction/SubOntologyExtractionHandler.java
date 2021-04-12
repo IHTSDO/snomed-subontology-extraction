@@ -412,7 +412,7 @@ public class SubOntologyExtractionHandler {
                 }
             }
             //reduce ancestor set based on subsumption
-            Set<OWLClass> reducedAncestors = sourceOntologyReasoningService.reduceClassSet(namedClassAncestorsInSignature);
+            Set<OWLClass> reducedAncestors = sourceOntologyReasoningService.eliminateWeakerClasses(namedClassAncestorsInSignature);
 
             //reduce ancestor set based on what is already entailed by subontology
             Set<OWLClass> nonRedundantAncestors = new HashSet<OWLClass>();
