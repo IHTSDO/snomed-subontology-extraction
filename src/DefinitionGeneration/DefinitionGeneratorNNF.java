@@ -1,14 +1,14 @@
 package DefinitionGeneration;
 
 import Classification.OntologyReasoningService;
-import NamingApproach.PropertyValueNamer;
+import NamingApproach.IntroducedNameHandler;
 import org.semanticweb.owlapi.model.*;
 
 import java.util.*;
 
 public class DefinitionGeneratorNNF extends DefinitionGenerator {
 
-    public DefinitionGeneratorNNF(OWLOntology inputOntology, OntologyReasoningService reasonerService, PropertyValueNamer namer) {
+    public DefinitionGeneratorNNF(OWLOntology inputOntology, OntologyReasoningService reasonerService, IntroducedNameHandler namer) {
         super(inputOntology, reasonerService, namer);
         //this.computeReflexiveProperties();
     }
@@ -24,18 +24,21 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
     }
 
     public void generateDefinition(OWLClass inputClass, Set<RedundancyOptions> redundancyOptions) {
+        //Need set of ancestors, split into classes and PVs, excluding all introduced names
         Set<OWLClass> ancestors = reasonerService.getAncestorClasses(inputClass);
         Set<OWLClass> ancestorRenamedPVs = extractNamedPVs(ancestors);
 
         Set<OWLClass> parentNamedClasses = new HashSet<OWLClass>();
         parentNamedClasses.addAll(reasonerService.getParentClasses(inputClass));
 
+        //remove all introduced classes to name PVs and name GCIs
         parentNamedClasses.removeAll(ancestorRenamedPVs);
+        parentNamedClasses.removeAll(extractNamedGCIs(parentNamedClasses));
 
         Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
 
-        //OLD reflexivity handling: before TODO: decide which is correct.
+        //OLD reflexivity handling: before
         //if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
         //    Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
         //    ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t
@@ -51,7 +54,6 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         if(redundancyOptions.contains(RedundancyOptions.eliminateRoleGroupRedundancy)) {
             reducedAncestorPVs = eliminateRoleGroupRedundancies(reducedAncestorPVs);
         }
-        //TODO: decide which is correct.
         if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
             reducedAncestorPVs = eliminateReflexivePVRedundancies(reducedAncestorPVs, inputClass);
         }

@@ -6,7 +6,7 @@ import DefinitionGeneration.DefinitionGeneratorAbstract;
 import DefinitionGeneration.DefinitionGeneratorNNF;
 import DefinitionGeneration.RedundancyOptions;
 import ExceptionHandlers.ReasonerException;
-import NamingApproach.PropertyValueNamer;
+import NamingApproach.IntroducedNameHandler;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
 
@@ -29,7 +29,7 @@ public class SubOntologyExtractionHandler {
     private OntologyReasoningService sourceOntologyReasoningService;
     private final OWLOntologyManager man;
     private final OWLDataFactory df;
-    private PropertyValueNamer sourceOntologyNamer;
+    private IntroducedNameHandler sourceOntologyNamer;
     private final Set<OWLAxiom> focusConceptDefinitions;
     private final Set<OWLAxiom> nnfDefinitions;
     private final Set<OWLClass> focusClasses;
@@ -60,7 +60,7 @@ public class SubOntologyExtractionHandler {
     }
 
     private void renamePVsAndClassify() throws OWLOntologyCreationException, ReasonerException {
-        sourceOntologyNamer = new PropertyValueNamer(sourceOntology);
+        sourceOntologyNamer = new IntroducedNameHandler(sourceOntology);
         OWLOntology backgroundOntologyWithRenamings = sourceOntologyNamer.returnOntologyWithNamings();
         sourceOntologyReasoningService = new OntologyReasoningService(backgroundOntologyWithRenamings);
         sourceOntologyReasoningService.classifyOntology();
@@ -111,7 +111,10 @@ public class SubOntologyExtractionHandler {
         //add property inclusion axioms for properties
         addRBoxAxiomsFromSourceOntology(subOntology.getObjectPropertiesInSignature());
 
-        //TODO: which?
+        //for now, for GCIs add separately (before the loop) to ensure all newly appearing classes are added. //TODO 09-04-21: check this is sufficient
+        addRequiredGCIAxioms();
+
+        //definition expansion loop
         computeRequiredSupportingClassDefinitions();
 
         //add grouper classes
@@ -135,7 +138,14 @@ public class SubOntologyExtractionHandler {
         //general layout: check if class in subontology signature has GCI axioms associated
         //OR
         //if there are any classes in the subontology such that they are a subclass of a GCI (RHS) concept e.g. A <= ... <= B, P1 and R some C <= B ??
-
+        Set<OWLClass> namedGCIs = sourceOntologyNamer.retrieveAllNamesForGCIs();
+        for(OWLClass name:namedGCIs) {
+            if(!Collections.disjoint(sourceOntologyReasoningService.getDescendantClasses(name, true), focusClasses)) {
+                abstractDefinitionsGenerator.generateDefinition(name, redundancyOptions);
+                man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(df.getOWLObjectIntersectionOf(abstractDefinitionsGenerator.getLatestNecessaryConditions()),
+                                                      sourceOntologyNamer.retrieveOriginalClassFromNamedGCI(name)));
+            }
+        }
 
     }
     /*
@@ -162,7 +172,7 @@ public class SubOntologyExtractionHandler {
      */
 
     private void addRBoxAxiomsFromSourceOntology(Set<OWLObjectProperty> inputProperties) {
-        Set<OWLAxiom> roleAxioms = new HashSet<OWLAxiom>();
+        Set<OWLAxiom> roleAxioms = new HashSet<>();
         for (OWLAxiom ax : sourceOntology.getRBoxAxioms(Imports.fromBoolean(false))) {
             if (!Collections.disjoint(ax.getSignature(), inputProperties)) {
                 roleAxioms.add(ax);
@@ -180,7 +190,7 @@ public class SubOntologyExtractionHandler {
 
     private void addGrouperClasses() {
         //TODO: is there a cheaper way to extract these from SCT?
-        Set<OWLClass> topLevelSCTGroupers = new HashSet<OWLClass>();
+        Set<OWLClass> topLevelSCTGroupers = new HashSet<>();
         for(OWLSubClassOfAxiom ax: sourceOntology.getSubClassAxiomsForSuperClass(sctTop)) {
             OWLClassExpression subClass = ax.getSubClass();
             //System.out.println("subClass: " + subClass);
@@ -215,9 +225,9 @@ public class SubOntologyExtractionHandler {
     }
     //TODO: new version, complete.
     private void computeRequiredSupportingClassDefinitions() {
-        List<OWLClass> expressionsToCheck = new ArrayList<OWLClass>();
+        List<OWLClass> expressionsToCheck = new ArrayList<>();
         //concepts to be checked - all supporting concepts that are ancestors of focus concepts
-        Set<OWLClass> supportingClasses = new HashSet<OWLClass>(subOntology.getClassesInSignature());
+        Set<OWLClass> supportingClasses = new HashSet<>(subOntology.getClassesInSignature());
         supportingClasses.removeAll(focusClasses);
         //for(OWLClass cls:subOntology.getClassesInSignature()) {
         for(OWLClass cls:supportingClasses) {
@@ -230,15 +240,14 @@ public class SubOntologyExtractionHandler {
         //this includes A <= R some C as well as A <= RG some (R some C and S some D), which can be expanded out during loop.
         for(OWLClassExpression exp:subOntology.getNestedClassExpressions()) {
             if(exp instanceof OWLObjectSomeValuesFrom) {
-                OWLClass pvName = sourceOntologyNamer.getPvNamingMap().get(exp);
+                OWLClass pvName = sourceOntologyNamer.retrieveNameForPV((OWLObjectSomeValuesFrom)exp);
                 if(!Collections.disjoint(sourceOntologyReasoningService.getDescendantClasses(pvName), focusClasses)) {
                     //TODO: 09/04/21 this check not needed? All PVs at this point will be in authoring defs of focus concepts anyway.
                     expressionsToCheck.add(pvName);
                 }
             }
         }
-        
-        //do the same for anonymous classes representing LHS of GCIs
+
 
         ListIterator<OWLClass> checkingIterator = expressionsToCheck.listIterator();
         Set<OWLClass> additionalSupportingClasses = new HashSet<>();
@@ -251,7 +260,7 @@ public class SubOntologyExtractionHandler {
             System.out.println("Checking required definition status for class: " + clsBeingChecked);
             if(sourceOntologyNamer.isNamedPV(clsBeingChecked)) { //pv case
                 //add filler as defined supporting class
-                OWLObjectSomeValuesFrom pv = sourceOntologyNamer.getNamingPvMap().get(clsBeingChecked);
+                OWLObjectSomeValuesFrom pv = sourceOntologyNamer.retrievePVForName(clsBeingChecked);
                 if(pv.getFiller() instanceof OWLClass) {
                     System.out.println("Filler is class");
                     abstractDefinitionsGenerator.generateDefinition((OWLClass) pv.getFiller(), redundancyOptions);
@@ -264,7 +273,7 @@ public class SubOntologyExtractionHandler {
                 }
                 else if(pv.getFiller() instanceof OWLObjectSomeValuesFrom) {
                     System.out.println("Filler is R some");
-                    checkingIterator.add(sourceOntologyNamer.getPvNamingMap().get((OWLObjectSomeValuesFrom) pv.getFiller()));
+                    checkingIterator.add(sourceOntologyNamer.retrieveNameForPV((OWLObjectSomeValuesFrom) pv.getFiller()));
                     checkingIterator.previous();
                 }
                 else if(pv.getFiller() instanceof OWLObjectIntersectionOf) {
@@ -276,7 +285,7 @@ public class SubOntologyExtractionHandler {
                             checkingIterator.previous();
                         }
                         else if(conj instanceof OWLObjectSomeValuesFrom) {
-                            checkingIterator.add(sourceOntologyNamer.getPvNamingMap().get(conj));
+                            checkingIterator.add(sourceOntologyNamer.retrieveNameForPV((OWLObjectSomeValuesFrom) conj));
                             checkingIterator.previous();
                         }
                     }
@@ -309,7 +318,7 @@ public class SubOntologyExtractionHandler {
                     }
                     //new pvs
                     else if (defExp instanceof OWLObjectSomeValuesFrom) { //TODO: should be ancestor of focus concept?
-                        OWLClass pvName = sourceOntologyNamer.getPvNamingMap().get(defExp);
+                        OWLClass pvName = sourceOntologyNamer.retrieveNameForPV((OWLObjectSomeValuesFrom)defExp);
                         if (!Collections.disjoint(sourceOntologyReasoningService.getDescendantClasses(pvName), focusClasses)) {
                             checkingIterator.add(pvName);
                             checkingIterator.previous();
@@ -433,7 +442,7 @@ public class SubOntologyExtractionHandler {
     private void computeNNFDefinitions(Set<OWLClass> classes, Set<RedundancyOptions> redundancyOptions) throws ReasonerException, OWLOntologyCreationException {
         //TODO: 08-04-21 check if using separate namer to sourceOntologyNamer works as intended.
         System.out.println("Computing necessary normal form (inferred relationships).");
-        PropertyValueNamer subOntologyNamer = new PropertyValueNamer(subOntology);
+        IntroducedNameHandler subOntologyNamer = new IntroducedNameHandler(subOntology);
         OWLOntology subOntologyWithNamings = subOntologyNamer.returnOntologyWithNamings();
         OntologyReasoningService subOntologyReasoningService = new OntologyReasoningService(subOntologyWithNamings);
         subOntologyReasoningService.classifyOntology();

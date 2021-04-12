@@ -4,11 +4,9 @@ import DefinitionGeneration.DefinitionGeneratorNNF;
 import DefinitionGeneration.RedundancyOptions;
 import ExceptionHandlers.ReasonerException;
 import Classification.OntologyReasoningService;
-import NamingApproach.PropertyValueNamer;
+import NamingApproach.IntroducedNameHandler;
 import ResultsWriters.RF2Printer;
-import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
@@ -36,7 +34,7 @@ public class ComputeDefinitionsTest {
         ///////////
         //for each PV in ontology, add a definition of the form PVCi == PVi
         //TODO: refactor, should be part of DefinitionGenerator class
-        PropertyValueNamer namer = new PropertyValueNamer(inputOntology);
+        IntroducedNameHandler namer = new IntroducedNameHandler(inputOntology);
         OWLOntology inputOntologyWithRenamings = namer.returnOntologyWithNamings();
 
         //perform classification using ELK

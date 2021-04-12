@@ -1,7 +1,7 @@
 package DefinitionGeneration;
 
 import Classification.OntologyReasoningService;
-import NamingApproach.PropertyValueNamer;
+import NamingApproach.IntroducedNameHandler;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.search.EntitySearcher;
@@ -12,14 +12,14 @@ public abstract class DefinitionGenerator {
 
     protected OWLOntology backgroundOntology;
     protected OntologyReasoningService reasonerService;
-    private PropertyValueNamer namer;
+    private IntroducedNameHandler namer;
     private OWLOntologyManager man;
     protected OWLDataFactory df;
     protected List<OWLAxiom> generatedDefinitions;
     protected Set<OWLClassExpression> latestNecessaryConditions;
     protected Set<OWLAxiom> undefinedClasses;
 
-    public DefinitionGenerator(OWLOntology inputOntology, OntologyReasoningService reasonerService, PropertyValueNamer namer) {
+    public DefinitionGenerator(OWLOntology inputOntology, OntologyReasoningService reasonerService, IntroducedNameHandler namer) {
         backgroundOntology = inputOntology;
         this.reasonerService = reasonerService;
         this.namer = namer;
@@ -98,7 +98,7 @@ public abstract class DefinitionGenerator {
     }
      */
 
-    Set<OWLObjectSomeValuesFrom> eliminateReflexivePVRedundancies(Set<OWLObjectSomeValuesFrom> inputPVs, OWLClass inputClass) {
+    public Set<OWLObjectSomeValuesFrom> eliminateReflexivePVRedundancies(Set<OWLObjectSomeValuesFrom> inputPVs, OWLClass inputClass) {
         Set<OWLObjectSomeValuesFrom> reducedInputPVs = new HashSet<OWLObjectSomeValuesFrom>();
 
         //retrieve reflexive PVs in definition
@@ -125,7 +125,7 @@ public abstract class DefinitionGenerator {
     }
 
     //TODO: refactor, some of these bit redundant with renamer.
-    public Set<OWLClass> extractNamedPVs(Set<OWLClass> classes) {
+    protected Set<OWLClass> extractNamedPVs(Set<OWLClass> classes) {
         Set<OWLClass> renamedPVs = new HashSet<OWLClass>();
 
         for (OWLClass cls : classes) {
@@ -136,15 +136,15 @@ public abstract class DefinitionGenerator {
         return renamedPVs;
     }
 
-    public Set<OWLClass> extractNamedClasses(Set<OWLClass> classes) {
-        Set<OWLClass> namedClasses = new HashSet<OWLClass>();
+    protected Set<OWLClass> extractNamedGCIs(Set<OWLClass> classes) {
+        Set<OWLClass> namedGCIs =  new HashSet<>();
 
-        for (OWLClass cls : classes) {
-            if (!namer.isNamedPV(cls)) {
-                namedClasses.add(cls);
+        for(OWLClass cls : classes) {
+            if(namer.isNamedGCI(cls)) {
+                namedGCIs.add(cls);
             }
         }
-        return namedClasses;
+        return namedGCIs;
     }
 
     public Set<OWLObjectSomeValuesFrom> replaceNamesWithPVs(Set<OWLClass> classes) {
@@ -152,8 +152,8 @@ public abstract class DefinitionGenerator {
         return pvs;
     }
 
-    public Set<OWLClass> replacePVsWithNames(Set<OWLObjectSomeValuesFrom> pvs) {
-        return namer.retrieveNamesForPVs(pvs);
+    protected Set<OWLClass> replacePVsWithNames(Set<OWLObjectSomeValuesFrom> pvs) {
+        return namer.retrieveNamesFromPVs(pvs);
     }
 
     protected void constructDefinitionAxiom(OWLClass definedClass, Set<OWLClassExpression> definingConditions) {

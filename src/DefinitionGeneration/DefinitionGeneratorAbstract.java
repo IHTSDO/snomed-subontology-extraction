@@ -1,7 +1,7 @@
 package DefinitionGeneration;
 
 import Classification.OntologyReasoningService;
-import NamingApproach.PropertyValueNamer;
+import NamingApproach.IntroducedNameHandler;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
@@ -11,7 +11,7 @@ import java.util.*;
 
 public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
-    public DefinitionGeneratorAbstract(OWLOntology inputOntology, OntologyReasoningService reasonerService, PropertyValueNamer namer) {
+    public DefinitionGeneratorAbstract(OWLOntology inputOntology, OntologyReasoningService reasonerService, IntroducedNameHandler namer) {
         super(inputOntology, reasonerService, namer);
     }
 
@@ -28,12 +28,15 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
     //TODO: move to super, code duplication with NNF
     public void generateDefinition(OWLClass inputClass, Set<RedundancyOptions> redundancyOptions) {
+        //separate ancestors into classes and PVs (represented by new name classes)
         Set<OWLClass> ancestors = reasonerService.getAncestorClasses(inputClass);
         Set<OWLClass> ancestorRenamedPVs = extractNamedPVs(ancestors);
         Set<OWLClass> primitiveAncestors = new HashSet<OWLClass>();
         primitiveAncestors.addAll(computeClosestPrimitiveAncestors(inputClass));
 
+        //remove classes representing introduced names
         primitiveAncestors.removeAll(ancestorRenamedPVs);
+        primitiveAncestors.removeAll(extractNamedGCIs(primitiveAncestors)); //TODO: 09-04-2021, not needed?
 
         Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
