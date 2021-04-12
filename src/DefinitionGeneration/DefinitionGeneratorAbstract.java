@@ -38,6 +38,13 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         primitiveAncestors.removeAll(ancestorRenamedPVs);
         primitiveAncestors.removeAll(extractNamedGCIs(primitiveAncestors)); //TODO: 09-04-2021, not needed?
 
+        //GCI handling: computing authoring form of GCI requires naming the LHS, meaning GCIName <= originalGCIClass, which is undesirable.
+        if(namer.isNamedGCI(inputClass)) {
+            OWLClass originalGCIConcept = namer.retrieveOriginalClassFromNamedGCI(inputClass);
+            primitiveAncestors.remove(originalGCIConcept);
+            primitiveAncestors.addAll(computeClosestPrimitiveAncestors(originalGCIConcept));
+        }
+
         Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
         //if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {

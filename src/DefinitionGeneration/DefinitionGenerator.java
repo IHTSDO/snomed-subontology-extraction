@@ -12,7 +12,7 @@ public abstract class DefinitionGenerator {
 
     protected OWLOntology backgroundOntology;
     protected OntologyReasoningService reasonerService;
-    private IntroducedNameHandler namer;
+    protected IntroducedNameHandler namer;
     private OWLOntologyManager man;
     protected OWLDataFactory df;
     protected List<OWLAxiom> generatedDefinitions;
