@@ -2,7 +2,6 @@ package Verification;
 
 import Classification.OntologyReasoningService;
 import ExceptionHandlers.ReasonerException;
-import ResultsWriters.MapPrinter;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLDataFactory;
@@ -46,7 +45,7 @@ public class VerificationChecker {
         Map<OWLClass, Set<OWLClass>> subOntologyHierarchyMap = new HashMap<>(); //TODO: do we need equivalent classes nodeset as in OWLReasoner? Shouldn't for SCT.
         System.out.println("Getting hierarchy for subontology.");
         for(OWLClass cls:subOntology.getClassesInSignature()) {
-            Set<OWLClass> children = subReasoner.getChildClasses(cls);
+            Set<OWLClass> children = subReasoner.getDirectSubClasses(cls);
             children.remove(df.getOWLNothing());
             subOntologyHierarchyMap.put(cls, children);
         }
@@ -54,18 +53,20 @@ public class VerificationChecker {
         Map<OWLClass, Set<OWLClass>> sourceOntologyHierarchyMap = new HashMap<>();
         System.out.println("Getting hierarchy for source ontology, within subontology signature.");
         for(OWLClass cls:subOntology.getClassesInSignature()) {
-            List<OWLClass> nearestChildren = new ArrayList<OWLClass>(sourceReasoner.getChildClasses(cls));
+            System.out.println("Checking transitive closure, computing source children for class: " + cls);
+            List<OWLClass> nearestChildren = new ArrayList<OWLClass>(sourceReasoner.getDirectSubClasses(cls));
             ListIterator<OWLClass> childIterator = nearestChildren.listIterator();
 
             Set<OWLClass> nearestChildrenInSig = new HashSet<>();
             while(childIterator.hasNext()) {
                 OWLClass child = childIterator.next();
+                System.out.println("Current child: " + child);
                 if(subOntology.getClassesInSignature().contains(child)) {
                     nearestChildrenInSig.add(child);
                     continue;
                 }
 
-                for(OWLClass nextDescendent:sourceReasoner.getChildClasses(child)) {
+                for(OWLClass nextDescendent:sourceReasoner.getDirectSubClasses(child)) {
                     childIterator.add(nextDescendent);
                     childIterator.previous();
                 }

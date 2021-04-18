@@ -11,17 +11,16 @@ import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import tools.InputSignatureHandler;
 
 import java.io.*;
-import java.util.HashSet;
 import java.util.Set;
 
 public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal_products_demo_refset.txt");
+        File inputOntologyFile = new File(inputPath + "sct-july-2018.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/dentistry/dentistry_refset.txt");
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/medicinal-products/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/dentistry/";
         boolean verifySubontology = true;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
@@ -79,7 +78,5 @@ public class SubOntologyExtractionTest {
             printer.printGeneralMap(checker.getLatestSourceOntologyClosureDiffs(), "sourceOntDiffMap.txt");
 
         }
-
     }
-
 }

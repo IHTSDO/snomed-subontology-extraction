@@ -85,7 +85,7 @@ public class OntologyReasoningService {
         return reasoner.getSuperClasses(cls, true).getFlattened();
     }
 
-    public Set<OWLClass> getChildClasses(OWLClass cls) {
+    public Set<OWLClass> getDirectSubClasses(OWLClass cls) {
         return reasoner.getSubClasses(cls, true).getFlattened();
     }
 
