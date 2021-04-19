@@ -18,22 +18,17 @@ public class SubOntologyExtractionTest {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
         File inputOntologyFile = new File(inputPath + "sct-july-2018.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/dentistry/dentistry_refset.txt");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/nursing/nursing_full_refset.txt");
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/dentistry/";
-        boolean verifySubontology = true;
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/nursing/";
+        boolean verifySubontology = false;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
         Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
-       // OWLClass cls = man.getOWLDataFactory().getOWLClass(IRI.create("http://snomed.info/id/763158003"));
-        //Set<OWLClass> conceptsToDefine = InputSignatureHandler.extractRefsetClassesFromDescendents(inputOntology, cls, true);
-
-        //InputSignatureHandler.printRefset(new HashSet<OWLEntity>(conceptsToDefine), "E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal_products_demo_refset.txt");
 
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
-
         generator.computeSubontology();
 
         OWLOntology subOntology = generator.getCurrentSubOntology();

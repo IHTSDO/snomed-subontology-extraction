@@ -471,6 +471,24 @@ public class SubOntologyExtractionHandler {
 
         System.out.println("total annotation assertions added: " + annotationAssertionAxioms.size());
         man.addAxioms(subOntology, annotationAssertionAxioms);
+
+        System.out.println("Annotating concept types.");
+        for(OWLClass cls:subOntology.getClassesInSignature()) {
+            OWLAnnotation anno;
+            if(focusClasses.contains(cls)) {
+                anno = df.getOWLAnnotation(df.getRDFSComment(), df.getOWLLiteral("Focus concept"));
+            }
+            else if(definedSupportingClasses.contains(cls)) {
+                anno = df.getOWLAnnotation(df.getRDFSComment(), df.getOWLLiteral("Supporting concept (with definition)"));
+            }
+            else {
+                anno = df.getOWLAnnotation(df.getRDFSComment(), df.getOWLLiteral("Supporting concept"));
+            }
+
+            OWLAnnotationAssertionAxiom as = df.getOWLAnnotationAssertionAxiom(cls.getIRI(), anno);
+            man.addAxiom(subOntology, as);
+        }
+
     }
 
     private static Set<Long> extractAllEntityIDsForOntology(OWLOntology ont) {
