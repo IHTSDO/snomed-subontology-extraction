@@ -2,7 +2,7 @@ import ExceptionHandlers.ReasonerException;
 import ResultsWriters.MapPrinter;
 import ResultsWriters.OntologySaver;
 import SubOntologyExtraction.SubOntologyExtractionHandler;
-import SubOntologyExtraction.SubOntologyRF2Converter;
+import SubOntologyExtraction.SubOntologyRF2ConversionService;
 import Verification.VerificationChecker;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
@@ -11,22 +11,30 @@ import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import tools.InputSignatureHandler;
 
 import java.io.*;
+import java.util.HashSet;
 import java.util.Set;
 
 public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-july-2018.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/nursing/nursing_full_refset.txt");
+        File inputOntologyFile = new File(inputPath + "sct-july-2020.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/dentistry/dentistry_refset_withMeta.txt");
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/nursing/";
+        //background RF2 for RF2 conversion //TODO: always latest, or same as version used? Presumably latter.
+        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2021.zip";
+
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/dentistry/";
         boolean verifySubontology = false;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
-        Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+        //Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+        OWLDataFactory df = man.getOWLDataFactory();
+        Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
+        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + "109741008")));
+        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + "109762009")));
 
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
         generator.computeSubontology();
@@ -43,11 +51,8 @@ public class SubOntologyExtractionTest {
         man.addAxioms(nnfsWithSubOntology, nnfOntology.getAxioms());
         OntologySaver.saveOntology(nnfsWithSubOntology, outputPath+"subOntologyWithNNFs.owl");
 
-        //TODO: make background file path more understandable (should always be latest SCT release)
-        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2021.zip";
         //Extract RF2 for subontology
-        SubOntologyRF2Converter converter = new SubOntologyRF2Converter(outputPath, backgroundFilePath);
-        converter.convertSubOntologytoRF2(subOntology, nnfOntology);
+        SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputPath, backgroundFilePath);
         System.out.println("Input ontology num axioms: " + inputOntology.getLogicalAxiomCount());
         System.out.println("Input ontology num classes: " + inputOntology.getClassesInSignature().size() + " and properties: " + inputOntology.getObjectPropertiesInSignature().size());
         System.out.println("Subontology Stats");

@@ -29,8 +29,7 @@ public class VerificationChecker {
     }
 
     public boolean satisfiesTransitiveClosureRequirement(OWLOntology subOntology, OWLOntology sourceOntology) throws ReasonerException {
-        //TODO: here, need to compute the transitive closure wrt subsumption for all concepts within the subontology signature. Result wrt source and wrt sub should then be equal.
-        //TODO: main question, how best to do this for the source ontology?
+        //compute the transitive closure wrt subsumption for all concepts within the subontology signature. Result wrt source and wrt sub should then be equal.
         boolean satisfiesRequirement = true;
 
         OntologyReasoningService sourceReasoner = new OntologyReasoningService(sourceOntology);

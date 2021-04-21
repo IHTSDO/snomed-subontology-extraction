@@ -1,3 +1,5 @@
+import Classification.OntologyReasoningService;
+import ExceptionHandlers.ReasonerException;
 import ResultsWriters.OntologySaver;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.FunctionalSyntaxDocumentFormat;
@@ -13,7 +15,7 @@ import java.util.Set;
 
 public class MiscTest {
 
-    public static void main(String[] args) throws OWLOntologyCreationException, OWLOntologyStorageException {
+    public static void main(String[] args) throws OWLOntologyCreationException, OWLOntologyStorageException, ReasonerException {
         /*
         String inputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/medicinal-products/";
         OWLOntology prevOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(new File(inputPath + "medicinal_products_prev.owl"));
@@ -79,6 +81,7 @@ public class MiscTest {
         OWLDataFactory df = man.getOWLDataFactory();
         OWLOntology ont = man.createOntology();
         String IOR = "example.com/#";
+        String IOR2 = "examples.com/#";
         OWLClass A1 = df.getOWLClass(IRI.create(IOR + "A1"));
         OWLClass A2 = df.getOWLClass(IRI.create(IOR + "A2"));
         OWLClass A3 = df.getOWLClass(IRI.create(IOR + "A3"));
@@ -87,6 +90,8 @@ public class MiscTest {
         OWLClass B2 = df.getOWLClass(IRI.create(IOR + "B2"));
         OWLClass B3 = df.getOWLClass(IRI.create(IOR + "B3"));
         OWLClass B4 = df.getOWLClass(IRI.create(IOR + "B4"));
+        OWLClass B5 = df.getOWLClass(IRI.create(IOR2 + "B5"));
+        OWLClass B5name = df.getOWLClass(IRI.create("B5"));
 
         OWLSubClassOfAxiom ax1 = df.getOWLSubClassOfAxiom(A1, df.getOWLObjectIntersectionOf(A2, B1));
         OWLSubClassOfAxiom ax2 = df.getOWLSubClassOfAxiom(A2, df.getOWLObjectIntersectionOf(A3, B2));
@@ -94,11 +99,17 @@ public class MiscTest {
         OWLSubClassOfAxiom ax4 = df.getOWLSubClassOfAxiom(B1, B2);
         OWLSubClassOfAxiom ax5 = df.getOWLSubClassOfAxiom(B2, B3);
         OWLSubClassOfAxiom ax6 = df.getOWLSubClassOfAxiom(B3, B4);
+        OWLSubClassOfAxiom ax7 = df.getOWLSubClassOfAxiom(B4, B5);
 
-        man.addAxioms(ont, new HashSet<OWLAxiom>(Arrays.asList(ax1,ax2,ax3)));
+        man.addAxioms(ont, new HashSet<OWLAxiom>(Arrays.asList(ax1,ax2,ax3,ax4,ax5,ax6,ax7)));
 
         String outputPath = "E:/Users/warren/Documents/aPostdoc/module-vs-subontology-tests/";
 
-        OntologySaver.saveOntology(ont, outputPath+"example2.owl");
+        OntologyReasoningService reasoningService = new OntologyReasoningService(ont);
+        //reasoningService.classifyOntology();
+        System.out.println("Descendents B4: " + reasoningService.getAncestorClasses(B4).toString());
+        System.out.println("Descendents B5: " + reasoningService.getDescendantClasses(B5name));
+
+        //OntologySaver.saveOntology(ont, outputPath+"example2.owl");
     }
 }

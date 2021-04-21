@@ -11,17 +11,22 @@ import org.snomed.otf.owltoolkit.domain.Relationship;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipInputStream;
 
-import static java.lang.String.format;
+/*
+* Prints OWLOntology statements as RF2 files. Based upon the RF2 services in the SNOMED OWL Toolkit.
+* Key:
+ */
 
 public class RF2Printer extends Printer {
 
     private static String outputDirectory;
     private static final String TAB = "\t";
     private static final Charset UTF_8_CHARSET = Charset.forName("UTF-8");
+    public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
 
     public RF2Printer(String outputPath){
         this.outputDirectory = outputPath;
@@ -186,7 +191,8 @@ public class RF2Printer extends Printer {
     }
 
     public void printRelationshipRF2File(OWLOntology nnfOntology) throws ConversionException, IOException {
-        String outputFilePath = outputDirectory + "Relationship_RF2" + ".txt";
+        String date = SIMPLE_DATE_FORMAT.format(new Date().getTime());
+        String outputFilePath = outputDirectory + "sct2_Relationship_Snapshot_INT" + date + ".txt";
 
         System.out.println("Writing inferred relationships file for: " + outputFilePath);
         AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<Long>());
