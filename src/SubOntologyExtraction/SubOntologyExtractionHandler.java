@@ -105,17 +105,14 @@ public class SubOntologyExtractionHandler {
     private void populateSubOntology() throws OWLOntologyCreationException, ReasonerException {
         subOntology = man.createOntology(focusConceptDefinitions);
         //TODO: check ordering of these steps.
-        //add gci axioms for relevant classes
-        //addGCIAxioms();
-
-        //add property inclusion axioms for properties
-        addRBoxAxiomsFromSourceOntology(subOntology.getObjectPropertiesInSignature());
-
         //for now, for GCIs add separately (before the loop) to ensure all newly appearing classes are added. //TODO 09-04-21: check this is sufficient
-        addRequiredGCIAxioms();
+        addInitialGCIAxioms();
 
         //definition expansion loop
         computeRequiredSupportingClassDefinitions();
+
+        //add property inclusion axioms for properties //TODO: where should this be placed?
+        addRBoxAxiomsFromSourceOntology(subOntology.getObjectPropertiesInSignature());
 
         //add grouper classes
         addGrouperClasses();
@@ -133,7 +130,7 @@ public class SubOntologyExtractionHandler {
         System.out.println("Added classes: " + additionalClassesInExpandedSignature);
     }
 
-    private void addRequiredGCIAxioms() {
+    private void addInitialGCIAxioms() {
         //TODO: insert this check into sig expansion
         //general layout: check if class in subontology signature has GCI axioms associated
         //OR
@@ -143,33 +140,10 @@ public class SubOntologyExtractionHandler {
             if(!Collections.disjoint(sourceOntologyReasoningService.getDescendantClasses(name, true), focusClasses)) {
                 abstractDefinitionsGenerator.generateDefinition(name, redundancyOptions);
                 man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(df.getOWLObjectIntersectionOf(abstractDefinitionsGenerator.getLatestNecessaryConditions()),
-                                                      sourceOntologyNamer.retrieveOriginalClassFromNamedGCI(name)));
+                                                      sourceOntologyNamer.retrieveSuperClassFromNamedGCI(name)));
             }
         }
-
     }
-    /*
-    private void addGCIAxioms() {
-        Set<OWLClass> classesInSignature = subOntology.getClassesInSignature();
-        System.out.println("Adding GCI axioms to subontology.");
-        Set<OWLSubClassOfAxiom> gciAxioms = new HashSet<OWLSubClassOfAxiom>();
-        for (OWLClass cls : classesInSignature) {
-            //gciAxioms.addAll(backgroundOntology.getSubClassAxiomsForSuperClass(cls));
-            for (OWLSubClassOfAxiom ax : sourceOntology.getSubClassAxiomsForSuperClass(cls)) {
-                if (ax.getSubClass() instanceof OWLObjectSomeValuesFrom || ax.getSubClass() instanceof OWLObjectIntersectionOf) {
-                    gciAxioms.add(ax);
-                }
-            }
-        }
-        System.out.println("total gci axioms added: " + gciAxioms.size());
-        man.addAxioms(subOntology, gciAxioms);
-        //add subclass inclusions for GCI related axioms
-        for(OWLSubClassOfAxiom ax:gciAxioms) {
-            OWLClassExpression cls = ax.getSuperClass();
-            man.addAxioms(subOntology, sourceOntology.getSubClassAxiomsForSubClass((OWLClass)cls));
-        }
-    }
-     */
 
     private void addRBoxAxiomsFromSourceOntology(Set<OWLObjectProperty> inputProperties) {
         Set<OWLAxiom> roleAxioms = new HashSet<>();
@@ -226,10 +200,10 @@ public class SubOntologyExtractionHandler {
     //TODO: new version, complete.
     private void computeRequiredSupportingClassDefinitions() {
         List<OWLClass> expressionsToCheck = new ArrayList<>();
+
         //concepts to be checked - all supporting concepts that are ancestors of focus concepts
         Set<OWLClass> supportingClasses = new HashSet<>(subOntology.getClassesInSignature());
         supportingClasses.removeAll(focusClasses);
-        //for(OWLClass cls:subOntology.getClassesInSignature()) {
         for(OWLClass cls:supportingClasses) {
             if(!Collections.disjoint(focusClasses, sourceOntologyReasoningService.getDescendantClasses(cls))) {
                 expressionsToCheck.add(cls);
@@ -248,12 +222,10 @@ public class SubOntologyExtractionHandler {
             }
         }
 
-
         ListIterator<OWLClass> checkingIterator = expressionsToCheck.listIterator();
         Set<OWLClass> additionalSupportingClasses = new HashSet<>();
 
         //check for each supporting class & pv if a definition is required
-        //DefinitionExpansionChecker expansionChecker = new DefinitionExpansionChecker(this);
         while(checkingIterator.hasNext()) {
             OWLClass clsBeingChecked = checkingIterator.next();
             boolean newDefinitionAdded = false;
@@ -262,22 +234,22 @@ public class SubOntologyExtractionHandler {
                 //add filler as defined supporting class
                 OWLObjectSomeValuesFrom pv = sourceOntologyNamer.retrievePVForName(clsBeingChecked);
                 if(pv.getFiller() instanceof OWLClass) {
-                    System.out.println("Filler is class");
+                    //System.out.println("Filler is class");
+                    //generate authoring form for filler class + check role chain requirement
                     abstractDefinitionsGenerator.generateDefinition((OWLClass) pv.getFiller(), redundancyOptions);
                     if(supportingDefinitionRequired(pv, abstractDefinitionsGenerator.getLatestNecessaryConditions())) {
                         definedSupportingClasses.add((OWLClass) pv.getFiller());
-                        //generate and add authoring form def for cls, + iterate
-                        additionalSupportingClassDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
+                        //additionalSupportingClassDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
                         newDefinitionAdded = true;
                     }
                 }
                 else if(pv.getFiller() instanceof OWLObjectSomeValuesFrom) {
-                    System.out.println("Filler is R some");
+                    //System.out.println("Filler is R some");
                     checkingIterator.add(sourceOntologyNamer.retrieveNameForPV((OWLObjectSomeValuesFrom) pv.getFiller()));
                     checkingIterator.previous();
                 }
                 else if(pv.getFiller() instanceof OWLObjectIntersectionOf) {
-                    System.out.println("Filler is RG some");
+                    //System.out.println("Filler is RG some");
                     for(OWLClassExpression conj:pv.getFiller().asConjunctSet()) {
                         if(conj instanceof OWLClass) {
                             //break into separate cases to be checked
@@ -295,18 +267,30 @@ public class SubOntologyExtractionHandler {
                 //add supporting class to list of defined supporting classes
                 if(supportingDefinitionRequired(clsBeingChecked)) {
                     definedSupportingClasses.add(clsBeingChecked);
+
                     //generate and add authoring form def for cls, + iterate
                     abstractDefinitionsGenerator.generateDefinition(clsBeingChecked, redundancyOptions);
-                    additionalSupportingClassDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
+                    //additionalSupportingClassDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
                     newDefinitionAdded = true;
                 }
             }
 
-            //TODO: add any new classes to the set to be checked, do the same for PVs. Add RBox axioms where necessary.
+            //add any new classes to the set to be checked, do the same for PVs. Add RBox axioms where necessary.
             //new classes
-            //Set<OWLClass> classesInNewDefinition = abstractDefinitionsGenerator.getLastDefinitionGenerated().getClassesInSignature();
             if(newDefinitionAdded) {
+                //definition generated for clsBeingChecked in loop above.
+                additionalSupportingClassDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
+
+                //add authoring form for any GCIs associated with newly defined class
+                Set<OWLSubClassOfAxiom> addedGCIs = addSupportingConceptGCIs(clsBeingChecked);
+                additionalSupportingClassDefinitions.addAll(addedGCIs);
+
+                //check for new classes / expressions in the new definition (and GCIs if applicable)
                 Set<OWLClassExpression> expressionsInNewDefinition = abstractDefinitionsGenerator.getLatestNecessaryConditions();
+                for(OWLSubClassOfAxiom gci:addedGCIs) {
+                    expressionsInNewDefinition.addAll(gci.getSubClass().asConjunctSet());
+                }
+
                 for (OWLClassExpression defExp : expressionsInNewDefinition) {
                     //new classes
                     if (defExp instanceof OWLClass) {
@@ -324,8 +308,8 @@ public class SubOntologyExtractionHandler {
                             checkingIterator.previous();
                         }
                     }
+
                 }
-                additionalSupportingClassDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
             }
 
         }
@@ -383,6 +367,22 @@ public class SubOntologyExtractionHandler {
         }
         return definitionRequired;
     }
+
+    //TODO: improve generation procedure in DefinitionGeneratorAbstract - separate method for GCIs?
+    private Set<OWLSubClassOfAxiom> addSupportingConceptGCIs(OWLClass suppCls) {
+        Set<OWLSubClassOfAxiom> associatedGCIs = new HashSet<OWLSubClassOfAxiom>();
+        if(sourceOntologyNamer.hasAssociatedGCIs(suppCls)) {
+            System.out.println("GCI AXIOMS FOR DEFINED SUPP CLS: " + suppCls);
+            Set<OWLClass> gciNames = sourceOntologyNamer.returnNamesOfGCIsForSuperConcept(suppCls);
+            System.out.println("GCINAMES: " + gciNames);
+            for(OWLClass gciName:gciNames) {
+                abstractDefinitionsGenerator.generateDefinition(gciName, redundancyOptions);
+                associatedGCIs.add(df.getOWLSubClassOfAxiom(df.getOWLObjectIntersectionOf(abstractDefinitionsGenerator.getLatestNecessaryConditions()),suppCls));
+            }
+        }
+        return associatedGCIs;
+    }
+
 
     private void addAtomicClassHierarchy() throws ReasonerException {
         Set<OWLClass> partiallyDefinedSupportingClasses = subOntology.getClassesInSignature();
@@ -510,5 +510,6 @@ public class SubOntologyExtractionHandler {
     public Set<OWLClass> getSupportingClassesWithAddedDefinitions() {return definedSupportingClasses;}
     public int getNumberOfClassesAddedDuringSignatureExpansion() { return additionalClassesInExpandedSignature.size();}
     public int getNumberOfAdditionalSupportingClassDefinitionsAdded() {return additionalSupportingClassDefinitions.size();}
+    public Set<OWLClass> getFocusClasses() {return focusClasses;}
 
 }

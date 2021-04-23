@@ -90,8 +90,8 @@ public class MiscTest {
         OWLClass B2 = df.getOWLClass(IRI.create(IOR + "B2"));
         OWLClass B3 = df.getOWLClass(IRI.create(IOR + "B3"));
         OWLClass B4 = df.getOWLClass(IRI.create(IOR + "B4"));
-        OWLClass B5 = df.getOWLClass(IRI.create(IOR2 + "B5"));
-        OWLClass B5name = df.getOWLClass(IRI.create("B5"));
+        OWLClass B5 = df.getOWLClass(IRI.create(IOR2 + "Bone Fracture"));
+        OWLClass B5name = df.getOWLClass(IRI.create("Bone"));
 
         OWLSubClassOfAxiom ax1 = df.getOWLSubClassOfAxiom(A1, df.getOWLObjectIntersectionOf(A2, B1));
         OWLSubClassOfAxiom ax2 = df.getOWLSubClassOfAxiom(A2, df.getOWLObjectIntersectionOf(A3, B2));

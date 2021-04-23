@@ -40,7 +40,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
         //GCI handling: computing authoring form of GCI requires naming the LHS, meaning GCIName <= originalGCIClass, which is undesirable.
         if(namer.isNamedGCI(inputClass)) {
-            OWLClass originalGCIConcept = namer.retrieveOriginalClassFromNamedGCI(inputClass);
+            OWLClass originalGCIConcept = namer.retrieveSuperClassFromNamedGCI(inputClass);
             primitiveAncestors.remove(originalGCIConcept);
             primitiveAncestors.addAll(computeClosestPrimitiveAncestors(originalGCIConcept));
         }

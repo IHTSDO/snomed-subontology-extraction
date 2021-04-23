@@ -81,7 +81,8 @@ public abstract class InputSignatureHandler {
             String inLine = "";
             br.readLine();
             while ((inLine = br.readLine()) != null) {
-                // process the line.
+                // process the line, remove whitespace
+                inLine = inLine.replaceAll("[\\s\\p{Z}]+", "").trim();
                 System.out.println("Adding class: " + inLine + " to input");
                 //if()
                 classes.add(df.getOWLClass(IRI.create(snomedIRIString + inLine)));

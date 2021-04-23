@@ -3,28 +3,45 @@ package Verification;
 import Classification.OntologyReasoningService;
 import ExceptionHandlers.ReasonerException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.model.OWLClass;
-import org.semanticweb.owlapi.model.OWLDataFactory;
-import org.semanticweb.owlapi.model.OWLOntology;
-import org.semanticweb.owlapi.model.OWLOntologyManager;
+import org.semanticweb.owlapi.model.*;
+import org.semanticweb.owlapi.util.OWLEntityRenamer;
 
 import java.util.*;
 
 public class VerificationChecker {
     private Map<OWLClass, Set<OWLClass>> latestSubOntologyClosureDiffs;
     private Map<OWLClass, Set<OWLClass>> latestSourceOntologyClosureDiffs;
+    private OWLOntologyManager man;
+    private OWLDataFactory df;
 
     public VerificationChecker() {
         latestSubOntologyClosureDiffs = new HashMap<OWLClass, Set<OWLClass>>();
         latestSourceOntologyClosureDiffs = new HashMap<OWLClass, Set<OWLClass>>();
+        man = OWLManager.createOWLOntologyManager();
+        df = man.getOWLDataFactory();
     }
 
-    public boolean satisfiesEquivalenceForFocusConcepts(OWLOntology subOntology, OWLOntology sourceOntology) {
+    //TODO: refactor based on annotations for focus concepts
+    public boolean satisfiesEquivalenceForFocusConcepts(Set<OWLClass> focusClasses, OWLOntology subOntology, OWLOntology sourceOntology) throws OWLOntologyCreationException {
         boolean satisfiesRequirement = true;
         //Takes as input the source ontology and a computed subontology.
         //TODO: rename the focus concepts in the subontology, store lookup for original name vs rename
         //TODO: add the renamed content to the source ontology, then check equivalence between original concepts and their subontology (renamed) versions
         //TODO: question -- is it sufficient to just add focus concept definitions from subontology to source?
+
+        //OWLOntology subOntologyWithRenamings = man.createOntology(subOntology.getAxioms());
+
+        OWLEntityRenamer renamer = new OWLEntityRenamer(man, new HashSet<OWLOntology>(Arrays.asList(subOntology)));
+        for(OWLClass cls:focusClasses) {
+            renamer.changeIRI(cls.getIRI(), IRI.create(cls.getIRI()+"_renaming"));
+            System.out.println("New cls IRI: " + cls.getIRI());
+
+        }
+
+
+
+
+
         return satisfiesRequirement;
     }
 
@@ -38,8 +55,6 @@ public class VerificationChecker {
         OntologyReasoningService subReasoner =  new OntologyReasoningService(subOntology);
         subReasoner.classifyOntology();
 
-        OWLOntologyManager man = OWLManager.createOWLOntologyManager();
-        OWLDataFactory df = man.getOWLDataFactory();
         //Obtain transitive closure for subOntology, store
         Map<OWLClass, Set<OWLClass>> subOntologyHierarchyMap = new HashMap<>(); //TODO: do we need equivalent classes nodeset as in OWLReasoner? Shouldn't for SCT.
         System.out.println("Getting hierarchy for subontology.");

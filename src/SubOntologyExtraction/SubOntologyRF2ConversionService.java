@@ -13,8 +13,13 @@ import java.util.*;
 
 /*
 Converted to RF2 as follows, making use of the SNOMED OWL Toolkit RF2 conversion methods
+Procedure is somewhat different, since subontology extraction utilises information from both the source ontology and the extracted subontology
         : All RF2 files except Relationships file - extracted from OWLtoRF2 of subontology
-        : Relationships RF2 file - extracted from NNF file
+        : Concept RF2 - from source ontology, together with the signature of the subontology
+        : Description RF2 - " "
+        : Relationships RF2 - extracted from NNF file
+        : OWLRefset RF2 - from subontology
+        : Text Definitions RF2 - " "
  */
 public class SubOntologyRF2ConversionService {
 
@@ -39,9 +44,7 @@ public class SubOntologyRF2ConversionService {
         inSubOntNotNNF.removeAll(nnfOntology.getClassesInSignature());
         Set<OWLClass> inNNFNotSubOnt = nnfOntology.getClassesInSignature();
         inNNFNotSubOnt.removeAll(subOntology.getClassesInSignature());
-        System.out.println("DIFFERENCE SUBONT VS NNF: " + inSubOntNotNNF);
-        System.out.println("DIFFERENCE NNF VS SUBONT: " + inNNFNotSubOnt);
-        
+
         extractConceptAndDescriptionRF2(entitiesInSubontologyAndNNFs, outputPath, sourceFilePath);
 
         //Extract relationship rf2 file from nnfs
@@ -65,7 +68,7 @@ public class SubOntologyRF2ConversionService {
             entityIDs.add(id);
         }
 
-        //TODO: add metadata concepts manually for now, improve later.
+        //TODO: add metadata concepts manually for now, improve later. -- needed?
         entityIDs.addAll(Arrays.asList(Long.parseLong("116680003"), Long.parseLong("410662002"), Long.parseLong("900000000000441003"), Long.parseLong("138875005")));
 
         new RF2ExtractionService().extractConcepts(
