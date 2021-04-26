@@ -19,7 +19,7 @@ public abstract class InputSignatureHandler {
         Set<OWLClass> conceptsInRefset = new HashSet<OWLClass>();
 
         conceptsInRefset.add(rootClass);
-        for(OWLClass childCls:service.getDescendantClasses(rootClass)) {
+        for(OWLClass childCls:service.getDescendants(rootClass)) {
             if(!childCls.toString().equals("owl:Nothing")) {
                 if (excludePrimitives) {
                     if (!service.isPrimitive(childCls)) {

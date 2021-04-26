@@ -1,17 +1,10 @@
 import Classification.OntologyReasoningService;
 import ExceptionHandlers.ReasonerException;
-import ResultsWriters.OntologySaver;
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.formats.FunctionalSyntaxDocumentFormat;
-import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
-import org.semanticweb.owlapi.io.OWLOntologyDocumentTarget;
 import org.semanticweb.owlapi.model.*;
 
-import java.io.File;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
 
 public class MiscTest {
 
@@ -107,8 +100,8 @@ public class MiscTest {
 
         OntologyReasoningService reasoningService = new OntologyReasoningService(ont);
         //reasoningService.classifyOntology();
-        System.out.println("Descendents B4: " + reasoningService.getAncestorClasses(B4).toString());
-        System.out.println("Descendents B5: " + reasoningService.getDescendantClasses(B5name));
+        System.out.println("Descendents B4: " + reasoningService.getAncestors(B4).toString());
+        System.out.println("Descendents B5: " + reasoningService.getDescendants(B5name));
 
         //OntologySaver.saveOntology(ont, outputPath+"example2.owl");
     }

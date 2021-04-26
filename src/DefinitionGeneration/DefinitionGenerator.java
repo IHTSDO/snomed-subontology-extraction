@@ -105,7 +105,7 @@ public abstract class DefinitionGenerator {
         for(OWLObjectSomeValuesFrom pv:inputPVs) {
             boolean isReflexiveProperty = checkIfReflexiveProperty(pv.getProperty().asOWLObjectProperty());
             if (isReflexiveProperty) {
-                if(reasonerService.getAncestorClasses(inputClass).contains(pv.getFiller()) || pv.getFiller().equals(inputClass)) {
+                if(reasonerService.getAncestors(inputClass).contains(pv.getFiller()) || pv.getFiller().equals(inputClass)) {
                     //System.out.println("Is reflexive redundancy: " + pv);
                     continue;
                 }

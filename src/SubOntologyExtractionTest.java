@@ -25,16 +25,13 @@ public class SubOntologyExtractionTest {
 
         String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/era/";
         boolean computeRF2 = false;
-        boolean verifySubontology = false;
+        boolean verifySubontology = true;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
         Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
         OWLDataFactory df = man.getOWLDataFactory();
-        //Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
-       // conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + "109741008")));
-        //conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + "109762009")));
 
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
         generator.computeSubontology();
@@ -75,7 +72,6 @@ public class SubOntologyExtractionTest {
             System.out.println("==========================");
             boolean satisfiesEquivalentFocusConceptsRequirement = checker.satisfiesEquivalenceForFocusConcepts(generator.getFocusClasses(), subOntology, inputOntology);
 
-            /*
             System.out.println("==========================");
             System.out.println("VERIFICATION: Step (2) transitive closure equal within sig(subOntology)");
             System.out.println("==========================");
@@ -84,9 +80,6 @@ public class SubOntologyExtractionTest {
             MapPrinter printer = new MapPrinter(outputPath);
             printer.printGeneralMap(checker.getLatestSubOntologyClosureDiffs(), "subOntDiffMap.txt");
             printer.printGeneralMap(checker.getLatestSourceOntologyClosureDiffs(), "sourceOntDiffMap.txt");
-
-             */
-
         }
     }
 }

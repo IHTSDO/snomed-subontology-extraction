@@ -29,7 +29,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
     //TODO: move to super, code duplication with NNF
     public void generateDefinition(OWLClass inputClass, Set<RedundancyOptions> redundancyOptions) {
         //separate ancestors into classes and PVs (represented by new name classes)
-        Set<OWLClass> ancestors = reasonerService.getAncestorClasses(inputClass);
+        Set<OWLClass> ancestors = reasonerService.getAncestors(inputClass);
         Set<OWLClass> ancestorRenamedPVs = extractNamedPVs(ancestors);
         Set<OWLClass> primitiveAncestors = new HashSet<OWLClass>();
         primitiveAncestors.addAll(computeClosestPrimitiveAncestors(inputClass));
@@ -84,7 +84,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         ListIterator<OWLClass> iterator = currentClassesToExpand.listIterator();
         while(iterator.hasNext()) {
             OWLClass cls = iterator.next();
-            Set<OWLClass> parentClasses = reasonerService.getParentClasses(cls);
+            Set<OWLClass> parentClasses = reasonerService.getDirectAncestors(cls);
             Set<OWLClass> namedPVs = extractNamedPVs(parentClasses);
             parentClasses.removeAll(namedPVs);
             for(OWLClass parent:parentClasses) {

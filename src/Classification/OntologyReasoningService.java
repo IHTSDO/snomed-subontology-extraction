@@ -1,16 +1,12 @@
 package Classification;
 
 import ExceptionHandlers.ReasonerException;
-import org.semanticweb.elk.owl.interfaces.ElkObjectProperty;
-import org.semanticweb.elk.owlapi.wrapper.OwlObjectPropertyAxiomConverterVisitor;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.reasoner.*;
-import org.semanticweb.owlapi.search.EntitySearcher;
 import org.semanticweb.owlapi.util.InferredEquivalentClassAxiomGenerator;
 import org.semanticweb.owlapi.util.InferredOntologyGenerator;
 import org.semanticweb.owlapi.util.InferredSubClassAxiomGenerator;
-import org.semanticweb.elk.owlapi.wrapper.OwlConverter;
 
 import java.util.*;
 
@@ -67,35 +63,62 @@ public class OntologyReasoningService {
         System.out.println("Computing equivalent classes map for ontology: " + rootOntology.getOntologyID().toString());
         Map<OWLClass, Set<OWLClass>> equivalentClassesMap = new HashMap<>();
         for(OWLClass cls:rootOntology.getClassesInSignature()) {
-            equivalentClassesMap.computeIfAbsent(cls, s -> this.getEquivalentClassesForClass(s));
+            equivalentClassesMap.computeIfAbsent(cls, s -> this.getEquivalentClasses(s));
         }
         return equivalentClassesMap;
     }
 
-    public Set<OWLClass> getEquivalentClassesForClass(OWLClass cls) {
+    public Set<OWLClass> getEquivalentClasses(OWLClass cls) {
         Node<OWLClass> clsNode = reasoner.getEquivalentClasses(cls);
         return clsNode.getEntities();
     }
 
-    public Set<OWLClass> getAncestorClasses(OWLClass cls) {
-        return reasoner.getSuperClasses(cls, false).getFlattened();
-    }
-
-    public Set<OWLClass> getParentClasses(OWLClass cls) {
+    public Set<OWLClass> getDirectAncestors(OWLClass cls) {
         return reasoner.getSuperClasses(cls, true).getFlattened();
     }
 
-    public Set<OWLClass> getDirectSubClasses(OWLClass cls) {
+    /* //ELK does not support
+    public Set<OWLObjectPropertyExpression> getDirectAncestors(OWLObjectPropertyExpression role) {
+        return reasoner.getSuperObjectProperties(role, false).getFlattened();
+    }
+     */
+
+    public Set<OWLClass> getAncestors(OWLClass cls) {
+        return reasoner.getSuperClasses(cls, false).getFlattened();
+    }
+
+    /* //ELK does not support
+    public Set<OWLObjectPropertyExpression> getAncestors(OWLObjectPropertyExpression role) {
+        return reasoner.getSuperObjectProperties(role, false).getFlattened();
+    }
+     */
+
+    public Set<OWLClass> getDirectDescendants(OWLClass cls) {
         return reasoner.getSubClasses(cls, true).getFlattened();
     }
 
-    public Set<OWLClass> getDescendantClasses(OWLClass cls) {
+    //ELK does not support
+    /*
+    public Set<OWLObjectPropertyExpression> getDirectDescendants(OWLObjectPropertyExpression role) {
+        return reasoner.getSubObjectProperties(role, true).getFlattened();
+    }
+     */
+
+    public Set<OWLClass> getDescendants(OWLClass cls) {
         return reasoner.getSubClasses(cls, false).getFlattened();
     }
+    //ELK does not support
+    /*
+    public Set<OWLObjectPropertyExpression> getDescendants(OWLObjectPropertyExpression role) {
+        return reasoner.getSubObjectProperties(role, false).getFlattened();
+    }
+     */
 
-    public Set<OWLClass> getDescendantClasses(OWLClass cls, boolean getSelf) {
+    /*
+    public Set<OWLClass> getDescendants(OWLClass cls, boolean getSelf) {
         return reasoner.getSubClasses(cls, getSelf).getFlattened();
     }
+     */
 
     public OWLClass getTopClassForHierarchy() {
         ArrayList<OWLEntity> topEntities = new ArrayList<OWLEntity>(reasoner.getTopClassNode().getEntities());
@@ -139,8 +162,26 @@ public class OntologyReasoningService {
         return (inputClassSet);
     }
 
+    /* //ELK does not support
+    public Set<OWLObjectPropertyExpression> eliminateWeakerRoles(Set<OWLObjectPropertyExpression> inputRoleSet) {
+        Set<OWLObjectPropertyExpression> redundantRoles = new HashSet<>();
+
+        Set<OWLObjectPropertyExpression> otherRoles = new HashSet<>(inputRoleSet);
+        for (OWLObjectPropertyExpression role : inputRoleSet) {
+            otherRoles.remove(role);
+            if (weakerThanAtLeastOneOf(role, otherRoles)) {
+                redundantRoles.add(role);
+            }
+            otherRoles.add(role); //retain redundancies to check against (?)
+            // TODO: check, would be problematic if we have equivalent named classes or PVs, since this will mean both are removed. Is this ever the case with SCT?
+        }   // TODO:...but if A |= B, then we have B |= C, via this approach we can safely remove them as we identify them? Check.
+
+        inputRoleSet.removeAll(redundantRoles);
+        return (inputRoleSet);
+    }
+     */
+
     public boolean isPrimitive(OWLClass cls) {
-        //TODO: for full SCT, could do this using fullyDefined IDs as in toolkit? Quicker?
         if(reasoner.getRootOntology().getEquivalentClassesAxioms(cls).isEmpty()) {
             return true;
         }
@@ -148,7 +189,7 @@ public class OntologyReasoningService {
     }
 
     public boolean isStrongerThan(OWLClass classBeingChecked, OWLClass classCheckedAgainst) {
-        if(this.getAncestorClasses(classBeingChecked).contains(classCheckedAgainst)) {
+        if(this.getAncestors(classBeingChecked).contains(classCheckedAgainst)) {
             return true;
         }
         return false;
@@ -156,30 +197,39 @@ public class OntologyReasoningService {
 
     public boolean weakerThanAtLeastOneOf(OWLClass classBeingChecked, Set<OWLClass> setCheckedAgainst) {
         for(OWLClass classCheckedAgainst:setCheckedAgainst) {
-            if(this.getAncestorClasses(classCheckedAgainst).contains(classBeingChecked)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    public boolean strongerThanAtLeastOneOf(OWLClass classBeingChecked, Set<OWLClass> setCheckedAgainst) {
-        for(OWLClass classCheckedAgainst:setCheckedAgainst) {
-            if(this.getDescendantClasses(classCheckedAgainst).contains(classBeingChecked)) {
+            if(this.getAncestors(classCheckedAgainst).contains(classBeingChecked)) {
                 return true;
             }
         }
         return false;
     }
 
-    //public Set<OWLObjectPropertyExpression> getAncestorProperties(OWLObjectProperty r) {
-    //"not implemented" in ELK
-    //return reasoner.getSuperObjectProperties(prop, true).getFlattened();
-    // }
+    /* //ELK does not support
+    public boolean weakerThanAtLeastOneOf(OWLObjectPropertyExpression roleBeingChecked, Set<OWLObjectPropertyExpression> setCheckedAgainst) {
+        for(OWLObjectPropertyExpression roleCheckedAgainst:setCheckedAgainst) {
+            if(this.getAncestors(roleCheckedAgainst).contains(roleBeingChecked)) {
+                return true;
+            }
+        }
+        return false;
+    }
+     */
+
+    public boolean strongerThanAtLeastOneOf(OWLClass classBeingChecked, Set<OWLClass> setCheckedAgainst) {
+        for(OWLClass classCheckedAgainst:setCheckedAgainst) {
+            if(this.getDescendants(classCheckedAgainst).contains(classBeingChecked)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public boolean isConsistent() {
         return reasoner.isConsistent();
     }
 
-    public boolean entails(OWLAxiom ax) { return reasoner.isEntailed(ax);}
+    public boolean entails(OWLAxiom ax) {
+        return reasoner.isEntailed(ax);
+    }
 
 }

@@ -59,7 +59,7 @@ public class VerificationChecker {
         Map<OWLClass, Set<OWLClass>> subOntologyHierarchyMap = new HashMap<>(); //TODO: do we need equivalent classes nodeset as in OWLReasoner? Shouldn't for SCT.
         System.out.println("Getting hierarchy for subontology.");
         for(OWLClass cls:subOntology.getClassesInSignature()) {
-            Set<OWLClass> children = subReasoner.getDirectSubClasses(cls);
+            Set<OWLClass> children = subReasoner.getDirectDescendants(cls);
             children.remove(df.getOWLNothing());
             subOntologyHierarchyMap.put(cls, children);
         }
@@ -68,19 +68,20 @@ public class VerificationChecker {
         System.out.println("Getting hierarchy for source ontology, within subontology signature.");
         for(OWLClass cls:subOntology.getClassesInSignature()) {
             System.out.println("Checking transitive closure, computing source children for class: " + cls);
-            List<OWLClass> nearestChildren = new ArrayList<OWLClass>(sourceReasoner.getDirectSubClasses(cls));
+            List<OWLClass> nearestChildren = new ArrayList<OWLClass>(sourceReasoner.getDirectDescendants(cls));
             ListIterator<OWLClass> childIterator = nearestChildren.listIterator();
 
             Set<OWLClass> nearestChildrenInSig = new HashSet<>();
             while(childIterator.hasNext()) {
                 OWLClass child = childIterator.next();
                 System.out.println("Current child: " + child);
+                //if in signature, store
                 if(subOntology.getClassesInSignature().contains(child)) {
                     nearestChildrenInSig.add(child);
                     continue;
                 }
-
-                for(OWLClass nextDescendent:sourceReasoner.getDirectSubClasses(child)) {
+                //if not in signature, look to next level of descendants
+                for(OWLClass nextDescendent:sourceReasoner.getDirectDescendants(child)) {
                     childIterator.add(nextDescendent);
                     childIterator.previous();
                 }

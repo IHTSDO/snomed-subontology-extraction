@@ -25,11 +25,11 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
 
     public void generateDefinition(OWLClass inputClass, Set<RedundancyOptions> redundancyOptions) {
         //Need set of ancestors, split into classes and PVs, excluding all introduced names
-        Set<OWLClass> ancestors = reasonerService.getAncestorClasses(inputClass);
+        Set<OWLClass> ancestors = reasonerService.getAncestors(inputClass);
         Set<OWLClass> ancestorRenamedPVs = extractNamedPVs(ancestors);
 
         Set<OWLClass> parentNamedClasses = new HashSet<OWLClass>();
-        parentNamedClasses.addAll(reasonerService.getParentClasses(inputClass));
+        parentNamedClasses.addAll(reasonerService.getDirectAncestors(inputClass));
 
         //remove all introduced classes to name PVs and name GCIs
         parentNamedClasses.removeAll(ancestorRenamedPVs);
