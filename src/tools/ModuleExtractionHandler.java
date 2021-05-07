@@ -25,6 +25,8 @@ public class ModuleExtractionHandler {
         return inputOntologyManager.createOntology(extractor.extract(inputSignature));
     }
 
+    //public static OWLOntology extractSegmentedModule(){}
+
     public static Map<ModuleType, OWLOntology> extractMultipleModuleTypes(OWLOntology inputOntology, Set<OWLEntity> inputSignature, Set<ModuleType> moduleTypes) throws OWLOntologyCreationException {
         Map<ModuleType, OWLOntology> modulesComputed = new HashMap<ModuleType, OWLOntology>();
 

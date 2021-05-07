@@ -29,7 +29,7 @@ public class RF2Printer extends Printer {
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
 
     public RF2Printer(String outputPath){
-        this.outputDirectory = outputPath;
+        outputDirectory = outputPath;
     }
 
     public void printNNFsAsRF2Tuples(OWLOntology nnfOntology) throws ConversionException, IOException {
@@ -55,9 +55,8 @@ public class RF2Printer extends Printer {
             Map<Integer, List<Relationship>> rightHandSideRelationshipsMap = rep.getRightHandSideRelationships();
 
             Map<Integer, List<Relationship>> rightHandSideRelationships = rep.getRightHandSideRelationships();
-            Iterator<Map.Entry<Integer, List<Relationship>>> iter = rightHandSideRelationshipsMap.entrySet().iterator();
-            while(iter.hasNext()) {
-                List<Relationship> currentConceptRelationships = iter.next().getValue();
+            for (Map.Entry<Integer, List<Relationship>> integerListEntry : rightHandSideRelationshipsMap.entrySet()) {
+                List<Relationship> currentConceptRelationships = integerListEntry.getValue();
                 for (Relationship rel : currentConceptRelationships) {
                     sb.append(conceptID);
                     sb.append("\t");
@@ -76,21 +75,22 @@ public class RF2Printer extends Printer {
     //TODO: code duplication from above, reduce.
     public void printNNFsAsFSNTuples(OWLOntology nnfOntology) throws IOException, ConversionException {
         String outputFilePath = outputDirectory + "_FSN_tuples" + ".txt";
-        //String outputFilePath = outputDirectory + "_NNF_tuples" + ".zip";
 
-        AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<Long>());
+        AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<>());
 
-        Map<Long, Set<OWLAxiom>> axiomsMap = new HashMap<Long, Set<OWLAxiom>>();
-        axiomsMap.put((long) 1, nnfOntology.getTBoxAxioms(Imports.fromBoolean(false))); //TODO: getAxioms or getTBoxAxioms?
+        Map<Long, Set<OWLAxiom>> axiomsMap = new HashMap<>();
+        axiomsMap.put((long) 1, nnfOntology.getTBoxAxioms(Imports.fromBoolean(false)));
 
         Map<Long, Set<AxiomRepresentation>> representationsMap = converter.convertAxiomsToRelationships(axiomsMap, false);
         Set<AxiomRepresentation> representations = representationsMap.get((long)1);
 
-        FileWriter fw = new FileWriter(new File(outputFilePath));
         //BufferedWriter writer =  new BufferedWriter(fw);
         BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
 
         Map<Long, String> conceptDescriptionMap = getConceptDescriptionMapFromDescriptionRF2();
+
+        MapPrinter mapPrint = new MapPrinter("E:/Users/warren/Documents/aPostdoc");
+        mapPrint.printGeneralMap(conceptDescriptionMap, "conceptDescriptionMap");
 
         int i=0;
         for(AxiomRepresentation rep:representations) {
@@ -99,14 +99,17 @@ public class RF2Printer extends Printer {
             Long conceptID = rep.getLeftHandSideNamedConcept();
             Map<Integer, List<Relationship>> rightHandSideRelationshipsMap = rep.getRightHandSideRelationships();
 
-            Iterator<Map.Entry<Integer, List<Relationship>>> iter = rightHandSideRelationshipsMap.entrySet().iterator();
-            while(iter.hasNext()) {
-                Map<Long, Set<Relationship>> definedConceptRelationshipsMap = new HashMap<Long, Set<Relationship>>();//TODO: print for each concept, doesn't overwrite info then.
-                List<Relationship> currentConceptRelationships = iter.next().getValue();
-                definedConceptRelationshipsMap.put(conceptID, new HashSet<Relationship>(currentConceptRelationships));
+            for (Map.Entry<Integer, List<Relationship>> integerListEntry : rightHandSideRelationshipsMap.entrySet()) {
+                Map<Long, Set<Relationship>> definedConceptRelationshipsMap = new HashMap<>();//TODO: print for each concept, doesn't overwrite info then.
+                List<Relationship> currentConceptRelationships = integerListEntry.getValue();
+                definedConceptRelationshipsMap.put(conceptID, new HashSet<>(currentConceptRelationships));
                 this.writeRelationshipChanges(writer, definedConceptRelationshipsMap, conceptDescriptionMap);
             }
         }
+        System.out.println("NNF Ontology num axioms: " + nnfOntology.getAxiomCount());
+        System.out.println("Axioms map size: "  + axiomsMap.size());
+        System.out.println("Relationships map size: " + representationsMap.size());
+        System.out.println("Representations size: " + representations.size());
     }
 
     //TODO: code reused from ClassificationResultsWriter in toolkit
@@ -117,7 +120,6 @@ public class RF2Printer extends Printer {
 
         // Write newly inferred relationships
         for (Long sourceId : addedStatements.keySet()) {
-            String active = "1";
             String sourceTerm = conceptDescriptionMap.get(sourceId);
             System.out.println("Source term: " + sourceTerm + " for ID: " + sourceId);
 
@@ -174,7 +176,8 @@ public class RF2Printer extends Printer {
         Map<Long, String> idToFSNMap = new HashMap<Long, String>();
 
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-        InputStream is = classloader.getResourceAsStream("resources/sct2_Description_Snapshot-en_INT_20210131.zip");
+        //InputStream is = classloader.getResourceAsStream("resources/sct2_Description_Snapshot-en_INT_20210131.zip");
+        InputStream is = classloader.getResourceAsStream("resources/sct2_Description_roleChain_test.zip");
         ZipInputStream zipStream = new ZipInputStream(is);
         zipStream.getNextEntry();
 
@@ -312,8 +315,6 @@ public class RF2Printer extends Printer {
 
     }
      */
-
-
     public String getDirectoryPath() {
         return outputDirectory;
     }

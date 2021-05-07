@@ -41,7 +41,7 @@ public class SubOntologyExtractionHandler {
     private IntroducedNameHandler sourceOntologyNamer;
     private final Set<OWLAxiom> focusConceptDefinitions;
     private final Set<OWLAxiom> nnfDefinitions;
-    private final Set<OWLClass> focusClasses;
+    private Set<OWLClass> focusClasses;
     private OWLOntology subOntology;
     private OWLOntology nnfOntology;
     private final OWLClass sctTop;
@@ -59,6 +59,10 @@ public class SubOntologyExtractionHandler {
         man = backgroundOntology.getOWLOntologyManager();
         df = man.getOWLDataFactory();
         sctTop = df.getOWLClass(IRI.create("http://snomed.info/id/138875005"));
+
+        OWLObjectProperty prop1 = df.getOWLObjectProperty(IRI.create("http://snomed.info/id/363701004"));
+        OWLObjectProperty prop2 = df.getOWLObjectProperty(IRI.create("http://snomed.info/id/762951001"));
+        man.addAxiom(sourceOntology, df.getOWLSubPropertyChainOfAxiom(Arrays.asList(prop1, prop2), prop1));
 
         System.out.println("Initialising ELK taxonomy graph.");
         this.renamePVsAndClassify();
@@ -274,28 +278,12 @@ public class SubOntologyExtractionHandler {
             }
         }
 
-        //check for new roles, add RBox axioms where needed
-        /*
-        Set<OWLObjectProperty> newRoles = new HashSet<>();
-        for(OWLAxiom newAx:additionalSupportingClassDefinitions) {
-            for(OWLObjectProperty prop:newAx.getObjectPropertiesInSignature()) {
-                if(!subOntology.getObjectPropertiesInSignature().contains(prop)) {
-                    newRoles.add(prop);
-                }
-            }
-        }
-        man.addAxioms(subOntology, additionalSupportingClassDefinitions);
-        this.addRBoxAxiomsFromSourceOntology(newRoles);
-         */
-
         //add new definitions to subontology
         man.addAxioms(subOntology, additionalSupportingClassDefinitions);
         additionalClassesInExpandedSignature = additionalSupportingClasses;
         System.out.println("Supporting class definitions added " + additionalSupportingClassDefinitions.size());
         System.out.println("Number of classes added as result of expansion: " + additionalSupportingClasses.size());
         System.out.println("Added classes: " + additionalSupportingClasses);
-        //System.out.println("New roles as result of expansion: " + newRoles.size());
-        //System.out.println("Added roles: " + newRoles);
     }
 
     //Expansion rule 1
@@ -538,5 +526,8 @@ public class SubOntologyExtractionHandler {
     public int getNumberOfClassesAddedDuringSignatureExpansion() { return additionalClassesInExpandedSignature.size();}
     public int getNumberOfAdditionalSupportingClassDefinitionsAdded() {return additionalSupportingClassDefinitions.size();}
     public Set<OWLClass> getFocusClasses() {return focusClasses;}
+
+    //public void setFocusClasses(Set<OWLClass> newFocusClasses) {focusClasses = newFocusClasses;}
+    //public void resetSubOntology(){man.removeOntology(subOntology);}
 
 }

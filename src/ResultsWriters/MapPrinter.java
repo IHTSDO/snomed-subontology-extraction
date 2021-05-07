@@ -44,6 +44,16 @@ public class MapPrinter extends Printer {
                 }
             continue;
            }
+            else {
+                sb.append(currentEntry.getKey());
+                sb.append("\t");
+                sb.append(currentEntry.getValue());
+                writer.write(sb.toString());
+                newline(writer);
+                sb.setLength(0);
+                writer.flush();
+            }
+
         }
     }
 

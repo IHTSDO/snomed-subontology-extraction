@@ -3,6 +3,7 @@ package DefinitionGeneration;
 import Classification.OntologyReasoningService;
 import NamingApproach.IntroducedNameHandler;
 import org.semanticweb.owlapi.model.*;
+import org.semanticweb.owlapi.model.parameters.Imports;
 
 import java.util.*;
 
@@ -27,6 +28,10 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         //Need set of ancestors, split into classes and PVs, excluding all introduced names
         Set<OWLClass> ancestors = reasonerService.getAncestors(inputClass);
         Set<OWLClass> ancestorRenamedPVs = extractNamedPVs(ancestors);
+
+        System.out.println("Computing def for INPUT CLASS: " + inputClass);
+
+        System.out.println("RBOX FOR ONT: " + super.getBackgroundOntology().getRBoxAxioms(Imports.fromBoolean(false)).toString());
 
         Set<OWLClass> parentNamedClasses = new HashSet<OWLClass>();
         parentNamedClasses.addAll(reasonerService.getDirectAncestors(inputClass));
@@ -63,6 +68,9 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         nonRedundantAncestors.addAll(reducedAncestorPVs);
 
         constructDefinitionAxiom(inputClass, nonRedundantAncestors);
+
+        System.out.println("INPUT CLASS: " + inputClass);
+        System.out.println("Nonredundant ancestors: " + nonRedundantAncestors);
 
     }
 }

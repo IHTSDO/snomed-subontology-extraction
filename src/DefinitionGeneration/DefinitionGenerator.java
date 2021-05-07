@@ -200,6 +200,6 @@ public abstract class DefinitionGenerator {
     public Set<OWLClassExpression> getLatestNecessaryConditions() {
         return this.latestNecessaryConditions;
     }
-
     public Set<OWLAxiom> getUndefinedClassAxioms() { return this.undefinedClasses; }
+    protected OWLOntology getBackgroundOntology() { return this.backgroundOntology; }
 }

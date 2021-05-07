@@ -11,21 +11,22 @@ import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import tools.InputSignatureHandler;
 
 import java.io.*;
+import java.util.HashSet;
 import java.util.Set;
 
 public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/era/era_edta_refset.txt");
+        File inputOntologyFile = new File(inputPath + "sct-july-2018.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/nursing/nursing_full_refset.txt");
 
         //background RF2 for RF2 conversion //TODO: always latest, or same as version used? Presumably latter.
-        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2021.zip";
+        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-july-2018.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/era/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/nursing/";
         boolean computeRF2 = false;
-        boolean verifySubontology = true;
+        boolean verifySubontology = false;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
@@ -46,7 +47,7 @@ public class SubOntologyExtractionTest {
         OWLOntology nnfsWithSubOntology = man.createOntology();
         man.addAxioms(nnfsWithSubOntology, subOntology.getAxioms());
         man.addAxioms(nnfsWithSubOntology, nnfOntology.getAxioms());
-        OntologySaver.saveOntology(nnfsWithSubOntology, outputPath+"subOntologyWithNNFs.owl");
+        //OntologySaver.saveOntology(nnfsWithSubOntology, outputPath+"subOntologyWithNNFs.owl");
 
         //Extract RF2 for subontology
         if(computeRF2) {

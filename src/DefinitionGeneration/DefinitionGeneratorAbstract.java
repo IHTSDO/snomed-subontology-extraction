@@ -47,6 +47,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
         Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
+
         //if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
         //    Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
         //    ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t

@@ -7,6 +7,7 @@ import Classification.OntologyReasoningService;
 import NamingApproach.IntroducedNameHandler;
 import ResultsWriters.RF2Printer;
 import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
@@ -18,8 +19,8 @@ public class ComputeDefinitionsTest {
 
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException, OWLOntologyStorageException, ConversionException {
         //File inputOntologyFile = new File(args[0]);
-        String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "anatomy.owl");
+        String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/tests/role-chain-issue/";
+        File inputOntologyFile = new File(inputPath + "snomed-role-chain-issue.owl");
         //File inputOntologyFile = new File(inputPath + "module_left_facet_joint.owl");
         String defType = "NNF";
 
@@ -33,7 +34,6 @@ public class ComputeDefinitionsTest {
         //RENAMING TEST
         ///////////
         //for each PV in ontology, add a definition of the form PVCi == PVi
-        //TODO: refactor, should be part of DefinitionGenerator class
         IntroducedNameHandler namer = new IntroducedNameHandler(inputOntology);
         OWLOntology inputOntologyWithRenamings = namer.returnOntologyWithNamings();
 
@@ -50,15 +50,13 @@ public class ComputeDefinitionsTest {
         //////////
         //NNF TEST
         //////////
-        //compute definitions using renames. TODO: NNF, abstract defs. So will need way to test if primitive or non-primitive
+        //compute definitions using renames.
         Set<OWLClass> ontClasses = new HashSet<OWLClass>();
-        ontClasses.addAll(inputOntology.getClassesInSignature());
+        //ontClasses.addAll(inputOntology.getClassesInSignature());
 
         //List<OWLClass> classesToDefine = new ArrayList<OWLClass>(ontClasses);
         List<OWLClass> classesToDefine = new ArrayList<OWLClass>();
-        classesToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/108350001")));
-        classesToDefine.remove(df.getOWLThing());
-        classesToDefine.remove(df.getOWLNothing());
+        classesToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/427633002")));
 
         Set<OWLAxiom> definitions = new HashSet<OWLAxiom>();
 
@@ -97,11 +95,8 @@ public class ComputeDefinitionsTest {
 
         man.addAxioms(definitionsOnt, annotations);
 
-        //man.saveOntology(definitionsOnt, new OWLXMLDocumentFormat(),
-        //        IRI.create(new File("E:/Users/warren/Documents/aPostdoc/code/~test-code/abstract-definitions-test/NNF_definitions_" + inputOntologyFile.getName())));
-
-        //man.saveOntology(definitionsOnt, new OWLXMLDocumentFormat(),
-        //        IRI.create(new File(inputPath + defType + "_definitions_" + inputOntologyFile.getName())));
+        man.saveOntology(definitionsOnt, new OWLXMLDocumentFormat(),
+                IRI.create(new File(inputPath + defType + "_definitions_" + inputOntologyFile.getName())));
 
         ////////////////////////////
         //print in RF2 tuple format
@@ -111,6 +106,7 @@ public class ComputeDefinitionsTest {
 
         rf2Printer.printNNFsAsFSNTuples(definitionsOnt);
         System.out.println("Num undefined classes: " + definitionGenerator.getUndefinedClassAxioms().size());
+        System.out.println("Undefined classes: " + definitionGenerator.getUndefinedClassAxioms());
         System.out.println("Num defined classes:"  + definitionGenerator.getGeneratedDefinitions().size());
 
         System.out.println("Printing pv map.");
