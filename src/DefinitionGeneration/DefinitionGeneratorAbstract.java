@@ -110,21 +110,31 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
     //      *type 1: classToDefine is subconcept of a sufficiency condition of a GCI concept. Here: replace GCI concept with next proximal primitives
     //      *type 2: classToDefine is subconcept of a necessary condition of a GCI concept. Here: normal authoring form, no change.
     private Set<OWLClass> eliminateSufficientProximalGCIConcepts(OWLClass classToDefine, Set<OWLClass> parentClasses) {
-        Set<OWLClass> newProximalPrimitiveParents = new HashSet<OWLClass>();
+        Set<OWLClass> newProximalPrimitiveParents = new HashSet<>();
+        ListIterator<OWLClass> parentIterator = new ArrayList<>(parentClasses).listIterator();
 
-        for(OWLClass parent:parentClasses) {
+        //for(OWLClass parent:parentClasses) {
+        while(parentIterator.hasNext()) {
+            OWLClass parent = parentIterator.next();
             //for each parent A, check if occurs in axiom of form C <= A, where C is a complex concept
             if(namer.hasAssociatedGCIs(parent)) {
                //for each associated GCI, check type 1 or type 2 relationship for classToDefine
+                boolean isTypeOne = false;
                 for(OWLClass gciName:namer.returnNamesOfGCIsForSuperConcept(parent)) {
                     if(reasonerService.getAncestors(classToDefine).contains(gciName)) {
-                        //type 1 -- add proximal primitive parents of GCI concept to parents for classToDefine, replacing GCI concept.
-                        
-                        
-                        continue;
+                        //type 1 -- add proximal primitives of GCI concept to parents for classToDefine, replacing GCI concept.
+                        isTypeOne = true;
+                        Set<OWLClass> gciProximalPrimitives = computeClosestPrimitiveAncestors(parent);
+                        for(OWLClass proximalPrimitive:gciProximalPrimitives) {
+                            newProximalPrimitiveParents.add(proximalPrimitive);
+                            parentIterator.previous();
+                        }
+                        break;
                     }
-                    //type 2 -- retain GCI concept in proximal primitive parent set
-
+                }
+                //type 2 -- retain GCI concept in proximal primitive parent set
+                if(!isTypeOne) {
+                    newProximalPrimitiveParents.add(parent);
                     continue;
                 }
             }
@@ -134,5 +144,6 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
         return newProximalPrimitiveParents;
     }
+
 }
 
