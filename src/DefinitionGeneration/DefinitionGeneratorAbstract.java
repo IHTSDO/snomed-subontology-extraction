@@ -63,9 +63,11 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         if(redundancyOptions.contains(RedundancyOptions.eliminateRoleGroupRedundancy)) {
             reducedAncestorPVs = eliminateRoleGroupRedundancies(reducedAncestorPVs);
         }
-        //TODO: needs to be done before rest of redundancy removal, due also to transitivity?
         if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
-            reducedAncestorPVs = eliminateReflexivePVRedundancies(reducedAncestorPVs, inputClass);
+            reducedAncestorPVs = eliminateReflexivePVRedundancies(inputClass, reducedAncestorPVs);
+        }
+        if(redundancyOptions.contains(RedundancyOptions.eliminateSufficientProximalGCIs)) {
+            reducedParentNamedClasses = eliminateSufficientProximalGCIConcepts(inputClass, reducedParentNamedClasses);
         }
 
         Set<OWLClassExpression> nonRedundantAncestors = new HashSet<OWLClassExpression>();
@@ -76,7 +78,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
     }
 
     //possibly quicker than taking all primitive ancestors & redundancy checking?
-    public Set<OWLClass> computeClosestPrimitiveAncestors(OWLClass classToDefine) {
+    private Set<OWLClass> computeClosestPrimitiveAncestors(OWLClass classToDefine) {
         List<OWLClass> currentClassesToExpand = new ArrayList<OWLClass>();
         Set<OWLClass> closestPrimitives = new HashSet<OWLClass>();
 
@@ -102,6 +104,35 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         }
 
         return closestPrimitives;
+    }
+
+    //type 1 and type 2 GCI subconcepts:
+    //      *type 1: classToDefine is subconcept of a sufficiency condition of a GCI concept. Here: replace GCI concept with next proximal primitives
+    //      *type 2: classToDefine is subconcept of a necessary condition of a GCI concept. Here: normal authoring form, no change.
+    private Set<OWLClass> eliminateSufficientProximalGCIConcepts(OWLClass classToDefine, Set<OWLClass> parentClasses) {
+        Set<OWLClass> newProximalPrimitiveParents = new HashSet<OWLClass>();
+
+        for(OWLClass parent:parentClasses) {
+            //for each parent A, check if occurs in axiom of form C <= A, where C is a complex concept
+            if(namer.hasAssociatedGCIs(parent)) {
+               //for each associated GCI, check type 1 or type 2 relationship for classToDefine
+                for(OWLClass gciName:namer.returnNamesOfGCIsForSuperConcept(parent)) {
+                    if(reasonerService.getAncestors(classToDefine).contains(gciName)) {
+                        //type 1 -- add proximal primitive parents of GCI concept to parents for classToDefine, replacing GCI concept.
+                        
+                        
+                        continue;
+                    }
+                    //type 2 -- retain GCI concept in proximal primitive parent set
+
+                    continue;
+                }
+            }
+            //if not GCI concept, retain proximal primitive parent
+            newProximalPrimitiveParents.add(parent);
+        }
+
+        return newProximalPrimitiveParents;
     }
 }
 

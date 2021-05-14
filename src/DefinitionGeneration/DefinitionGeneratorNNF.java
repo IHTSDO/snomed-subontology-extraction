@@ -60,7 +60,7 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
             reducedAncestorPVs = eliminateRoleGroupRedundancies(reducedAncestorPVs);
         }
         if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
-            reducedAncestorPVs = eliminateReflexivePVRedundancies(reducedAncestorPVs, inputClass);
+            reducedAncestorPVs = eliminateReflexivePVRedundancies(inputClass, reducedAncestorPVs);
         }
 
         Set<OWLClassExpression> nonRedundantAncestors = new HashSet<OWLClassExpression>();

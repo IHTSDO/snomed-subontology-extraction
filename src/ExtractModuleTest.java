@@ -29,6 +29,5 @@ public class ExtractModuleTest {
         for(Map.Entry<ModuleType, OWLOntology> entry: moduleMap.entrySet()) {
             OntologySaver.saveOntology(entry.getValue(), outputPath+entry.getKey()+"_"+refsetName);
         }
-                //new ModuleExtractionHandler(inputOntology, )
     }
 }

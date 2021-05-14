@@ -98,7 +98,7 @@ public abstract class DefinitionGenerator {
     }
      */
 
-    public Set<OWLObjectSomeValuesFrom> eliminateReflexivePVRedundancies(Set<OWLObjectSomeValuesFrom> inputPVs, OWLClass inputClass) {
+    public Set<OWLObjectSomeValuesFrom> eliminateReflexivePVRedundancies(OWLClass inputClass, Set<OWLObjectSomeValuesFrom> inputPVs) {
         Set<OWLObjectSomeValuesFrom> reducedInputPVs = new HashSet<OWLObjectSomeValuesFrom>();
 
         //retrieve reflexive PVs in definition
