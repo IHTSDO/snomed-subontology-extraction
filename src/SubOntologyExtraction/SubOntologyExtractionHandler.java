@@ -84,6 +84,7 @@ public class SubOntologyExtractionHandler {
         defaultOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
         defaultOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
         defaultOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
+        defaultOptions.add(RedundancyOptions.eliminateSufficientProximalGCIs);
         this.computeSubontology(defaultOptions);
     }
 
@@ -118,8 +119,8 @@ public class SubOntologyExtractionHandler {
     private void populateSubOntology() throws OWLOntologyCreationException, ReasonerException {
         subOntology = man.createOntology(focusConceptDefinitions);
         //TODO: check ordering of these steps.
-        //for now, for GCIs add separately (before the loop) to ensure all newly appearing classes are added. //TODO 09-04-21: check this is sufficient
-        addInitialGCIAxioms();
+
+        //addInitialGCIAxioms(); //TODO: needed with latest update?
 
         //definition expansion loop
         computeRequiredSupportingClassDefinitions();
@@ -130,7 +131,7 @@ public class SubOntologyExtractionHandler {
         subOntologyReasoningService = new OntologyReasoningService(subOntology);
         subOntologyReasoningService.classifyOntology();
 
-        //add property inclusion axioms for properties //TODO: where should this be placed?
+        //add property inclusion axioms for properties
         populateRBox();
 
         //add grouper classes
@@ -245,6 +246,7 @@ public class SubOntologyExtractionHandler {
             //new classes
             if(newDefinitionAdded) {
                 //definition generated for clsBeingChecked in loop above.
+                System.out.println("latest def being added: " + abstractDefinitionsGenerator.getLastDefinitionGenerated());
                 additionalSupportingClassDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
 
                 //add authoring form for any GCIs associated with newly defined class

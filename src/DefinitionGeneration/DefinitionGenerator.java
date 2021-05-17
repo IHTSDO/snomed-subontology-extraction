@@ -161,6 +161,7 @@ public abstract class DefinitionGenerator {
         definingConditions.remove(df.getOWLNothing());
         if (definingConditions.size() == 0) {
             System.out.println("Undefined class: " + definedClass);
+            generatedDefinitions.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
             undefinedClasses.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
             return;
         }

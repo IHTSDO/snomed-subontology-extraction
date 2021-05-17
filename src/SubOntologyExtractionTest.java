@@ -18,21 +18,25 @@ public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-july-2020.owl");
+        File inputOntologyFile = new File(inputPath + "examples/yong-gci-example.owl");
         File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/era/era_edta_refset.txt");
 
         //background RF2 for RF2 conversion //TODO: always latest, or same as version used? Presumably latter.
         String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-july-2020.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/era/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/misc/yong-gci-example/";
         boolean computeRF2 = false;
         boolean verifySubontology = false;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
-        Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+        //Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
         OWLDataFactory df = man.getOWLDataFactory();
+        Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
+        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/A")));
+        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/A11")));
+        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/A12")));
 
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
         generator.computeSubontology();
