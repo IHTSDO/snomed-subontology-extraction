@@ -11,37 +11,67 @@ import java.util.*;
 public class VerificationChecker {
     private Map<OWLClass, Set<OWLClass>> latestSubOntologyClosureDiffs;
     private Map<OWLClass, Set<OWLClass>> latestSourceOntologyClosureDiffs;
+    private Set<OWLClass> nonEquivalentFocusClasses;
     private OWLOntologyManager man;
     private OWLDataFactory df;
 
     public VerificationChecker() {
         latestSubOntologyClosureDiffs = new HashMap<OWLClass, Set<OWLClass>>();
         latestSourceOntologyClosureDiffs = new HashMap<OWLClass, Set<OWLClass>>();
+        nonEquivalentFocusClasses = new HashSet<OWLClass>();
         man = OWLManager.createOWLOntologyManager();
         df = man.getOWLDataFactory();
     }
 
     //TODO: refactor based on annotations for focus concepts
-    public boolean satisfiesEquivalenceForFocusConcepts(Set<OWLClass> focusClasses, OWLOntology subOntology, OWLOntology sourceOntology) throws OWLOntologyCreationException {
+    public boolean satisfiesEquivalenceForFocusConcepts(Set<OWLClass> focusClasses, OWLOntology subOntology, OWLOntology sourceOntology) throws OWLOntologyCreationException, ReasonerException {
         boolean satisfiesRequirement = true;
         //Takes as input the source ontology and a computed subontology.
         //TODO: rename the focus concepts in the subontology, store lookup for original name vs rename
         //TODO: add the renamed content to the source ontology, then check equivalence between original concepts and their subontology (renamed) versions
         //TODO: question -- is it sufficient to just add focus concept definitions from subontology to source?
 
-        //OWLOntology subOntologyWithRenamings = man.createOntology(subOntology.getAxioms());
+        OWLOntology subOntologyRenamedFocusConcepts = man.createOntology();
+        man.addAxioms(subOntologyRenamedFocusConcepts, subOntology.getLogicalAxioms());
 
+        //rename all concepts & roles in subontology
+        Map<OWLClass, OWLClass> focusClassRenamingMap = new HashMap<OWLClass, OWLClass>();
+        Set<OWLClass> subOntologyClasses = subOntology.getClassesInSignature();
         OWLEntityRenamer renamer = new OWLEntityRenamer(man, new HashSet<OWLOntology>(Arrays.asList(subOntology)));
-        for(OWLClass cls:focusClasses) {
-            renamer.changeIRI(cls.getIRI(), IRI.create(cls.getIRI()+"_renaming"));
-            System.out.println("New cls IRI: " + cls.getIRI());
-
+        for(OWLClass cls:subOntologyClasses) {
+            System.out.println("Old cls IRI: " + cls.getIRI());
+            subOntologyRenamedFocusConcepts.getOWLOntologyManager().applyChanges(renamer.changeIRI(cls, IRI.create(cls.getIRI()+"_renamed")));
+            if(focusClasses.contains(cls)) {
+                focusClassRenamingMap.put(cls, df.getOWLClass(IRI.create(cls.getIRI()+"_renamed"))); //TODO: confirm this works as intended
+            }
+        }
+        Set<OWLObjectProperty> subOntologyProperties = subOntology.getObjectPropertiesInSignature();
+        for(OWLObjectProperty prop:subOntologyProperties) {
+            System.out.println("Old prop IRI: " + prop.getIRI());
+            subOntologyRenamedFocusConcepts.getOWLOntologyManager().applyChanges(renamer.changeIRI(prop, IRI.create(prop.getIRI()+"_renamed")));
         }
 
+        //add all renaming axioms to source ontology
+        OWLOntology sourceOntologyWithRenamedSubOntology = man.createOntology();
+        man.addAxioms(sourceOntologyWithRenamedSubOntology, sourceOntology.getAxioms());
+        man.addAxioms(sourceOntologyWithRenamedSubOntology, subOntologyRenamedFocusConcepts.getAxioms());
 
+        //check equivalence for each focus concept.
+        OntologyReasoningService reasoningService = new OntologyReasoningService(sourceOntologyWithRenamedSubOntology);
+        reasoningService.classifyOntology();
 
+        Set<OWLClass> nonEquivalentCases = new HashSet<OWLClass>();
+        for(OWLClass focusCls:focusClasses) {
+            if(!reasoningService.getEquivalentClasses(focusCls).contains(focusClassRenamingMap.get(focusCls))) {
+                System.out.println("Focus class not equivalent to corresponding renamed (subontology) class: " + focusCls);
+                nonEquivalentCases.add(focusCls);
+            }
+        }
 
-
+        if(nonEquivalentCases.size() > 0) {
+            satisfiesRequirement = false;
+        }
+        nonEquivalentFocusClasses = nonEquivalentCases;
         return satisfiesRequirement;
     }
 
@@ -126,5 +156,8 @@ public class VerificationChecker {
     }
     public Map<OWLClass, Set<OWLClass>> getLatestSourceOntologyClosureDiffs() {
         return latestSourceOntologyClosureDiffs;
+    }
+    public Set<OWLClass> getFailedFocusClassEquivalenceCases() {
+        return nonEquivalentFocusClasses;
     }
 }
