@@ -19,7 +19,7 @@ public class SubOntologyExtractionTest {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
         File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/era/era_edta_refset.txt");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/dentistry/dentistry_refset.txt");
 
         //background RF2 for RF2 conversion //TODO: always latest, or same as version used? Presumably latter.
         String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2021.zip";
