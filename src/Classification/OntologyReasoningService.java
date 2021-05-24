@@ -14,6 +14,7 @@ public class OntologyReasoningService {
 
     private OWLReasoner reasoner;
     private final OWLReasonerConfiguration configuration = new SimpleConfiguration(new ConsoleProgressMonitor());
+    private String reasonerName;
 
     public OntologyReasoningService(OWLOntology inputOntology) throws ReasonerException {
         this(inputOntology, "org.semanticweb.elk.owlapi.ElkReasonerFactory");
@@ -21,6 +22,7 @@ public class OntologyReasoningService {
     public OntologyReasoningService(OWLOntology inputOntology, String reasonerFactoryName) throws ReasonerException {
         //this.inputOntology = inputOntology;
         reasoner = getReasonerFactory(reasonerFactoryName).createReasoner(inputOntology, configuration);
+        reasonerName = reasonerFactoryName;
     }
 
     public void classifyOntology() {
@@ -232,4 +234,9 @@ public class OntologyReasoningService {
         return reasoner.isEntailed(ax);
     }
 
+    public void setNewSourceOntologyAndClassify(OWLOntology newSourceOntology) throws ReasonerException {
+        reasoner.dispose();
+        reasoner = getReasonerFactory(reasonerName).createReasoner(newSourceOntology, configuration);
+        this.classifyOntology();
+    }
 }

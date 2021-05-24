@@ -2,6 +2,7 @@ package Verification;
 
 import Classification.OntologyReasoningService;
 import ExceptionHandlers.ReasonerException;
+import ResultsWriters.OntologySaver;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.util.OWLEntityRenamer;
@@ -12,49 +13,53 @@ public class VerificationChecker {
     private Map<OWLClass, Set<OWLClass>> latestSubOntologyClosureDiffs;
     private Map<OWLClass, Set<OWLClass>> latestSourceOntologyClosureDiffs;
     private Set<OWLClass> nonEquivalentFocusClasses;
-    private OWLOntologyManager man;
-    private OWLDataFactory df;
+    //private OWLOntologyManager man;
+    //private OWLDataFactory df;
 
     public VerificationChecker() {
         latestSubOntologyClosureDiffs = new HashMap<OWLClass, Set<OWLClass>>();
         latestSourceOntologyClosureDiffs = new HashMap<OWLClass, Set<OWLClass>>();
         nonEquivalentFocusClasses = new HashSet<OWLClass>();
-        man = OWLManager.createOWLOntologyManager();
-        df = man.getOWLDataFactory();
+        //man = OWLManager.createOWLOntologyManager();
+        //df = man.getOWLDataFactory();
     }
 
-    //TODO: refactor based on annotations for focus concepts
-    public boolean satisfiesEquivalenceForFocusConcepts(Set<OWLClass> focusClasses, OWLOntology subOntology, OWLOntology sourceOntology) throws OWLOntologyCreationException, ReasonerException {
+    /*
+    public boolean satisfiesEquivalenceForFocusConcepts(Set<OWLClass> focusClasses, OWLOntology subOntology, OWLOntology sourceOntology) throws OWLOntologyCreationException, ReasonerException, OWLOntologyStorageException {
+        OWLOntologyManager man = OWLManager.createOWLOntologyManager();
+        OWLDataFactory df = man.getOWLDataFactory();
         boolean satisfiesRequirement = true;
-        //Takes as input the source ontology and a computed subontology.
-        //TODO: rename the focus concepts in the subontology, store lookup for original name vs rename
-        //TODO: add the renamed content to the source ontology, then check equivalence between original concepts and their subontology (renamed) versions
-        //TODO: question -- is it sufficient to just add focus concept definitions from subontology to source?
 
-        OWLOntology subOntologyRenamedFocusConcepts = man.createOntology();
-        man.addAxioms(subOntologyRenamedFocusConcepts, subOntology.getLogicalAxioms());
+        OWLOntology subOntologyRenamed = man.createOntology();
+        man.addAxioms(subOntologyRenamed, subOntology.getAxioms());
 
-        //rename all concepts & roles in subontology
+        //rename all focus concepts in subontology
         Map<OWLClass, OWLClass> focusClassRenamingMap = new HashMap<OWLClass, OWLClass>();
-        Set<OWLClass> subOntologyClasses = subOntology.getClassesInSignature();
-        OWLEntityRenamer renamer = new OWLEntityRenamer(man, new HashSet<OWLOntology>(Arrays.asList(subOntology)));
-        for(OWLClass cls:subOntologyClasses) {
+        OWLEntityRenamer renamer = new OWLEntityRenamer(man, new HashSet<OWLOntology>(Arrays.asList(subOntologyRenamed)));
+
+        for(OWLClass cls:focusClasses) {
             System.out.println("Old cls IRI: " + cls.getIRI());
-            subOntologyRenamedFocusConcepts.getOWLOntologyManager().applyChanges(renamer.changeIRI(cls, IRI.create(cls.getIRI()+"_renamed")));
-            if(focusClasses.contains(cls)) {
-                focusClassRenamingMap.put(cls, df.getOWLClass(IRI.create(cls.getIRI()+"_renamed"))); //TODO: confirm this works as intended
-            }
-        }
-        Set<OWLObjectProperty> subOntologyProperties = subOntology.getObjectPropertiesInSignature();
-        for(OWLObjectProperty prop:subOntologyProperties) {
-            System.out.println("Old prop IRI: " + prop.getIRI());
-            subOntologyRenamedFocusConcepts.getOWLOntologyManager().applyChanges(renamer.changeIRI(prop, IRI.create(prop.getIRI()+"_renamed")));
+            subOntologyRenamed.getOWLOntologyManager().applyChanges(renamer.changeIRI(cls, IRI.create(cls.getIRI()+"_renamed")));
+            focusClassRenamingMap.put(cls, df.getOWLClass(IRI.create(cls.getIRI()+"_renamed"))); //TODO: confirm this works as intended
         }
 
-        //add all renaming axioms to source ontology
+        //add all renaming axioms to source ontology. Note: begin by adding all axioms, since we require all non-logical axioms also, then remove irrelevant (non-focus/renamed) ones.
         OWLOntology sourceOntologyWithRenamedSubOntology = man.createOntology();
         man.addAxioms(sourceOntologyWithRenamedSubOntology, sourceOntology.getAxioms());
-        man.addAxioms(sourceOntologyWithRenamedSubOntology, subOntologyRenamedFocusConcepts.getAxioms());
+        man.addAxioms(sourceOntologyWithRenamedSubOntology, subOntologyRenamed.getAxioms());
+        for(OWLAxiom ax:subOntologyRenamed.getAxioms()) {
+            if(Collections.disjoint(ax.getClassesInSignature(), focusClasses)) {
+                man.removeAxiom(sourceOntology, ax);
+            }
+        }
+
+        OntologySaver.saveOntology(subOntologyRenamed, "E:/Users/warren/Documents/aPostdoc/subontologies/subOntologyRenamed.owl");
+        OntologySaver.saveOntology(sourceOntologyWithRenamedSubOntology, "E:/Users/warren/Documents/aPostdoc/subontologies/sourceWithRenamings.owl");
+        OWLOntology testOnt = man.createOntology();
+        man.addAxioms(testOnt, subOntology.getAxioms());
+        man.addAxioms(testOnt, subOntologyRenamed.getAxioms());
+        OntologySaver.saveOntology(testOnt, "E:/Users/warren/Documents/aPostdoc/subontologies/subAndRenamingsTest.owl");
+
 
         //check equivalence for each focus concept.
         OntologyReasoningService reasoningService = new OntologyReasoningService(sourceOntologyWithRenamedSubOntology);
@@ -62,20 +67,114 @@ public class VerificationChecker {
 
         Set<OWLClass> nonEquivalentCases = new HashSet<OWLClass>();
         for(OWLClass focusCls:focusClasses) {
+            //System.out.println("Focus cls: " + focusCls + " renaming: " + focusClassRenamingMap.get(focusCls));
+            System.out.println("Focus cls equivalent cases: " + reasoningService.getEquivalentClasses(focusCls));
+            System.out.println("Focus cls descendants: " + reasoningService.getDescendants(focusCls));
+            System.out.println("Focus cls ancestors: " + reasoningService.getAncestors(focusCls));
             if(!reasoningService.getEquivalentClasses(focusCls).contains(focusClassRenamingMap.get(focusCls))) {
-                System.out.println("Focus class not equivalent to corresponding renamed (subontology) class: " + focusCls);
+                System.out.println("Focus cls not equivalent to renaming: " + focusCls);
                 nonEquivalentCases.add(focusCls);
+                satisfiesRequirement = false;
             }
         }
 
-        if(nonEquivalentCases.size() > 0) {
-            satisfiesRequirement = false;
+        nonEquivalentFocusClasses = nonEquivalentCases;
+        Set<OWLClass> primitiveFailures = new HashSet<OWLClass>();
+        Set<OWLClass> namedFailures = new HashSet<OWLClass>();
+
+        for(OWLClass cls:nonEquivalentCases) {
+            if(reasoningService.isPrimitive(cls)) {
+                primitiveFailures.add(cls);
+            }
+            else {
+                namedFailures.add(cls);
+            }
+        }
+
+        System.out.println("Of failures, num named: " + namedFailures.size());
+        System.out.println("named failures: " + namedFailures);
+        System.out.println("Of failures, num primitive: " + primitiveFailures.size());
+        System.out.println("primitive failures: " + primitiveFailures);
+
+
+        return satisfiesRequirement;
+    }
+     */
+
+     //TODO: temp test ver
+    public boolean satisfiesEquivalenceForFocusConcepts(Set<OWLClass> focusClasses, OWLOntology subOntology, OWLOntology sourceOntology) throws OWLOntologyCreationException, ReasonerException, OWLOntologyStorageException {
+        OWLOntologyManager man = OWLManager.createOWLOntologyManager();
+        OWLDataFactory df = man.getOWLDataFactory();
+        boolean satisfiesRequirement = true;
+
+        //rename all focus concepts in subontology -- create instance to contain all renamings to draw from
+        Map<OWLClass, OWLClass> focusClassRenamingMap = new HashMap<OWLClass, OWLClass>();
+
+        //create instance of source ontology, ready for renaming additions
+        OWLOntology sourceOntologyWithRenamedSubOntology = man.createOntology();
+        man.addAxioms(sourceOntologyWithRenamedSubOntology, sourceOntology.getAxioms());
+
+        Set<OWLClass> primitiveFailures = new HashSet<OWLClass>();
+        Set<OWLClass> namedFailures = new HashSet<OWLClass>();
+
+        Set<OWLClass> nonEquivalentCases = new HashSet<OWLClass>();
+        int i = 0;
+        OntologyReasoningService reasoningService = new OntologyReasoningService(sourceOntologyWithRenamedSubOntology);
+        for(OWLClass focusCls:focusClasses) {
+            System.out.println("Classes covered: " + i + "/"+focusClasses.size() + " num failed, primitive: " + primitiveFailures.size() + ", named: " + namedFailures.size());
+
+            //create ontology instance to rename class in
+            OWLOntology subOntologyRenamed = man.createOntology(subOntology.getAxioms());
+            OWLEntityRenamer renamer = new OWLEntityRenamer(man, new HashSet<OWLOntology>(Arrays.asList(subOntologyRenamed)));
+            System.out.println("Old cls IRI: " + focusCls.getIRI());
+            subOntologyRenamed.getOWLOntologyManager().applyChanges(renamer.changeIRI(focusCls, IRI.create(focusCls.getIRI()+"_renamed")));
+            focusClassRenamingMap.put(focusCls, df.getOWLClass(IRI.create(focusCls.getIRI()+"_renamed")));
+
+            //add renaming axioms for the given focus class only
+            Set<OWLAxiom> addedRenamingAxioms = new HashSet<OWLAxiom>();
+            for(OWLAxiom ax:subOntologyRenamed.getAxioms()) {
+                //if axiom contains occurrence of the renaming, add it
+                if(ax.getClassesInSignature().contains(focusClassRenamingMap.get(focusCls))) {
+                    addedRenamingAxioms.add(ax);
+                }
+            }
+            man.addAxioms(sourceOntologyWithRenamedSubOntology, addedRenamingAxioms);
+
+            //classify the source ontology with these new renaming axioms
+            reasoningService.setNewSourceOntologyAndClassify(sourceOntologyWithRenamedSubOntology);
+            
+            if(!reasoningService.getEquivalentClasses(focusCls).contains(focusClassRenamingMap.get(focusCls))) {
+                System.out.println("Focus cls not equivalent to renaming: " + focusCls);
+                nonEquivalentCases.add(focusCls);
+                satisfiesRequirement = false;
+                if(reasoningService.isPrimitive(focusCls)) {
+                    primitiveFailures.add(focusCls);
+                }
+                else {
+                    namedFailures.add(focusCls);
+                }
+            }
+
+            //reset the sourceOntology with renamings instance
+            man.removeAxioms(sourceOntologyWithRenamedSubOntology, addedRenamingAxioms);
+            i++;
+            man.removeOntology(subOntologyRenamed);
+
         }
         nonEquivalentFocusClasses = nonEquivalentCases;
+
+        System.out.println("Of failures, num named: " + namedFailures.size());
+        System.out.println("named failures: " + namedFailures);
+        System.out.println("Of failures, num primitive: " + primitiveFailures.size());
+        System.out.println("primitive failures: " + primitiveFailures);
+
+
         return satisfiesRequirement;
     }
 
     public boolean satisfiesTransitiveClosureRequirement(OWLOntology subOntology, OWLOntology sourceOntology) throws ReasonerException {
+        OWLOntologyManager man = OWLManager.createOWLOntologyManager();
+        OWLDataFactory df = man.getOWLDataFactory();
         //compute the transitive closure wrt subsumption for all concepts within the subontology signature. Result wrt source and wrt sub should then be equal.
         boolean satisfiesRequirement = true;
 

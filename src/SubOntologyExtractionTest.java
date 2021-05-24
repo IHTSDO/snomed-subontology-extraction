@@ -19,12 +19,12 @@ public class SubOntologyExtractionTest {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
         File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/dentistry/dentistry_refset.txt");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/era/era_edta_refset.txt");
 
         //background RF2 for RF2 conversion //TODO: always latest, or same as version used? Presumably latter.
         String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2021.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/dentistry/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/";
         boolean computeRF2 = false;
         boolean verifySubontology = true;
 
@@ -32,6 +32,14 @@ public class SubOntologyExtractionTest {
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
         Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+        /*
+        Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
+        OWLDataFactory df = man.getOWLDataFactory();
+        //conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/699422003")));
+       // conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/734009000")));
+        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/42711005")));
+
+         */
 
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
         generator.computeSubontology();
@@ -39,7 +47,6 @@ public class SubOntologyExtractionTest {
         OWLOntology subOntology = generator.getCurrentSubOntology();
         OWLOntology nnfOntology = generator.getNnfOntology();
 
-        OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
 
         //Create temporary ontology for nnfs + subOntology, use this to extract everything except the Refset and Relationship files
         //TODO: this is to extract the Concept, Description, Language and Text Definition RF2 files. Make more efficient.
@@ -72,20 +79,31 @@ public class SubOntologyExtractionTest {
             System.out.println("==========================");
             boolean satisfiesEquivalentFocusConceptsRequirement = checker.satisfiesEquivalenceForFocusConcepts(generator.getFocusClasses(), subOntology, inputOntology);
             System.out.println("Satisfies equivalence of focus classes requirement?" + satisfiesEquivalentFocusConceptsRequirement);
-            if(!satisfiesEquivalentFocusConceptsRequirement) {
-                Set<OWLClass> failedCases = checker.getFailedFocusClassEquivalenceCases();
-                System.out.println("Failed cases for equivalence: ");
-                System.out.println(failedCases);
-            }
 
+            /*
             System.out.println("==========================");
             System.out.println("VERIFICATION: Step (2) transitive closure equal within sig(subOntology)");
             System.out.println("==========================");
             boolean satisfiesTransitiveClosureReq = checker.satisfiesTransitiveClosureRequirement(subOntology, inputOntology);
             System.out.println("Satisfies transitive closure requirement?" + satisfiesTransitiveClosureReq);
-            MapPrinter printer = new MapPrinter(outputPath);
-            printer.printGeneralMap(checker.getLatestSubOntologyClosureDiffs(), "subOntDiffMap.txt");
-            printer.printGeneralMap(checker.getLatestSourceOntologyClosureDiffs(), "sourceOntDiffMap.txt");
+            */
+
+            if (!satisfiesEquivalentFocusConceptsRequirement) {
+                Set<OWLClass> failedCases = checker.getFailedFocusClassEquivalenceCases();
+                System.out.println("Failed cases for equivalence: ");
+                System.out.println(failedCases);
+                System.out.println("Num failed cases: " + failedCases.size() + " out of: " + conceptsToDefine.size());
+            }
+            /*
+            if (!satisfiesTransitiveClosureReq) {
+                MapPrinter printer = new MapPrinter(outputPath);
+                printer.printGeneralMap(checker.getLatestSubOntologyClosureDiffs(), "subOntDiffMap.txt");
+                printer.printGeneralMap(checker.getLatestSourceOntologyClosureDiffs(), "sourceOntDiffMap.txt");
+            }
+
+             */
         }
+        OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
+
     }
 }
