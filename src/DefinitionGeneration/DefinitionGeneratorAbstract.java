@@ -36,10 +36,10 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
         //remove classes representing introduced names
         primitiveAncestors.removeAll(ancestorRenamedPVs);
-        primitiveAncestors.removeAll(extractNamedGCIs(primitiveAncestors)); //TODO: 09-04-2021, not needed?
+        primitiveAncestors.removeAll(extractNamedGCIs(primitiveAncestors));
 
         //GCI handling: computing authoring form of GCI requires naming the LHS, meaning GCIName <= originalGCIClass, which is undesirable.
-        if(namer.isNamedGCI(inputClass)) {
+        if(namer.isNamedGCI(inputClass)) { //TODO: 31/05/21 -- still needed?
             OWLClass originalGCIConcept = namer.retrieveSuperClassFromNamedGCI(inputClass);
             primitiveAncestors.remove(originalGCIConcept);
             primitiveAncestors.addAll(computeClosestPrimitiveAncestors(originalGCIConcept));

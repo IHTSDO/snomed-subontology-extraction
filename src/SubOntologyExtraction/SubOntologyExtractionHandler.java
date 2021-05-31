@@ -361,8 +361,6 @@ public class SubOntologyExtractionHandler {
         System.out.println("Module roles: " + module.getObjectPropertiesInSignature());
 
         man.addAxioms(subOntology, module.getLogicalAxioms());
-
-        //TODO: does RBox check automatically include transitive & reflexive axioms?
         /*
         for(OWLObjectProperty prop:subOntology.getObjectPropertiesInSignature()) {
             man.addAxioms(subOntology, sourceOntology.getTransitiveObjectPropertyAxioms(prop));
@@ -376,7 +374,7 @@ public class SubOntologyExtractionHandler {
         for(OWLSubClassOfAxiom ax: sourceOntology.getSubClassAxiomsForSuperClass(sctTop)) {
             OWLClassExpression subClass = ax.getSubClass();
             //System.out.println("subClass: " + subClass);
-            if(subClass instanceof OWLClass) { // TODO: check
+            if(subClass instanceof OWLClass) {
                 topLevelSCTGroupers.add((OWLClass) ax.getSubClass());
             }
         }
@@ -395,7 +393,7 @@ public class SubOntologyExtractionHandler {
         Set<OWLClass> classesUsedInSubontology = subOntology.getClassesInSignature();
         classesUsedInSubontology.remove(sctTop);
 
-        for(OWLClass cls:classesUsedInSubontology) { //TODO: inefficient top-down, but no link to OWLThing yet?
+        for(OWLClass cls:classesUsedInSubontology) {
             List<OWLClass> parentClasses = new ArrayList<OWLClass>(sourceOntologyReasoningService.getDirectAncestors(cls));
             if(Collections.disjoint(parentClasses, classesUsedInSubontology)
                     && subOntology.getSubClassAxiomsForSubClass(cls).isEmpty()
@@ -412,7 +410,7 @@ public class SubOntologyExtractionHandler {
         partiallyDefinedSupportingClasses.remove(sctTop);
 
         for (OWLClass cls : partiallyDefinedSupportingClasses) {
-            //subOntologyReasoningService.classifyOntology(); //TODO: expensive. Do we need to do this at every class or just once?
+            //subOntologyReasoningService.classifyOntology();
             //if(subOntology.getEquivalentClassesAxioms(cls).isEmpty() && subOntology.getSubClassAxiomsForSubClass(cls).isEmpty()) {
             Set<OWLClass> sourceOntologyAncestors = sourceOntologyReasoningService.getAncestors(cls);
             Set<OWLClass> subOntologyAncestors = subOntologyReasoningService.getAncestors(cls);
@@ -433,7 +431,7 @@ public class SubOntologyExtractionHandler {
             //reduce ancestor set based on what is already entailed by subontology
             Set<OWLClass> nonRedundantAncestors = new HashSet<OWLClass>();
             for (OWLClass ancestor : reducedAncestors) {
-                //TODO: 23-04-2021, this check not needed? DOUBLE CHECK.
+                //TODO: 23-04-2021, this check not needed?
                 if (!subOntologyReasoningService.getAncestors(cls).contains(ancestor)) {
                     //man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(cls, ancestor));
                     nonRedundantAncestors.add(ancestor);
@@ -451,13 +449,11 @@ public class SubOntologyExtractionHandler {
     }
 
     /*
-    //TODO: semantically minimal subontologies, not necessarily user-preferred, some overlap with NNFs here, refactor/reuse
     private void addMinimalSupportingClassDefinitions() throws OWLOntologyCreationException {
     }
      */
 
     private void computeNNFDefinitions(Set<OWLClass> classes, Set<RedundancyOptions> redundancyOptions) throws ReasonerException, OWLOntologyCreationException {
-        //TODO: 08-04-21 check if using separate namer to sourceOntologyNamer works as intended.
         System.out.println("Computing necessary normal form (inferred relationships).");
         IntroducedNameHandler subOntologyNamer = new IntroducedNameHandler(subOntology);
         OWLOntology subOntologyWithNamings = subOntologyNamer.returnOntologyWithNamings();
@@ -465,7 +461,6 @@ public class SubOntologyExtractionHandler {
         subOntologyReasoningService.classifyOntology();
         DefinitionGenerator nnfDefinitionsGenerator = new DefinitionGeneratorNNF(subOntology, subOntologyReasoningService, subOntologyNamer);
 
-        classes.remove(df.getOWLNothing());
         for(OWLClass cls:classes) {
             nnfDefinitionsGenerator.generateDefinition(cls, redundancyOptions);
         }

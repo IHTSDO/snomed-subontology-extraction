@@ -13,8 +13,7 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         super(inputOntology, reasonerService, namer);
         //this.computeReflexiveProperties();
     }
-    //TODO: make version of this for groups of signatures -- identify everything that can be done once, and only do it once (efficiency). Top down?
-    //TODO: refactor, move to super (?)
+
     public void generateDefinition(OWLClass inputClass) {
         //default: all redundancy elimination
         Set<RedundancyOptions> defaultOptions = new HashSet<RedundancyOptions>();

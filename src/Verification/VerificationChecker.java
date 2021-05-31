@@ -25,7 +25,7 @@ public class VerificationChecker {
         //df = man.getOWLDataFactory();
     }
 
-    //TODO: note, temporarily done...
+    //TODO: note, temporarily check would require external reasoner...
     public boolean axiomsInSubOntologyEntailedBySource(OWLOntology subOntology, OWLOntology sourceOntology) {
 
         for(OWLAxiom ax:subOntology.getLogicalAxioms()) {

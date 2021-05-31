@@ -2,6 +2,7 @@ package SubOntologyExtraction;
 
 import ResultsWriters.RF2Printer;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
+import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import org.snomed.otf.owltoolkit.conversion.OWLtoRF2Service;
@@ -40,10 +41,18 @@ public class SubOntologyRF2ConversionService {
         entitiesInSubontologyAndNNFs.addAll(nnfOntology.getClassesInSignature());
         entitiesInSubontologyAndNNFs.addAll(nnfOntology.getObjectPropertiesInSignature());
 
+        /*
         Set<OWLClass> inSubOntNotNNF = subOntology.getClassesInSignature();
         inSubOntNotNNF.removeAll(nnfOntology.getClassesInSignature());
         Set<OWLClass> inNNFNotSubOnt = nnfOntology.getClassesInSignature();
         inNNFNotSubOnt.removeAll(subOntology.getClassesInSignature());
+         */
+
+        OWLOntologyManager man = OWLManager.createOWLOntologyManager();
+        OWLDataFactory df = man.getOWLDataFactory();
+
+        entitiesInSubontologyAndNNFs.remove(df.getOWLThing());
+        entitiesInSubontologyAndNNFs.remove(df.getOWLNothing());
 
         extractConceptAndDescriptionRF2(entitiesInSubontologyAndNNFs, outputPath, sourceFilePath);
 
