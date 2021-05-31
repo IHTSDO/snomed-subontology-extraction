@@ -25,6 +25,16 @@ public class VerificationChecker {
         //df = man.getOWLDataFactory();
     }
 
+    //TODO: note, temporarily done...
+    public boolean axiomsInSubOntologyEntailedBySource(OWLOntology subOntology, OWLOntology sourceOntology) {
+
+        for(OWLAxiom ax:subOntology.getLogicalAxioms()) {
+
+        }
+
+        return false;
+    }
+
      //TODO: temp test ver
     public boolean namedFocusConceptsSatisfyEquivalence(Set<OWLClass> focusClasses, OWLOntology subOntology, OWLOntology sourceOntology) throws OWLOntologyCreationException, ReasonerException, OWLOntologyStorageException {
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
@@ -162,60 +172,13 @@ public class VerificationChecker {
         }
          */
 
-        //primitive case //TODO: test 2 - does not work either.
-        for(OWLClass focusCls:primitiveFocusClasses) {
-            System.out.println("Primitive classes covered: " + i + "/" + primitiveFocusClasses.size() + " num failed: " + primitiveFailures.size());
-
-            //create ontology instance to rename class in
-            OWLOntology subOntologyRenamed = man.createOntology(subOntology.getAxioms());
-            OWLEntityRenamer renamer = new OWLEntityRenamer(man, new HashSet<OWLOntology>(Arrays.asList(subOntologyRenamed)));
-            subOntologyRenamed.getOWLOntologyManager().applyChanges(renamer.changeIRI(focusCls, IRI.create(focusCls.getIRI() + "_renamed")));
-            focusClassRenamingMap.put(focusCls, df.getOWLClass(IRI.create(focusCls.getIRI() + "_renamed")));
-
-            //add renaming axioms for the given focus class only
-            Set<OWLAxiom> addedRenamingAxioms = new HashSet<OWLAxiom>();
-            for (OWLAxiom ax : subOntologyRenamed.getAxioms()) {
-                //if axiom contains occurrence of the renaming, add it
-                if (ax.getClassesInSignature().contains(focusClassRenamingMap.get(focusCls))) {
-                    addedRenamingAxioms.add(ax);
-                }
-            }
-            man.addAxioms(sourceOntologyWithRenamedSubOntology, addedRenamingAxioms);
-
-            OWLNamedIndividual a = df.getOWLNamedIndividual(IRI.create(snomedIRI + "a"));
-            OWLClassAssertionAxiom as1 = df.getOWLClassAssertionAxiom(df.getOWLObjectIntersectionOf(df.getOWLObjectComplementOf(focusCls), focusClassRenamingMap.get(focusCls)), a);
-            OWLClassAssertionAxiom as2 = df.getOWLClassAssertionAxiom(df.getOWLObjectIntersectionOf(df.getOWLObjectComplementOf(focusClassRenamingMap.get(focusCls)), focusCls), a);
-
-            //test direction 1
-            boolean direction1 = false;
-            man.addAxiom(sourceOntologyWithRenamedSubOntology, as1);
-            reasoningService.setNewSourceOntologyAndClassify(sourceOntologyWithRenamedSubOntology);
-
-            direction1 = reasoningService.isConsistent();
-
-            //test direction 2
-            boolean direction2 = false;
-            man.removeAxiom(sourceOntologyWithRenamedSubOntology, as1);
-            man.addAxiom(sourceOntologyWithRenamedSubOntology, as2);
-
-            reasoningService.setNewSourceOntologyAndClassify(sourceOntologyWithRenamedSubOntology);
-            direction2 = reasoningService.isConsistent();
-
-            if(direction1 || direction2) { //then not equivalent?
-                System.out.println("Focus cls not equivalent to renaming: " + focusCls);
-                nonEquivalentCases.add(focusCls);
-                satisfiesRequirement = false;
-                primitiveFailures.add(focusCls);
-            }
-        }
-
         nonEquivalentFocusClasses = nonEquivalentCases;
 
-        System.out.println("Total failures: " + nonEquivalentCases.size()+"/"+focusClasses.size());
-        System.out.println("Of failures, num named: " + namedFailures.size());
+        //System.out.println("Total failures: " + nonEquivalentCases.size()+"/"+focusClasses.size());
+        System.out.println("Num named failures: " + namedFailures.size()+"/"+namedFocusClasses.size());
         System.out.println("named failures: " + namedFailures);
-        System.out.println("Of failures, num primitive: " + primitiveFailures.size());
-        System.out.println("primitive failures: " + primitiveFailures);
+        //System.out.println("Of failures, num primitive: " + primitiveFailures.size());
+        //System.out.println("primitive failures: " + primitiveFailures);
 
 
         return satisfiesRequirement;

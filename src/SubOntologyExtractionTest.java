@@ -1,4 +1,5 @@
 import ExceptionHandlers.ReasonerException;
+import ResultsWriters.MapPrinter;
 import ResultsWriters.OntologySaver;
 import SubOntologyExtraction.SubOntologyExtractionHandler;
 import SubOntologyExtraction.SubOntologyRF2ConversionService;
@@ -17,23 +18,20 @@ public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "examples/authFormBugExample2.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/rheumatic-test/rheumatic_test_refset.txt");
+        File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/dentistry/dentistry_refset.txt");
 
         //background RF2 for RF2 conversion //TODO: always latest, or same as version used? Presumably latter.
         String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2021.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/dentistry/";
         boolean computeRF2 = false;
-        boolean verifySubontology = false;
+        boolean verifySubontology = true;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
-        //Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
-        Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
-        OWLDataFactory df = man.getOWLDataFactory();
-        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/A")));
+        Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
 
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
         generator.computeSubontology();
@@ -74,13 +72,11 @@ public class SubOntologyExtractionTest {
             boolean satisfiesEquivalentFocusConceptsRequirement = checker.namedFocusConceptsSatisfyEquivalence(generator.getFocusClasses(), subOntology, inputOntology);
             System.out.println("Satisfies equivalence of focus classes requirement?" + satisfiesEquivalentFocusConceptsRequirement);
 
-            /*
             System.out.println("==========================");
             System.out.println("VERIFICATION: Step (2) transitive closure equal within sig(subOntology)");
             System.out.println("==========================");
             boolean satisfiesTransitiveClosureReq = checker.satisfiesTransitiveClosureRequirement(subOntology, inputOntology);
             System.out.println("Satisfies transitive closure requirement?" + satisfiesTransitiveClosureReq);
-            */
 
             if (!satisfiesEquivalentFocusConceptsRequirement) {
                 Set<OWLClass> failedCases = checker.getFailedFocusClassEquivalenceCases();
@@ -88,14 +84,11 @@ public class SubOntologyExtractionTest {
                 System.out.println(failedCases);
                 System.out.println("Num failed cases: " + failedCases.size() + " out of: " + conceptsToDefine.size());
             }
-            /*
             if (!satisfiesTransitiveClosureReq) {
                 MapPrinter printer = new MapPrinter(outputPath);
                 printer.printGeneralMap(checker.getLatestSubOntologyClosureDiffs(), "subOntDiffMap.txt");
                 printer.printGeneralMap(checker.getLatestSourceOntologyClosureDiffs(), "sourceOntDiffMap.txt");
             }
-
-             */
         }
         OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
 

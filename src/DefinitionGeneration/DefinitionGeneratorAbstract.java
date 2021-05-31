@@ -101,7 +101,6 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
                 //If not primitive, add to check
                 iterator.add(parent);
                 iterator.previous();
-
             }
         }
 
