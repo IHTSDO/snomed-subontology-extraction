@@ -133,7 +133,7 @@ public abstract class InputSignatureHandler {
             classes.addAll(InputSignatureHandler.extractRefsetClassesFromDescendents(inputOntology, cls, true));
         }
 
-        String outputFilePath = "E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/rheumatic-test/rheumatic_test_refset.txt";
+        String outputFilePath = "E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/rheumatic-test/rheumatic_test_noPrimitives_refset.txt";
         InputSignatureHandler.printRefset(new HashSet<OWLEntity>(classes), outputFilePath);
     }
 }

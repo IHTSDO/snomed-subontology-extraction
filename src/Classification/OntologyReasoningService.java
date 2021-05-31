@@ -157,8 +157,7 @@ public class OntologyReasoningService {
                 redundantClasses.add(cls);
             }
             otherClasses.add(cls); //retain redundancies to check against (?)
-            // TODO: check, would be problematic if we have equivalent named classes or PVs, since this will mean both are removed. Is this ever the case with SCT?
-        }   // TODO:...but if A |= B, then we have B |= C, via this approach we can safely remove them as we identify them? Check.
+        }
 
         inputClassSet.removeAll(redundantClasses);
         return (inputClassSet);
@@ -175,8 +174,8 @@ public class OntologyReasoningService {
                 redundantRoles.add(role);
             }
             otherRoles.add(role); //retain redundancies to check against (?)
-            // TODO: check, would be problematic if we have equivalent named classes or PVs, since this will mean both are removed. Is this ever the case with SCT?
-        }   // TODO:...but if A |= B, then we have B |= C, via this approach we can safely remove them as we identify them? Check.
+
+        }
 
         inputRoleSet.removeAll(redundantRoles);
         return (inputRoleSet);

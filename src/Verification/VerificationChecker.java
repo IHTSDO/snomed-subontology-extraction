@@ -13,6 +13,7 @@ public class VerificationChecker {
     private Map<OWLClass, Set<OWLClass>> latestSubOntologyClosureDiffs;
     private Map<OWLClass, Set<OWLClass>> latestSourceOntologyClosureDiffs;
     private Set<OWLClass> nonEquivalentFocusClasses;
+    private static String snomedIRI = "http://snomed.info/id/";
     //private OWLOntologyManager man;
     //private OWLDataFactory df;
 
@@ -24,85 +25,8 @@ public class VerificationChecker {
         //df = man.getOWLDataFactory();
     }
 
-    /*
-    public boolean satisfiesEquivalenceForFocusConcepts(Set<OWLClass> focusClasses, OWLOntology subOntology, OWLOntology sourceOntology) throws OWLOntologyCreationException, ReasonerException, OWLOntologyStorageException {
-        OWLOntologyManager man = OWLManager.createOWLOntologyManager();
-        OWLDataFactory df = man.getOWLDataFactory();
-        boolean satisfiesRequirement = true;
-
-        OWLOntology subOntologyRenamed = man.createOntology();
-        man.addAxioms(subOntologyRenamed, subOntology.getAxioms());
-
-        //rename all focus concepts in subontology
-        Map<OWLClass, OWLClass> focusClassRenamingMap = new HashMap<OWLClass, OWLClass>();
-        OWLEntityRenamer renamer = new OWLEntityRenamer(man, new HashSet<OWLOntology>(Arrays.asList(subOntologyRenamed)));
-
-        for(OWLClass cls:focusClasses) {
-            System.out.println("Old cls IRI: " + cls.getIRI());
-            subOntologyRenamed.getOWLOntologyManager().applyChanges(renamer.changeIRI(cls, IRI.create(cls.getIRI()+"_renamed")));
-            focusClassRenamingMap.put(cls, df.getOWLClass(IRI.create(cls.getIRI()+"_renamed"))); //TODO: confirm this works as intended
-        }
-
-        //add all renaming axioms to source ontology. Note: begin by adding all axioms, since we require all non-logical axioms also, then remove irrelevant (non-focus/renamed) ones.
-        OWLOntology sourceOntologyWithRenamedSubOntology = man.createOntology();
-        man.addAxioms(sourceOntologyWithRenamedSubOntology, sourceOntology.getAxioms());
-        man.addAxioms(sourceOntologyWithRenamedSubOntology, subOntologyRenamed.getAxioms());
-        for(OWLAxiom ax:subOntologyRenamed.getAxioms()) {
-            if(Collections.disjoint(ax.getClassesInSignature(), focusClasses)) {
-                man.removeAxiom(sourceOntology, ax);
-            }
-        }
-
-        OntologySaver.saveOntology(subOntologyRenamed, "E:/Users/warren/Documents/aPostdoc/subontologies/subOntologyRenamed.owl");
-        OntologySaver.saveOntology(sourceOntologyWithRenamedSubOntology, "E:/Users/warren/Documents/aPostdoc/subontologies/sourceWithRenamings.owl");
-        OWLOntology testOnt = man.createOntology();
-        man.addAxioms(testOnt, subOntology.getAxioms());
-        man.addAxioms(testOnt, subOntologyRenamed.getAxioms());
-        OntologySaver.saveOntology(testOnt, "E:/Users/warren/Documents/aPostdoc/subontologies/subAndRenamingsTest.owl");
-
-
-        //check equivalence for each focus concept.
-        OntologyReasoningService reasoningService = new OntologyReasoningService(sourceOntologyWithRenamedSubOntology);
-        reasoningService.classifyOntology();
-
-        Set<OWLClass> nonEquivalentCases = new HashSet<OWLClass>();
-        for(OWLClass focusCls:focusClasses) {
-            //System.out.println("Focus cls: " + focusCls + " renaming: " + focusClassRenamingMap.get(focusCls));
-            System.out.println("Focus cls equivalent cases: " + reasoningService.getEquivalentClasses(focusCls));
-            System.out.println("Focus cls descendants: " + reasoningService.getDescendants(focusCls));
-            System.out.println("Focus cls ancestors: " + reasoningService.getAncestors(focusCls));
-            if(!reasoningService.getEquivalentClasses(focusCls).contains(focusClassRenamingMap.get(focusCls))) {
-                System.out.println("Focus cls not equivalent to renaming: " + focusCls);
-                nonEquivalentCases.add(focusCls);
-                satisfiesRequirement = false;
-            }
-        }
-
-        nonEquivalentFocusClasses = nonEquivalentCases;
-        Set<OWLClass> primitiveFailures = new HashSet<OWLClass>();
-        Set<OWLClass> namedFailures = new HashSet<OWLClass>();
-
-        for(OWLClass cls:nonEquivalentCases) {
-            if(reasoningService.isPrimitive(cls)) {
-                primitiveFailures.add(cls);
-            }
-            else {
-                namedFailures.add(cls);
-            }
-        }
-
-        System.out.println("Of failures, num named: " + namedFailures.size());
-        System.out.println("named failures: " + namedFailures);
-        System.out.println("Of failures, num primitive: " + primitiveFailures.size());
-        System.out.println("primitive failures: " + primitiveFailures);
-
-
-        return satisfiesRequirement;
-    }
-     */
-
      //TODO: temp test ver
-    public boolean satisfiesEquivalenceForFocusConcepts(Set<OWLClass> focusClasses, OWLOntology subOntology, OWLOntology sourceOntology) throws OWLOntologyCreationException, ReasonerException, OWLOntologyStorageException {
+    public boolean namedFocusConceptsSatisfyEquivalence(Set<OWLClass> focusClasses, OWLOntology subOntology, OWLOntology sourceOntology) throws OWLOntologyCreationException, ReasonerException, OWLOntologyStorageException {
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLDataFactory df = man.getOWLDataFactory();
         boolean satisfiesRequirement = true;
@@ -158,6 +82,10 @@ public class VerificationChecker {
             boolean isEquivalent = false;
             //TODO: split methods + improve readability
             reasoningService.setNewSourceOntologyAndClassify(sourceOntologyWithRenamedSubOntology);
+
+            System.out.println("Named focus: " + focusCls);
+            System.out.println("and equivs: " + reasoningService.getEquivalentClasses(focusCls));
+
             if(reasoningService.getEquivalentClasses(focusCls).contains(focusClassRenamingMap.get(focusCls))) {
                 isEquivalent = true;
             }
@@ -166,12 +94,7 @@ public class VerificationChecker {
                 System.out.println("Focus cls not equivalent to renaming: " + focusCls);
                 nonEquivalentCases.add(focusCls);
                 satisfiesRequirement = false;
-                if(reasoningService.isPrimitive(focusCls)) {
-                    primitiveFailures.add(focusCls);
-                }
-                else {
-                    namedFailures.add(focusCls);
-                }
+                namedFailures.add(focusCls);
             }
 
             //reset the sourceOntology with renamings instance
@@ -181,6 +104,7 @@ public class VerificationChecker {
         }
 
         //primitive case
+        /* //TODO: test 1 -- failed
         i=0;
         for(OWLClass focusCls:primitiveFocusClasses) {
             System.out.println("Primitive classes covered: " + i + "/"+primitiveFocusClasses.size() + " num failed: " + primitiveFailures.size());
@@ -188,7 +112,6 @@ public class VerificationChecker {
             //create ontology instance to rename class in
             OWLOntology subOntologyRenamed = man.createOntology(subOntology.getAxioms());
             OWLEntityRenamer renamer = new OWLEntityRenamer(man, new HashSet<OWLOntology>(Arrays.asList(subOntologyRenamed)));
-            System.out.println("Old cls IRI: " + focusCls.getIRI());
             subOntologyRenamed.getOWLOntologyManager().applyChanges(renamer.changeIRI(focusCls, IRI.create(focusCls.getIRI()+"_renamed")));
             focusClassRenamingMap.put(focusCls, df.getOWLClass(IRI.create(focusCls.getIRI()+"_renamed")));
 
@@ -208,17 +131,20 @@ public class VerificationChecker {
             OWLClass equivClassFocus = df.getOWLClass(IRI.create(focusCls.getIRI() + "_equiv"));
             OWLClass equivClassRenamedFocus = df.getOWLClass(IRI.create(focusClassRenamingMap.get(focusCls).getIRI() + "_equiv"));
             OWLEquivalentClassesAxiom equivFocus = df.getOWLEquivalentClassesAxiom(focusCls, equivClassFocus);
-            OWLEquivalentClassesAxiom equivRenamedFocus = df.getOWLEquivalentClassesAxiom(focusClassRenamingMap.get(focusCls), equivClassRenamedFocus);
+            //OWLEquivalentClassesAxiom equivRenamedFocus = df.getOWLEquivalentClassesAxiom(focusClassRenamingMap.get(focusCls), equivClassRenamedFocus);
 
-            man.addAxioms(sourceOntologyWithRenamedSubOntology, new HashSet<OWLAxiom>(Arrays.asList(equivFocus, equivRenamedFocus)));
-            addedRenamingAxioms.add(equivFocus);
-            addedRenamingAxioms.add(equivRenamedFocus);
+           // man.addAxioms(sourceOntologyWithRenamedSubOntology, new HashSet<OWLAxiom>(Arrays.asList(equivFocus, equivRenamedFocus)));
+           // addedRenamingAxioms.add(equivFocus);
+           // addedRenamingAxioms.add(equivRenamedFocus);
 
             //classify the source ontology with these new renaming axioms
             reasoningService.setNewSourceOntologyAndClassify(sourceOntologyWithRenamedSubOntology);
 
+            System.out.println("Primitive focus: " + focusCls);
+            System.out.println("Named equiv: " + equivClassFocus + " and equivs: " + reasoningService.getEquivalentClasses(equivClassFocus));
+
             //compare the two introduced equivalent classes
-            if(reasoningService.getEquivalentClasses(equivClassFocus).contains(equivRenamedFocus)) {
+            if(reasoningService.getEquivalentClasses(equivClassFocus).contains(equivClassRenamedFocus)) {
                 isEquivalent = true;
             }
             //if(!reasoningService.getEquivalentClasses(focusCls).contains(focusClassRenamingMap.get(focusCls))) {
@@ -226,12 +152,7 @@ public class VerificationChecker {
                 System.out.println("Focus cls not equivalent to renaming: " + focusCls);
                 nonEquivalentCases.add(focusCls);
                 satisfiesRequirement = false;
-                if(reasoningService.isPrimitive(focusCls)) {
-                    primitiveFailures.add(focusCls);
-                }
-                else {
-                    namedFailures.add(focusCls);
-                }
+                primitiveFailures.add(focusCls);
             }
 
             //reset the sourceOntology with renamings instance
@@ -239,74 +160,55 @@ public class VerificationChecker {
             i++;
             man.removeOntology(subOntologyRenamed);
         }
+         */
 
-        /* //TODO: temp
-        for(OWLClass focusCls:focusClasses) {
-            System.out.println("Classes covered: " + i + "/"+focusClasses.size() + " num failed, primitive: " + primitiveFailures.size() + ", named: " + namedFailures.size());
+        //primitive case //TODO: test 2 - does not work either.
+        for(OWLClass focusCls:primitiveFocusClasses) {
+            System.out.println("Primitive classes covered: " + i + "/" + primitiveFocusClasses.size() + " num failed: " + primitiveFailures.size());
 
             //create ontology instance to rename class in
             OWLOntology subOntologyRenamed = man.createOntology(subOntology.getAxioms());
             OWLEntityRenamer renamer = new OWLEntityRenamer(man, new HashSet<OWLOntology>(Arrays.asList(subOntologyRenamed)));
-            System.out.println("Old cls IRI: " + focusCls.getIRI());
-            subOntologyRenamed.getOWLOntologyManager().applyChanges(renamer.changeIRI(focusCls, IRI.create(focusCls.getIRI()+"_renamed")));
-            focusClassRenamingMap.put(focusCls, df.getOWLClass(IRI.create(focusCls.getIRI()+"_renamed")));
+            subOntologyRenamed.getOWLOntologyManager().applyChanges(renamer.changeIRI(focusCls, IRI.create(focusCls.getIRI() + "_renamed")));
+            focusClassRenamingMap.put(focusCls, df.getOWLClass(IRI.create(focusCls.getIRI() + "_renamed")));
 
             //add renaming axioms for the given focus class only
             Set<OWLAxiom> addedRenamingAxioms = new HashSet<OWLAxiom>();
-            for(OWLAxiom ax:subOntologyRenamed.getAxioms()) {
+            for (OWLAxiom ax : subOntologyRenamed.getAxioms()) {
                 //if axiom contains occurrence of the renaming, add it
-                if(ax.getClassesInSignature().contains(focusClassRenamingMap.get(focusCls))) {
+                if (ax.getClassesInSignature().contains(focusClassRenamingMap.get(focusCls))) {
                     addedRenamingAxioms.add(ax);
                 }
             }
             man.addAxioms(sourceOntologyWithRenamedSubOntology, addedRenamingAxioms);
 
-            boolean isEquivalent = false;
-            //TODO: split methods + improve readability
-            if(reasoningService.isPrimitive(focusCls)) { //primitive focus class case
-                OWLClass equivClassFocus = df.getOWLClass(IRI.create(focusCls.getIRI() + "_equiv"));
-                OWLClass equivClassRenamedFocus = df.getOWLClass(IRI.create(focusClassRenamingMap.get(focusCls).getIRI() + "_equiv"));
-                OWLEquivalentClassesAxiom equivFocus = df.getOWLEquivalentClassesAxiom(focusCls, equivClassFocus);
-                OWLEquivalentClassesAxiom equivRenamedFocus = df.getOWLEquivalentClassesAxiom(focusClassRenamingMap.get(focusCls), equivClassRenamedFocus);
+            OWLNamedIndividual a = df.getOWLNamedIndividual(IRI.create(snomedIRI + "a"));
+            OWLClassAssertionAxiom as1 = df.getOWLClassAssertionAxiom(df.getOWLObjectIntersectionOf(df.getOWLObjectComplementOf(focusCls), focusClassRenamingMap.get(focusCls)), a);
+            OWLClassAssertionAxiom as2 = df.getOWLClassAssertionAxiom(df.getOWLObjectIntersectionOf(df.getOWLObjectComplementOf(focusClassRenamingMap.get(focusCls)), focusCls), a);
 
-                man.addAxioms(sourceOntologyWithRenamedSubOntology, new HashSet<OWLAxiom>(Arrays.asList(equivFocus, equivRenamedFocus)));
-                addedRenamingAxioms.add(equivFocus);
-                addedRenamingAxioms.add(equivRenamedFocus);
+            //test direction 1
+            boolean direction1 = false;
+            man.addAxiom(sourceOntologyWithRenamedSubOntology, as1);
+            reasoningService.setNewSourceOntologyAndClassify(sourceOntologyWithRenamedSubOntology);
 
-                //classify the source ontology with these new renaming axioms
-                reasoningService.setNewSourceOntologyAndClassify(sourceOntologyWithRenamedSubOntology);
+            direction1 = reasoningService.isConsistent();
 
-                //compare the two introduced equivalent classes
-                if(reasoningService.getEquivalentClasses(equivClassFocus).contains(equivRenamedFocus)) {
-                    isEquivalent = true;
-                }
-            }
-            else { //named focus class case
-                reasoningService.setNewSourceOntologyAndClassify(sourceOntologyWithRenamedSubOntology);
-                if(reasoningService.getEquivalentClasses(focusCls).contains(focusClassRenamingMap.get(focusCls))) {
-                    isEquivalent = true;
-                }
-            }
-            //if(!reasoningService.getEquivalentClasses(focusCls).contains(focusClassRenamingMap.get(focusCls))) {
-            if(!isEquivalent) {
+            //test direction 2
+            boolean direction2 = false;
+            man.removeAxiom(sourceOntologyWithRenamedSubOntology, as1);
+            man.addAxiom(sourceOntologyWithRenamedSubOntology, as2);
+
+            reasoningService.setNewSourceOntologyAndClassify(sourceOntologyWithRenamedSubOntology);
+            direction2 = reasoningService.isConsistent();
+
+            if(direction1 || direction2) { //then not equivalent?
                 System.out.println("Focus cls not equivalent to renaming: " + focusCls);
                 nonEquivalentCases.add(focusCls);
                 satisfiesRequirement = false;
-                if(reasoningService.isPrimitive(focusCls)) {
-                    primitiveFailures.add(focusCls);
-                }
-                else {
-                    namedFailures.add(focusCls);
-                }
+                primitiveFailures.add(focusCls);
             }
-
-            //reset the sourceOntology with renamings instance
-            man.removeAxioms(sourceOntologyWithRenamedSubOntology, addedRenamingAxioms);
-            i++;
-            man.removeOntology(subOntologyRenamed);
-
         }
-         */
+
         nonEquivalentFocusClasses = nonEquivalentCases;
 
         System.out.println("Total failures: " + nonEquivalentCases.size()+"/"+focusClasses.size());

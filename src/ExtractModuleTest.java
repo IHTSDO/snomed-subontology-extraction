@@ -21,7 +21,7 @@ public class ExtractModuleTest {
         File signatureFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/rheumatic-test/rheumatic_test_refset.txt");
         Set<OWLEntity> signature = new HashSet<OWLEntity>(InputSignatureHandler.readRefset(signatureFile));
 
-        Set<ModuleType> typesToExtract = new HashSet<ModuleType>(Arrays.asList(ModuleType.BOT));// ModuleType.TOP));
+        Set<ModuleType> typesToExtract = new HashSet<ModuleType>(Arrays.asList(ModuleType.STAR));// ModuleType.TOP));
         Map<ModuleType, OWLOntology> moduleMap = ModuleExtractionHandler.extractMultipleModuleTypes(inputOntology, signature, typesToExtract);
 
 

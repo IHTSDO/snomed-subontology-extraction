@@ -157,6 +157,7 @@ public abstract class DefinitionGenerator {
     }
 
     protected void constructDefinitionAxiom(OWLClass definedClass, Set<OWLClassExpression> definingConditions) {
+        //TODO: 28-05-21 -- issues with defined concepts that have a separate necessary condition that is not also sufficient, authoring form not equivalent!
         definingConditions.remove(df.getOWLThing());
         definingConditions.remove(df.getOWLNothing());
         if (definingConditions.size() == 0) {
