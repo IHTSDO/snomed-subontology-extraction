@@ -7,17 +7,10 @@ import DefinitionGeneration.DefinitionGeneratorNNF;
 import DefinitionGeneration.RedundancyOptions;
 import ExceptionHandlers.ReasonerException;
 import NamingApproach.IntroducedNameHandler;
-import ResultsWriters.OntologySaver;
-import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
-import org.semanticweb.owlapi.model.parameters.Imports;
-import org.semanticweb.owlapi.reasoner.OWLReasoner;
-import org.semanticweb.owlapi.reasoner.structural.StructuralReasoner;
-import tools.InputSignatureHandler;
 import tools.ModuleExtractionHandler;
 import uk.ac.manchester.cs.owlapi.modularity.ModuleType;
 
-import java.io.File;
 import java.util.*;
 
 /*
@@ -33,20 +26,21 @@ Includes
 //      however, in abstract form: B <= C does not imply P1 <= P2, so cannot necessarily remove them!
 public class SubOntologyExtractionHandler {
 
-    private final OWLOntology sourceOntology;
-    private OntologyReasoningService sourceOntologyReasoningService;
-    private OntologyReasoningService subOntologyReasoningService;
     private final OWLOntologyManager man;
     private final OWLDataFactory df;
+    private final OWLOntology sourceOntology;
+    private OWLOntology subOntology;
+    private OWLOntology nnfOntology;
+    private OntologyReasoningService sourceOntologyReasoningService;
+    private OntologyReasoningService subOntologyReasoningService;
     private IntroducedNameHandler sourceOntologyNamer;
     private final Set<OWLAxiom> focusConceptDefinitions;
     private final Set<OWLAxiom> nnfDefinitions;
-    private Set<OWLClass> focusClasses;
-    private OWLOntology subOntology;
-    private OWLOntology nnfOntology;
     private final OWLClass sctTop;
-    //TODO: temp variable, implement stats handler
+    //TODO: temp variables, implement data handler
     //classes and definitions added during signature expansion
+    private Set<OWLClass> focusClasses;
+    private Set<OWLClass> grouperClasses = new HashSet<>();
     private final Set<OWLClass> definedSupportingClasses = new HashSet<>();
     private Set<OWLClass> additionalClassesInExpandedSignature = new HashSet<>();
     private final Set<OWLAxiom> additionalSupportingClassDefinitions = new HashSet<>();
@@ -134,22 +128,23 @@ public class SubOntologyExtractionHandler {
         //add property inclusion axioms for properties
         populateRBox();
 
+        //shrinking hierarchy. P1 <= P2 <= P3   where P2 has no conjunctive definition (i.e. just P2 <= P3)
+        shrinkAtomicHierarchy();
+
         //add grouper classes
         addGrouperClasses();
 
         //add atomic class hierarchy where needed. Classes in the focus set, or classes whose definitions have been added, do not need to be considered here.
-        addAtomicClassHierarchy();
+        completeSubsumptionTransitiveClosure();
 
-        //add top level classes
+        //add top level classes -- //TODO: change naming, clean.
         addTopLevelClasses();
-
-        //add top level roles
-        //addTopLevelRoles();
 
         //TODO: temp printing, get stats handler and remove.
         System.out.println("Added classes: " + additionalClassesInExpandedSignature);
     }
 
+    /*
     private void addInitialGCIAxioms() {
         //general layout: check if class in subontology signature has GCI axioms associated
         //OR
@@ -164,6 +159,7 @@ public class SubOntologyExtractionHandler {
             }
         }
     }
+     */
 
     private void computeRequiredSupportingClassDefinitions() {
         List<OWLClass> expressionsToCheck = new ArrayList<>();
@@ -334,21 +330,6 @@ public class SubOntologyExtractionHandler {
         return associatedGCIs;
     }
 
-    /*
-    private void populateRBox() {
-        Set<OWLObjectProperty> subOntologyRoles = subOntology.getObjectPropertiesInSignature();
-
-        //currently: add all RBox axioms for object properties in the subontology (post definition expansion)
-        /*
-        Set<OWLAxiom> roleAxioms = new HashSet<>();
-        for (OWLAxiom ax : sourceOntology.getRBoxAxioms(Imports.fromBoolean(false))) {
-            //if (!Collections.disjoint(ax.getObjectPropertiesInSignature(), subOntologyProperties)) {
-            if(subOntologyRoles.containsAll(ax.getObjectPropertiesInSignature())) {
-                roleAxioms.add(ax);
-            }
-        }
-    }
-     */
     //temp: compute STAR module for RBox population
     private void populateRBox() throws OWLOntologyCreationException {
         Set<OWLEntity> signature = new HashSet<OWLEntity>();
@@ -369,6 +350,65 @@ public class SubOntologyExtractionHandler {
          */
     }
 
+
+    //Due to definition expansion, some cases will have flat hierarchy e.g. A <= B <= C, where B does not have any non-isA structure in its definition. Can collapse this into
+    //A <= C. TODO: improve, this is just initial shrinking. Note: implementation here avoids need to classify ontology, otherwise would need to reclassify post-removal.
+    private void shrinkAtomicHierarchy() {
+        //for each primitive, atomically defined supporting concept, check inclusions with it as a subclass. If superclass is also atomically defined, gather.
+        Set<OWLClass> atomicPrimitives = new HashSet<OWLClass>();
+        for(OWLClass cls:subOntology.getClassesInSignature()) {
+            if(!subOntologyReasoningService.isPrimitive(cls)) {
+                continue;
+            }
+            for(OWLSubClassOfAxiom ax:subOntology.getSubClassAxiomsForSubClass(cls)) {
+                if(ax.getSuperClass() instanceof OWLClass && subOntologyReasoningService.isPrimitive((OWLClass) ax.getSuperClass())) {
+                    OWLClass primitiveParent = (OWLClass) ax.getSuperClass();
+                    Set<OWLSubClassOfAxiom> definitionsOfPrimitive = subOntology.getSubClassAxiomsForSubClass(primitiveParent);
+
+                    boolean isAtomicallyDefined = true;
+                    if(definitionsOfPrimitive.size() > 1) {
+                        isAtomicallyDefined = false;
+                    }
+                    else {
+                        for (OWLSubClassOfAxiom subAx : definitionsOfPrimitive) {
+                            if (!(subAx.getSuperClass() instanceof OWLClass)) {
+                                isAtomicallyDefined = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(isAtomicallyDefined) {
+                        atomicPrimitives.add(primitiveParent);
+                    }
+                }
+            }
+        }
+
+        //check each atomically defined primtive "P": if it is only used in axioms of the form P1 <= P, where "P1" is not a focus concept, remove it.
+        for(OWLClass primitive:atomicPrimitives) {
+            Set<OWLLogicalAxiom> axiomsContainingPrimitive = new HashSet<OWLLogicalAxiom>();
+            for(OWLLogicalAxiom ax:subOntology.getLogicalAxioms()) {
+                if(ax.containsEntityInSignature(primitive)) {
+                    axiomsContainingPrimitive.add(ax);
+                }
+            }
+
+            boolean usedElsewhere = false;
+            for(OWLLogicalAxiom ax:axiomsContainingPrimitive) {
+                if(ax.getClassesInSignature().contains(primitive)) {
+                    if(!(ax instanceof OWLSubClassOfAxiom && ((OWLSubClassOfAxiom)ax).getSuperClass().equals(primitive))) {
+                        usedElsewhere = true;
+                        break;
+                    }
+                }
+            }
+            if(!usedElsewhere) {
+                man.removeAxioms(subOntology, axiomsContainingPrimitive);
+            }
+        }
+    }
+
     private void addGrouperClasses() {
         Set<OWLClass> topLevelSCTGroupers = new HashSet<>();
         for(OWLSubClassOfAxiom ax: sourceOntology.getSubClassAxiomsForSuperClass(sctTop)) {
@@ -383,6 +423,7 @@ public class SubOntologyExtractionHandler {
         for(OWLClass cls:topLevelSCTGroupers) {
             if(!Collections.disjoint(subOntology.getClassesInSignature(), sourceOntologyReasoningService.getDescendants(cls))) {
                 man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(cls, sctTop));
+                grouperClasses.add(cls);
             }
         }
     }
@@ -403,11 +444,14 @@ public class SubOntologyExtractionHandler {
         }
     }
 
-    private void addAtomicClassHierarchy() throws ReasonerException {
+    private void completeSubsumptionTransitiveClosure() throws ReasonerException {
         Set<OWLClass> partiallyDefinedSupportingClasses = subOntology.getClassesInSignature();
         partiallyDefinedSupportingClasses.removeAll(focusClasses);
         partiallyDefinedSupportingClasses.removeAll(definedSupportingClasses);
         partiallyDefinedSupportingClasses.remove(sctTop);
+
+        //also include groupers
+        partiallyDefinedSupportingClasses.addAll(grouperClasses);
 
         for (OWLClass cls : partiallyDefinedSupportingClasses) {
             //subOntologyReasoningService.classifyOntology();

@@ -24,14 +24,18 @@ public class SubOntologyExtractionTest {
         //background RF2 for RF2 conversion //TODO: always latest, or same as version used? Presumably latter.
         String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2021.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/dentistry/";
-        boolean computeRF2 = true;
-        boolean verifySubontology = false;
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/";
+        boolean computeRF2 = false;
+        boolean verifySubontology = true;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
-        Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+        //Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+        OWLDataFactory df = man.getOWLDataFactory();
+        Set<OWLClass> conceptsToDefine = new HashSet<>();
+        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + "716299008")));
+        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + "308635004")));
 
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
         generator.computeSubontology();
@@ -67,16 +71,21 @@ public class SubOntologyExtractionTest {
             boolean satisfiesTransitiveClosureReq = checker.satisfiesTransitiveClosureRequirement(subOntology, inputOntology);
             System.out.println("Satisfies transitive closure requirement?" + satisfiesTransitiveClosureReq);
 
-            if (!satisfiesEquivalentFocusConceptsRequirement) {
-                Set<OWLClass> failedCases = checker.getFailedFocusClassEquivalenceCases();
-                System.out.println("Failed cases for equivalence: ");
-                System.out.println(failedCases);
-                System.out.println("Num failed cases: " + failedCases.size() + " out of: " + conceptsToDefine.size());
-            }
-            else if (!satisfiesTransitiveClosureReq) {
-                MapPrinter printer = new MapPrinter(outputPath);
-                printer.printGeneralMap(checker.getLatestSubOntologyClosureDiffs(), "subOntDiffMap.txt");
-                printer.printGeneralMap(checker.getLatestSourceOntologyClosureDiffs(), "sourceOntDiffMap.txt");
+            if (!satisfiesEquivalentFocusConceptsRequirement || !satisfiesTransitiveClosureReq) {
+                if(!satisfiesEquivalentFocusConceptsRequirement) {
+                    System.out.println("Equivalence test failed.");
+                    Set<OWLClass> failedCases = checker.getFailedFocusClassEquivalenceCases();
+                    System.out.println("Failed cases for equivalence: ");
+                    System.out.println(failedCases);
+                    System.out.println("Num failed cases: " + failedCases.size() + " out of: " + conceptsToDefine.size());
+                }
+                if(!satisfiesTransitiveClosureReq) {
+                    System.out.println("Transitive Closure test failed");
+                    System.out.println("Failed classes: " + checker.getLatestSourceOntologyClosureDiffs().keySet());
+                    MapPrinter printer = new MapPrinter(outputPath);
+                    printer.printGeneralMap(checker.getLatestSubOntologyClosureDiffs(), "subOntDiffMap.txt");
+                    printer.printGeneralMap(checker.getLatestSourceOntologyClosureDiffs(), "sourceOntDiffMap.txt");
+                }
             }
             else {
                 System.out.println("Verification passed.");
