@@ -30,6 +30,7 @@ public class OntologyReasoningService {
         System.out.println("Classifying ontology (precomputing hierarchy).");
         reasoner.flush();
         reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
+
     }
 
     public OWLOntology getClassifiedOntology() throws OWLOntologyCreationException {

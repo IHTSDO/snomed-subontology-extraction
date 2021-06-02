@@ -8,7 +8,6 @@ import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
-import tools.InputSignatureHandler;
 
 import java.io.*;
 import java.util.HashSet;
@@ -62,7 +61,7 @@ public class SubOntologyExtractionTest {
             System.out.println("==========================");
             System.out.println("VERIFICATION: Step (1) focus concept equivalence");
             System.out.println("==========================");
-            boolean satisfiesEquivalentFocusConceptsRequirement = checker.namedFocusConceptsSatisfyEquivalence(generator.getFocusClasses(), subOntology, inputOntology);
+            boolean satisfiesEquivalentFocusConceptsRequirement = checker.namedFocusConceptsSatisfyEquivalence(generator.getFocusConcepts(), subOntology, inputOntology);
             System.out.println("Satisfies equivalence of focus classes requirement?" + satisfiesEquivalentFocusConceptsRequirement);
 
             System.out.println("==========================");
