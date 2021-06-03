@@ -199,6 +199,10 @@ public abstract class DefinitionGenerator {
         return latestDefinition;
     }
 
+    public void removeLastDefinition() {
+        generatedDefinitions.remove(generatedDefinitions.get(generatedDefinitions.size()-1));
+    }
+
     public Set<OWLClassExpression> getLatestNecessaryConditions() {
         return this.latestNecessaryConditions;
     }

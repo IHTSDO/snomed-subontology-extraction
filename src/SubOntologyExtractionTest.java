@@ -8,6 +8,7 @@ import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
+import tools.InputSignatureHandler;
 
 import java.io.*;
 import java.util.HashSet;
@@ -17,24 +18,20 @@ public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/dentistry/dentistry_refset.txt");
+        File inputOntologyFile = new File(inputPath + "sct-july-2020.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/era/era_edta_refset.txt");
 
-        //background RF2 for RF2 conversion //TODO: always latest, or same as version used? Presumably latter.
-        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2021.zip";
+        //background RF2 for RF2 conversion //ensure same as version used for subontology generation (above).
+        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-july-2020.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/era/";
         boolean computeRF2 = false;
-        boolean verifySubontology = true;
+        boolean verifySubontology = false;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
-        //Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
-        OWLDataFactory df = man.getOWLDataFactory();
-        Set<OWLClass> conceptsToDefine = new HashSet<>();
-        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + "716299008")));
-        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + "308635004")));
+        Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
 
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
         generator.computeSubontology();

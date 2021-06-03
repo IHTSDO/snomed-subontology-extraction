@@ -215,7 +215,6 @@ public class VerificationChecker {
             Set<OWLClass> nearestChildrenInSig = new HashSet<>();
             while(childIterator.hasNext()) {
                 OWLClass child = childIterator.next();
-                System.out.println("Current child: " + child);
                 //if in signature, store
                 if(subOntology.getClassesInSignature().contains(child)) {
                     nearestChildrenInSig.add(child);
