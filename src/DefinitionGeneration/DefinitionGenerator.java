@@ -185,6 +185,12 @@ public abstract class DefinitionGenerator {
             generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
         }
         latestNecessaryConditions = definingConditions;
+
+        //TODO: 03-06 temp. Improve.
+        if(namer.isNamedGCI(definedClass)) {
+            removeLastDefinition();
+        }
+
     }
 
     public List<OWLAxiom> getGeneratedDefinitions() {

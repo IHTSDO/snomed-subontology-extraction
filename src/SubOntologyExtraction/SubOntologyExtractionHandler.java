@@ -88,6 +88,11 @@ public class SubOntologyExtractionHandler {
         //Compute initial abstract (authoring) form definitions for focus classes
         computeFocusConceptDefinitions();
 
+        subOntology = man.createOntology(focusConceptDefinitions);
+
+        //add focus concept GCIs
+        addFocusConceptGCIAxioms();
+
         //include authoring definitions, role inclusions (rbox?), GCIs for defined classes
         populateSubOntology();
 
@@ -110,8 +115,6 @@ public class SubOntologyExtractionHandler {
     }
 
     private void populateSubOntology() throws OWLOntologyCreationException, ReasonerException {
-        subOntology = man.createOntology(focusConceptDefinitions);
-
         //definition expansion loop
         computeRequiredSupportingClassDefinitions();
 
@@ -141,22 +144,28 @@ public class SubOntologyExtractionHandler {
         System.out.println("Added classes: " + additionalConceptsInExpandedSignature);
     }
 
-    /*
-    private void addInitialGCIAxioms() {
-        //general layout: check if class in subontology signature has GCI axioms associated
-        //OR
+    private void addFocusConceptGCIAxioms() {
         //if there are any classes in the subontology such that they are a subclass of a GCI (RHS) concept e.g. A <= ... <= B, P1 and R some C <= B ??
+        //OR if the GCI is part of a focus concept definition
         Set<OWLClass> namedGCIs = sourceOntologyNamer.retrieveAllNamesForGCIs();
+
+        Set<OWLClass> gciNamesInFocusConceptDefinitions = new HashSet<OWLClass>();
+        for(OWLClass focusConcept:focusConcepts) {
+            if(!sourceOntologyNamer.returnNamesOfGCIsForSuperConcept(focusConcept).isEmpty()) {
+                gciNamesInFocusConceptDefinitions.addAll(sourceOntologyNamer.returnNamesOfGCIsForSuperConcept(focusConcept));
+            }
+        }
+
+        //if GCI is in focus definition, or a focus concept is a descendent of this definition, then compute authoring form of GCI LHS and add.
         for(OWLClass name:namedGCIs) {
-            //if(!Collections.disjoint(sourceOntologyReasoningService.getDescendants(name, true), focusClasses)) {
-            if(!Collections.disjoint(sourceOntologyReasoningService.getDescendants(name), focusConcepts)) {
+            if(!Collections.disjoint(sourceOntologyReasoningService.getDescendants(name), focusConcepts) || gciNamesInFocusConceptDefinitions.contains(name)) {
                 abstractDefinitionsGenerator.generateDefinition(name, redundancyOptions);
                 man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(df.getOWLObjectIntersectionOf(abstractDefinitionsGenerator.getLatestNecessaryConditions()),
                                                       sourceOntologyNamer.retrieveSuperClassFromNamedGCI(name)));
             }
         }
     }
-     */
+
 
     private void computeRequiredSupportingClassDefinitions() {
         List<OWLClass> expressionsToCheck = new ArrayList<>();
@@ -321,7 +330,6 @@ public class SubOntologyExtractionHandler {
             for(OWLClass gciName:gciNames) {
                 abstractDefinitionsGenerator.generateDefinition(gciName, redundancyOptions);
                 //TODO: 02-06-21, need better handling of this issue here -- do not want to store GCI definitions (would introduce fresh concept names into subontology)
-                abstractDefinitionsGenerator.removeLastDefinition();
 
                 associatedGCIs.add(df.getOWLSubClassOfAxiom(df.getOWLObjectIntersectionOf(abstractDefinitionsGenerator.getLatestNecessaryConditions()),suppCls));
             }
@@ -374,7 +382,8 @@ public class SubOntologyExtractionHandler {
     }
      */
     private void completeSubsumptionTransitiveClosure() throws ReasonerException {
-        Set<OWLClass> partiallyDefinedSupportingClasses = subOntology.getClassesInSignature();
+        Set<OWLClass> partiallyDefinedSupportingClasses = new HashSet<>();
+        partiallyDefinedSupportingClasses.addAll(subOntology.getClassesInSignature());
         partiallyDefinedSupportingClasses.removeAll(focusConcepts);
         partiallyDefinedSupportingClasses.removeAll(definedSupportingConcepts);
         //partiallyDefinedSupportingClasses.remove(sctTop);

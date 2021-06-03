@@ -168,6 +168,9 @@ public class IntroducedNameHandler {
     }
 
     public Set<OWLClass> returnNamesOfGCIsForSuperConcept(OWLClass cls) {
+        if(!superGCIConceptAndNameMap.containsKey(cls)) {
+            return new HashSet<OWLClass>();
+        }
         return superGCIConceptAndNameMap.get(cls);
     }
 

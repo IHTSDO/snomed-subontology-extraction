@@ -79,13 +79,15 @@ public abstract class InputSignatureHandler {
         Set<OWLClass> classes = new HashSet<OWLClass>();
         try (BufferedReader br = new BufferedReader(new FileReader(refsetFile))) {
             String inLine = "";
-            br.readLine();
+            //br.readLine();
             while ((inLine = br.readLine()) != null) {
                 // process the line, remove whitespace
-                inLine = inLine.replaceAll("[\\s\\p{Z}]+", "").trim();
-                System.out.println("Adding class: " + inLine + " to input");
-                //if()
-                classes.add(df.getOWLClass(IRI.create(snomedIRIString + inLine)));
+                if(inLine.matches(".*\\d+.*")) {
+                    inLine = inLine.replaceAll("[\\s\\p{Z}]+", "").trim();
+                    System.out.println("Adding class: " + inLine + " to input");
+                    //if()
+                    classes.add(df.getOWLClass(IRI.create(snomedIRIString + inLine)));
+                }
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
