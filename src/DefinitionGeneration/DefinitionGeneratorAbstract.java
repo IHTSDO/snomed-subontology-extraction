@@ -27,20 +27,20 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
     }
 
     //TODO: move to super, code duplication with NNF
-    public void generateDefinition(OWLClass inputClass, Set<RedundancyOptions> redundancyOptions) {
+    public void generateDefinition(OWLClass classToDefine, Set<RedundancyOptions> redundancyOptions) {
         //separate ancestors into classes and PVs (represented by new name classes)
-        Set<OWLClass> ancestors = reasonerService.getAncestors(inputClass);
+        Set<OWLClass> ancestors = reasonerService.getAncestors(classToDefine);
         Set<OWLClass> ancestorRenamedPVs = extractNamedPVs(ancestors);
         Set<OWLClass> primitiveAncestors = new HashSet<OWLClass>();
-        primitiveAncestors.addAll(computeClosestPrimitiveAncestors(inputClass));
+        primitiveAncestors.addAll(computeClosestPrimitiveAncestors(classToDefine));
 
         //remove classes representing introduced names
         primitiveAncestors.removeAll(ancestorRenamedPVs);
         primitiveAncestors.removeAll(extractNamedGCIs(primitiveAncestors));
 
         //GCI handling: computing authoring form of GCI requires naming the LHS, meaning GCIName <= originalGCIClass, which is undesirable.
-        if(namer.isNamedGCI(inputClass)) { //TODO: 31/05/21 -- still needed?
-            OWLClass originalGCIConcept = namer.retrieveSuperClassFromNamedGCI(inputClass);
+        if(namer.isNamedGCI(classToDefine)) { //TODO: 31/05/21 -- still needed?
+            OWLClass originalGCIConcept = namer.retrieveSuperClassFromNamedGCI(classToDefine);
             primitiveAncestors.remove(originalGCIConcept);
             primitiveAncestors.addAll(computeClosestPrimitiveAncestors(originalGCIConcept));
         }
@@ -54,6 +54,41 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         //}
         if(redundancyOptions.contains(RedundancyOptions.eliminateLessSpecificRedundancy)) {
             reducedParentNamedClasses = reduceClassSet(primitiveAncestors);
+            System.out.println("Parents before GCI check: " + reducedParentNamedClasses);
+
+            boolean gciParentsChanged = false;
+            if(redundancyOptions.contains(RedundancyOptions.eliminateSufficientProximalGCIs)) {
+                System.out.println("Eliminating sufficient proximal GCI concepts");
+                Set<OWLClass> parentsAfterCheckingGCIs = eliminateSufficientProximalGCIConcepts(classToDefine, reducedParentNamedClasses);
+                parentsAfterCheckingGCIs = reduceClassSet(parentsAfterCheckingGCIs); //TODO: unnecessary additional call?
+
+                if(!parentsAfterCheckingGCIs.equals(reducedParentNamedClasses)) {
+                    gciParentsChanged = true;
+                    reducedParentNamedClasses = parentsAfterCheckingGCIs;
+                }
+            }
+            //if parents changed, then eliminate PVs inherited from type 1 gci concepts.
+            System.out.println("Parents after gci check: " + reducedParentNamedClasses);
+            if(gciParentsChanged) {
+                System.out.println("GCI parents changed for class: " + classToDefine);
+                Set<OWLClass> pvsToCheck = new HashSet<>();
+                pvsToCheck.addAll(ancestorRenamedPVs);
+                for(OWLClass pv:pvsToCheck) {
+                    System.out.println("Checking pv: " + pv);
+                    boolean pvInheritedFromTypeOneGCI = true;
+                    for(OWLClass parent:reducedParentNamedClasses) {
+                        System.out.println("Parent check against: " + parent);
+                        System.out.println("Ancestors of parent: " + reasonerService.getAncestors(parent));
+                        //if an ancestor of a retained parent, or a direct ancestor of the class being defined, keep.
+                        if(reasonerService.getAncestors(parent).contains(pv) || reasonerService.getDirectAncestors(classToDefine).contains(pv)) {
+                            pvInheritedFromTypeOneGCI = false;
+                        }
+                    }
+                    if(pvInheritedFromTypeOneGCI) {
+                        ancestorRenamedPVs.remove(pv);
+                    }
+                }
+            }
             reducedAncestorPVs = replaceNamesWithPVs(reduceClassSet(ancestorRenamedPVs));
         }
         else {
@@ -64,19 +99,14 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             reducedAncestorPVs = eliminateRoleGroupRedundancies(reducedAncestorPVs);
         }
         if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
-            reducedAncestorPVs = eliminateReflexivePVRedundancies(inputClass, reducedAncestorPVs);
-        }
-        if(redundancyOptions.contains(RedundancyOptions.eliminateSufficientProximalGCIs)) {
-            System.out.println("Eliminating sufficient proximal GCI concepts");
-            reducedParentNamedClasses = eliminateSufficientProximalGCIConcepts(inputClass, reducedParentNamedClasses);
-            reducedParentNamedClasses = reduceClassSet(reducedParentNamedClasses); //TODO: unnecessary additional call?
+            reducedAncestorPVs = eliminateReflexivePVRedundancies(classToDefine, reducedAncestorPVs);
         }
 
         Set<OWLClassExpression> nonRedundantAncestors = new HashSet<OWLClassExpression>();
         nonRedundantAncestors.addAll(reducedParentNamedClasses);
         nonRedundantAncestors.addAll(reducedAncestorPVs);
 
-        constructDefinitionAxiom(inputClass, nonRedundantAncestors);
+        constructDefinitionAxiom(classToDefine, nonRedundantAncestors);
     }
 
     //possibly quicker than taking all primitive ancestors & redundancy checking?
@@ -149,7 +179,6 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
                 newProximalPrimitiveParents.add(parent);
             }
         }
-
         return newProximalPrimitiveParents;
     }
 
