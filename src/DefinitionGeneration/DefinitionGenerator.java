@@ -16,6 +16,7 @@ public abstract class DefinitionGenerator {
     private OWLOntologyManager man;
     protected OWLDataFactory df;
     protected List<OWLAxiom> generatedDefinitions;
+    protected List<OWLAxiom> gciDefinitions;
     protected Set<OWLClassExpression> latestNecessaryConditions;
     protected Set<OWLAxiom> undefinedClasses;
 
@@ -27,6 +28,7 @@ public abstract class DefinitionGenerator {
         df = man.getOWLDataFactory();
         //subPropertiesOfreflexiveProperties = new ArrayList<OWLObjectPropertyExpression>();
         generatedDefinitions = new ArrayList<OWLAxiom>();
+        gciDefinitions = new ArrayList<OWLAxiom>();
         undefinedClasses = new HashSet<OWLAxiom>(); //TODO: add "memory" of generated defs somewhere?
     }
 
@@ -166,30 +168,40 @@ public abstract class DefinitionGenerator {
             undefinedClasses.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
             return;
         }
-        else if(definingConditions.size() == 1) {
+        OWLAxiom definingAxiom = null;
+        if(definingConditions.size() == 1) {
             OWLClassExpression definingCondition = (new ArrayList<OWLClassExpression>(definingConditions)).get(0);
             if(!backgroundOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
                 //System.out.println("Equivalent class axiom for class: " + definedClass);
-                generatedDefinitions.add(df.getOWLEquivalentClassesAxiom(definedClass, definingCondition));
+                //generatedDefinitions.add(df.getOWLEquivalentClassesAxiom(definedClass, definingCondition));
+                definingAxiom = df.getOWLEquivalentClassesAxiom(definedClass, definingCondition);
             }
             else {
                 //System.out.println("Necessary class axiom for class: " + definedClass);
-                generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, definingCondition));
+                //generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, definingCondition));
+                definingAxiom = df.getOWLSubClassOfAxiom(definedClass, definingCondition);
             }
-            return;
-        }
-        if(!backgroundOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
-            generatedDefinitions.add(df.getOWLEquivalentClassesAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
         }
         else {
-            generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
-        }
-        latestNecessaryConditions = definingConditions;
+            if (!backgroundOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
+                //generatedDefinitions.add(df.getOWLEquivalentClassesAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
+                definingAxiom = df.getOWLEquivalentClassesAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions));
 
-        //TODO: 03-06 temp. Improve.
-        if(namer.isNamedGCI(definedClass)) {
-            removeLastDefinition();
+            } else {
+                //generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
+                definingAxiom = df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions));
+            }
         }
+
+        latestNecessaryConditions = definingConditions;
+        //store gci definitions separately.
+        if(namer.isNamedGCI(definedClass)) {
+            System.out.println("GCI DEFINITION ADDED: " + definingAxiom);
+            gciDefinitions.add(definingAxiom);
+            return;
+        }
+        generatedDefinitions.add(definingAxiom);
+        return;
 
     }
 

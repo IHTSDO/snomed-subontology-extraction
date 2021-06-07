@@ -23,7 +23,7 @@ public class IntroducedNameHandler {
 
     private Map<OWLObjectSomeValuesFrom, OWLClass> pvNamingMap;
     private Map<OWLClass, OWLObjectSomeValuesFrom> namingPvMap;
-    private Map<OWLClass, OWLClassExpression> namedGCIMap;
+    private Map<OWLClass, OWLClassExpression> gciNameAndExpressionMap;
     private Map<OWLClass, OWLClass> nameAndSuperGCIConceptMap; //TODO: improve.
     private Map<OWLClass, Set<OWLClass>> superGCIConceptAndNameMap;
     private OWLOntology originalOntology;
@@ -34,7 +34,7 @@ public class IntroducedNameHandler {
     public IntroducedNameHandler(OWLOntology inputOntology) {
         pvNamingMap = new HashMap<OWLObjectSomeValuesFrom, OWLClass>();
         namingPvMap = new HashMap<OWLClass, OWLObjectSomeValuesFrom>();
-        namedGCIMap  = new HashMap<OWLClass, OWLClassExpression>();
+        gciNameAndExpressionMap = new HashMap<OWLClass, OWLClassExpression>();
         nameAndSuperGCIConceptMap = new HashMap<OWLClass, OWLClass>();
         superGCIConceptAndNameMap = new HashMap<OWLClass, Set<OWLClass>>();
         originalOntology = inputOntology;
@@ -59,7 +59,7 @@ public class IntroducedNameHandler {
         nameGCIs();
 
         Set<OWLAxiom> gciNamingAxioms = new HashSet<OWLAxiom>();
-        for(Map.Entry<OWLClass, OWLClassExpression> entry:namedGCIMap.entrySet()) {
+        for(Map.Entry<OWLClass, OWLClassExpression> entry: gciNameAndExpressionMap.entrySet()) {
             gciNamingAxioms.add(df.getOWLEquivalentClassesAxiom(entry.getValue(), entry.getKey()));
         }
 
@@ -107,7 +107,7 @@ public class IntroducedNameHandler {
                     OWLClass gciClass = (OWLClass) ax.getSuperClass();
                     OWLClass gciNameClass = df.getOWLClass(IRI.create(IRIName, gciNameString));
 
-                    namedGCIMap.putIfAbsent(gciNameClass, gciExpression);
+                    gciNameAndExpressionMap.putIfAbsent(gciNameClass, gciExpression);
                     nameAndSuperGCIConceptMap.putIfAbsent(gciNameClass, gciClass);
                     gciNames.add(gciNameClass);
                 }
@@ -154,13 +154,13 @@ public class IntroducedNameHandler {
         printer.printNamingsForPVs(pvNamingMap);
     }
 
-    //GCI naming methods //TODO: split classes
+    //GCI naming methods
     private String produceGCIName() {
-        return "GCI_" + namedGCIMap.size();
+        return "GCI_" + gciNameAndExpressionMap.size();
     }
 
     public boolean isNamedGCI(OWLClass cls) {
-        return namedGCIMap.containsKey(cls);
+        return gciNameAndExpressionMap.containsKey(cls);
     }
 
     public boolean hasAssociatedGCIs(OWLClass cls) {
@@ -175,7 +175,11 @@ public class IntroducedNameHandler {
     }
 
     public Set<OWLClass> retrieveAllNamesForGCIs() {
-        return namedGCIMap.keySet();
+        return gciNameAndExpressionMap.keySet();
+    }
+
+    public OWLClassExpression retrieveExpressionFromGCIName(OWLClass gciName) {
+        return gciNameAndExpressionMap.get(gciName);
     }
 
     public OWLClass retrieveSuperClassFromNamedGCI(OWLClass gciName) {
@@ -185,7 +189,7 @@ public class IntroducedNameHandler {
     public void resetNames() {
         pvNamingMap.clear();
         namingPvMap.clear();
-        namedGCIMap.clear();
+        gciNameAndExpressionMap.clear();
     }
 
     /*

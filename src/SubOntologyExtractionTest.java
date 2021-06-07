@@ -18,13 +18,13 @@ public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "examples/yong-gci-example.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/examples/yong_gci_example_refset.txt");
+        File inputOntologyFile = new File(inputPath + "sct-july-2020.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/dentistry/dentistry_refset.txt");
 
         //background RF2 for RF2 conversion //ensure same as version used for subontology generation (above).
         String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-july-2020.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/dentistry/";
         boolean computeRF2 = false;
         boolean verifySubontology = true;
 
@@ -40,6 +40,7 @@ public class SubOntologyExtractionTest {
         OWLOntology nnfOntology = generator.getNnfOntology();
 
         OntologySaver.saveOntology(nnfOntology, outputPath+"subOntologyNNFs.owl");
+        OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
 
         //Create temporary ontology for nnfs + subOntology, use this to extract everything except the Refset and Relationship files
         //TODO: this is to extract the Concept, Description, Language and Text Definition RF2 files. Make more efficient.
@@ -99,7 +100,5 @@ public class SubOntologyExtractionTest {
                 System.out.println("Supporting classes with incrementally added definitions: " + generator.getSupportingClassesWithAddedDefinitions().toString());
             }
         }
-        OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
-
     }
 }

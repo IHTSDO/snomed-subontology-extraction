@@ -332,6 +332,7 @@ public class SubOntologyExtractionHandler {
                 //TODO: 02-06-21, need better handling of this issue here -- do not want to store GCI definitions (would introduce fresh concept names into subontology)
 
                 associatedGCIs.add(df.getOWLSubClassOfAxiom(df.getOWLObjectIntersectionOf(abstractDefinitionsGenerator.getLatestNecessaryConditions()),suppCls));
+                System.out.println("ADDED GCI AXIOM: " + df.getOWLSubClassOfAxiom(df.getOWLObjectIntersectionOf(abstractDefinitionsGenerator.getLatestNecessaryConditions()),suppCls));
             }
         }
         return associatedGCIs;
@@ -434,7 +435,7 @@ public class SubOntologyExtractionHandler {
     private void shrinkAtomicHierarchy() {
         //for each primitive, atomically defined supporting concept, check following conditions:
         // *If supporting concept "P" has an "atomic definition" i.e., P <= P1, where P1 is a concept (i.e., no conjunction / complex)
-        // *If the supporting concept "P" is also only used in atomic inclusions of the form A <= P
+        // *If the supporting concept "P" is also only used in atomic inclusions of the form A <= P (A is not a focus concept)
         // *Is not an introduced grouper concept.
         //If satisfied, can be removed.
         Set<OWLClass> atomicPrimitives = new HashSet<OWLClass>();
@@ -472,6 +473,8 @@ public class SubOntologyExtractionHandler {
             }
         }
 
+        System.out.println("Atomic primitives: " + atomicPrimitives);
+
         //check each atomically defined primitive "P": if it is only used in axioms of the form P1 <= P, where "P1" is not a focus concept, remove it.
         Set<OWLClass> primitivesToRemove = new HashSet<OWLClass>();
         for(OWLClass primitive:atomicPrimitives) {
@@ -492,10 +495,25 @@ public class SubOntologyExtractionHandler {
                 if(ax instanceof OWLSubClassOfAxiom && ((OWLSubClassOfAxiom)ax).getSubClass().equals(primitive)) {//exclude definition for primitive itself.
                     continue;
                 }
-                else if(!(ax instanceof OWLSubClassOfAxiom) || !(((OWLSubClassOfAxiom)ax).getSuperClass().equals(primitive))) {
+                else if(focusConceptDefinitions.contains(ax)) { //do not edit focus concept definitions.
                     usedElsewhere = true;
                     break;
                 }
+                else if(!(ax instanceof OWLSubClassOfAxiom)) {
+                    usedElsewhere = true;
+                    break;
+                }
+                else if(((OWLSubClassOfAxiom)ax).getSuperClass() instanceof OWLObjectIntersectionOf) {
+                    //if axiom has form A <= P1 and P2 and ... and Pi where all conjuncts are primitive, including Pi being checked, do not consider this as Pi "used elsewhere".
+                    for(OWLClassExpression exp:((OWLSubClassOfAxiom)ax).getSuperClass().asConjunctSet()) {
+                        if(!(exp instanceof OWLClass) || !subOntologyReasoningService.isPrimitive((OWLClass)exp)) {
+                            usedElsewhere = true;
+                            break;
+                        }
+                    }
+                }
+                //else if(!(((OWLSubClassOfAxiom)ax).getSuperClass().equals(primitive))) { too general.
+                //}
             }
             if(!usedElsewhere) {
                 System.out.println("Removing primitive: " + primitive.toString());
@@ -503,15 +521,25 @@ public class SubOntologyExtractionHandler {
             }
         }
 
-        //remove unnecessary content
+        System.out.println("Primitives to remove: " + primitivesToRemove);
+
+        //add content to remove to a set
         for(OWLClass primitive:primitivesToRemove) {
+            Set<OWLAxiom> axiomsToRemove = new HashSet<OWLAxiom>();
             System.out.println("Parents of primitive: " + subOntologyReasoningService.getDirectAncestors(primitive));
             //remove class axioms & references, shrink hierarchy to next parent up
             for (OWLAxiom ax : subOntology.getLogicalAxioms()) {
                 if (ax.containsEntityInSignature(primitive)) {
-                    man.removeAxiom(subOntology, ax);
+                    if(ax.toString().contains("418560003") || ax.toString().contains("45486003") ) {
+                        System.out.println("AXIOMOFINTEREST: " + ax.toString());
+                    }
+                    //man.removeAxiom(subOntology, ax);
+                    axiomsToRemove.add(ax);
+                    axiomsToRemove.addAll(subOntology.getAnnotationAssertionAxioms(primitive.getIRI()));
                 }
             }
+            //System.out.println("Removing axioms for hierarchy shrinking"); //TODO: here or at end?
+            //man.removeAxioms(subOntology, axiomsToRemove);
 
             //ensure that parent of the primitive concept is not already removed. Avoids re-adding removed primitives when bridging gap to children.
             List<OWLClass> parentsOfPrimitive = new ArrayList<OWLClass>();
@@ -531,19 +559,38 @@ public class SubOntologyExtractionHandler {
                 parentsOfPrimitive.add(parent);
             }
 
-            //man.removeAxioms(subOntology, axiomsContainingPrimitive);
-            man.removeAxioms(subOntology, subOntology.getAnnotationAssertionAxioms(primitive.getIRI()));
+            //TODO 04-06-21: ensure axioms of form A <= P1 and ... and Pi and ... and Pn reduced correctly (remove Pi but retain axiom)
             Set<OWLClass> childrenOfPrimitive = subOntologyReasoningService.getDirectDescendants(primitive);
+            //change child parents to exclude the removed primitive(s)
             for (OWLClass child : childrenOfPrimitive) {
+                if(child.toString().contains("45486003")) {
+                    System.out.println("APLASIA AS CHILD.");
+                    System.out.println("Primitive: " + primitive + " parents replacing: " + parentsOfPrimitive);
+                }
                 if(!primitivesToRemove.contains(child)) {
+
+                    //gather existing parents for child
+                    Set<OWLClass> otherParents = subOntologyReasoningService.getDirectAncestors(child);
+                    otherParents.removeAll(primitivesToRemove);
+
+                    System.out.println("Other parents: " + otherParents);
+
                     System.out.println("setting child: " + child + " as child of primitive parents: " + parentsOfPrimitive);
-                    if (parentsOfPrimitive.size() == 1) {
-                        man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(child, parentsOfPrimitive.get(0)));
+
+                    List<OWLClass> newParentsOfChild = new ArrayList<>();
+                    newParentsOfChild.addAll(parentsOfPrimitive);
+                    newParentsOfChild.addAll(otherParents);
+
+                    if (newParentsOfChild.size() == 1) {
+                        man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(child, newParentsOfChild.get(0)));
                         continue;
                     }
-                    man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(child, df.getOWLObjectIntersectionOf(new HashSet<>(parentsOfPrimitive))));
+
+                    man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(child, df.getOWLObjectIntersectionOf(new HashSet<>(newParentsOfChild))));
                 }
             }
+            //remove axioms for this primitive
+            man.removeAxioms(subOntology, axiomsToRemove);
         }
     }
     /*
