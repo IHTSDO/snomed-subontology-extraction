@@ -79,11 +79,20 @@ public class SubOntologyExtractionHandler {
         defaultOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
         defaultOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
         defaultOptions.add(RedundancyOptions.eliminateSufficientProximalGCIs);
-        this.computeSubontology(defaultOptions);
+        this.computeSubontology(true, defaultOptions);
+    }
+
+    public void computeSubontology(boolean computeRF2) throws OWLException, ReasonerException {
+        Set<RedundancyOptions> defaultOptions = new HashSet<RedundancyOptions>();
+        defaultOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
+        defaultOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
+        defaultOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
+        defaultOptions.add(RedundancyOptions.eliminateSufficientProximalGCIs);
+        this.computeSubontology(computeRF2, defaultOptions);
     }
 
     //TODO: refactor, split
-    public void computeSubontology(Set<RedundancyOptions> inputRedundancyOptions) throws OWLException, ReasonerException {
+    public void computeSubontology(boolean computeRF2, Set<RedundancyOptions> inputRedundancyOptions) throws OWLException, ReasonerException {
         redundancyOptions = inputRedundancyOptions;
         //Compute initial abstract (authoring) form definitions for focus classes
         computeFocusConceptDefinitions();
@@ -96,9 +105,7 @@ public class SubOntologyExtractionHandler {
         //include authoring definitions, role inclusions (rbox?), GCIs for defined classes
         populateSubOntology();
 
-        //Compute NNFs
-        computeNNFDefinitions(subOntology.getClassesInSignature(), redundancyOptions);
-        nnfOntology = man.createOntology(nnfDefinitions);
+        generateNNFs();
 
         //add necessary metadata
         //add relevant annotation axioms
@@ -142,6 +149,12 @@ public class SubOntologyExtractionHandler {
 
         //TODO: temp printing, get stats handler and remove.
         System.out.println("Added classes: " + additionalConceptsInExpandedSignature);
+    }
+
+    public void generateNNFs() throws OWLOntologyCreationException, ReasonerException {
+        //Compute NNFs
+        computeNNFDefinitions(subOntology.getClassesInSignature(), redundancyOptions);
+        nnfOntology = man.createOntology(nnfDefinitions);
     }
 
     private void addFocusConceptGCIAxioms() {

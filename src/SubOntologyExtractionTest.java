@@ -18,39 +18,44 @@ public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-july-2020.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/dentistry/dentistry_refset.txt");
+        File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/gps/global_patient_refset.txt");
 
         //background RF2 for RF2 conversion //ensure same as version used for subontology generation (above).
-        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-july-2020.zip";
+        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-jan-2021.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/dentistry/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/gps/";
         boolean computeRF2 = false;
-        boolean verifySubontology = true;
+        boolean verifySubontology = false;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
         Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+        //Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
+        //OWLDataFactory df = man.getOWLDataFactory();
+        //conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/871927008")));
+        //conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/282095007")));
+        //conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/177866001")));
+        //conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/76876009")));
+
 
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
-        generator.computeSubontology();
+        generator.computeSubontology(computeRF2);
 
         OWLOntology subOntology = generator.getCurrentSubOntology();
-        OWLOntology nnfOntology = generator.getNnfOntology();
 
-        OntologySaver.saveOntology(nnfOntology, outputPath+"subOntologyNNFs.owl");
         OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
 
-        //Create temporary ontology for nnfs + subOntology, use this to extract everything except the Refset and Relationship files
-        //TODO: this is to extract the Concept, Description, Language and Text Definition RF2 files. Make more efficient.
-        OWLOntology nnfsWithSubOntology = man.createOntology();
-        man.addAxioms(nnfsWithSubOntology, subOntology.getAxioms());
-        man.addAxioms(nnfsWithSubOntology, nnfOntology.getAxioms());
-        //
+
 
         //Extract RF2 for subontology
         if(computeRF2) {
+            generator.generateNNFs();
+
+            OWLOntology nnfOntology = generator.getNnfOntology();
+            OntologySaver.saveOntology(nnfOntology, outputPath+"subOntologyNNFs.owl");
+
             SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputPath, backgroundFilePath);
         }
 

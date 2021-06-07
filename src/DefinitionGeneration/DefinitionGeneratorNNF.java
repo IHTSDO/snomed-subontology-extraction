@@ -30,8 +30,6 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
 
         System.out.println("Computing def for INPUT CLASS: " + inputClass);
 
-        System.out.println("RBOX FOR ONT: " + super.getBackgroundOntology().getRBoxAxioms(Imports.fromBoolean(false)).toString());
-
         Set<OWLClass> parentNamedClasses = new HashSet<OWLClass>();
         parentNamedClasses.addAll(reasonerService.getDirectAncestors(inputClass));
 

@@ -119,23 +119,21 @@ public abstract class InputSignatureHandler {
 
     public static void main(String[] args) throws OWLOntologyCreationException, ReasonerException, IOException {
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
+        File inputOntologyFile = new File(inputPath + "sct-injury.owl");
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLDataFactory df = man.getOWLDataFactory();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
         String snomedIRIString = "http://snomed.info/id/";
         Set<OWLClass> conceptsToInclude = new HashSet<OWLClass>();
-        conceptsToInclude.add(df.getOWLClass(IRI.create(snomedIRIString + "69896004")));
-        conceptsToInclude.add(df.getOWLClass(IRI.create(snomedIRIString + "55464009")));
-        conceptsToInclude.add(df.getOWLClass(IRI.create(snomedIRIString + "9631008")));
+        conceptsToInclude.add(df.getOWLClass(IRI.create(snomedIRIString + "417163006")));
 
         Set<OWLClass> classes = new HashSet<OWLClass>();
         for(OWLClass cls:conceptsToInclude) {
-            classes.addAll(InputSignatureHandler.extractRefsetClassesFromDescendents(inputOntology, cls, true));
+            classes.addAll(InputSignatureHandler.extractRefsetClassesFromDescendents(inputOntology, cls, false));
         }
 
-        String outputFilePath = "E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/rheumatic-test/rheumatic_test_noPrimitives_refset.txt";
+        String outputFilePath = "E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/injury/injury_refset.txt";
         InputSignatureHandler.printRefset(new HashSet<OWLEntity>(classes), outputFilePath);
     }
 }

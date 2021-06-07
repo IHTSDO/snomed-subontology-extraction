@@ -52,9 +52,14 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             System.out.println("Parents before GCI check: " + reducedParentNamedClasses);
 
             boolean gciParentsChanged = false;
+            Set<OWLClass> removedParents = new HashSet<>();
             if(redundancyOptions.contains(RedundancyOptions.eliminateSufficientProximalGCIs)) {
                 System.out.println("Eliminating sufficient proximal GCI concepts");
                 Set<OWLClass> parentsAfterCheckingGCIs = eliminateSufficientProximalGCIConcepts(classToDefine, reducedParentNamedClasses);
+
+                removedParents.addAll(reducedParentNamedClasses);
+                removedParents.removeAll(parentsAfterCheckingGCIs);
+
                 parentsAfterCheckingGCIs = reduceClassSet(parentsAfterCheckingGCIs); //TODO: unnecessary additional call?
 
                 if(!parentsAfterCheckingGCIs.equals(reducedParentNamedClasses)) {
@@ -67,15 +72,18 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
                 System.out.println("GCI parents changed for class: " + classToDefine);
                 Set<OWLClass> pvsToCheck = new HashSet<>();
                 pvsToCheck.addAll(ancestorRenamedPVs);
+
                 for(OWLClass pv:pvsToCheck) {
-                    boolean pvInheritedFromTypeOneGCI = true;
+                    //boolean pvInheritedFromTypeOneGCI = true;
+                    boolean pvInheritedFromTypeOneGCI = false;
                     for(OWLClass parent:reducedParentNamedClasses) {
                         //if an ancestor of a retained parent, or a direct ancestor of the class being defined, keep.
-                        if(reasonerService.getAncestors(parent).contains(pv) || reasonerService.getDirectAncestors(classToDefine).contains(pv)) {
-                            pvInheritedFromTypeOneGCI = false;
+                        //TODO: edited 07-06-21
+                        if(removedParents.contains(parent)) {
+                            pvInheritedFromTypeOneGCI = true;
                         }
                     }
-                    if(pvInheritedFromTypeOneGCI) {
+                    if(pvInheritedFromTypeOneGCI) { //TODO: edited 07-06-21 -- check, is this too strong? Should an additional check be added in case the PV is a mutual ancestor of removed & non-removed parent?
                         ancestorRenamedPVs.remove(pv);
                     }
                 }
