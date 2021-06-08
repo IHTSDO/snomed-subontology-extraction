@@ -178,8 +178,7 @@ public class SubOntologyExtractionHandler {
             }
         }
     }
-
-
+    
     private void computeRequiredSupportingClassDefinitions() {
         List<OWLClass> expressionsToCheck = new ArrayList<>();
 
@@ -363,12 +362,6 @@ public class SubOntologyExtractionHandler {
         System.out.println("Module roles: " + module.getObjectPropertiesInSignature());
 
         man.addAxioms(subOntology, module.getLogicalAxioms());
-        /*
-        for(OWLObjectProperty prop:subOntology.getObjectPropertiesInSignature()) {
-            man.addAxioms(subOntology, sourceOntology.getTransitiveObjectPropertyAxioms(prop));
-            man.addAxioms(subOntology, sourceOntology.getReflexiveObjectPropertyAxioms(prop));
-        }
-         */
     }
 
     private void addGrouperConcepts() {

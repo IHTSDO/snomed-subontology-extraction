@@ -18,15 +18,15 @@ public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/gps/global_patient_refset.txt");
+        File inputOntologyFile = new File(inputPath + "sct-injury.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/injury/injury_refset.txt");
 
         //background RF2 for RF2 conversion //ensure same as version used for subontology generation (above).
-        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-jan-2021.zip";
+        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-injury.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/gps/";
-        boolean computeRF2 = false;
-        boolean verifySubontology = false;
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/injury/";
+        boolean computeRF2 = true;
+        boolean verifySubontology = true;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
@@ -46,8 +46,6 @@ public class SubOntologyExtractionTest {
         OWLOntology subOntology = generator.getCurrentSubOntology();
 
         OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
-
-
 
         //Extract RF2 for subontology
         if(computeRF2) {
