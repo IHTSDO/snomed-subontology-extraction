@@ -28,7 +28,7 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         Set<OWLClass> ancestors = reasonerService.getAncestors(inputClass);
         Set<OWLClass> ancestorRenamedPVs = extractNamedPVs(ancestors);
 
-        System.out.println("Computing def for INPUT CLASS: " + inputClass);
+        System.out.println("Computing NNF for INPUT CLASS: " + inputClass);
 
         Set<OWLClass> parentNamedClasses = new HashSet<OWLClass>();
         parentNamedClasses.addAll(reasonerService.getDirectAncestors(inputClass));

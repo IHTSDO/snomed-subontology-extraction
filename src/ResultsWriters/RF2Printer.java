@@ -33,7 +33,7 @@ public class RF2Printer extends Printer {
     }
 
     public void printNNFsAsRF2Tuples(OWLOntology nnfOntology) throws ConversionException, IOException {
-        //get attributes (roles) from ontology to be provided to toolkit OntologyService. TODO: we don't actually need the ontology service to go from OWL --> RF2, so doesn't matter?
+        //get attributes (roles) from ontology to be provided to toolkit OntologyService. TODO: we don't actually need the ontology service to go from OWL --> RF2, so doesn't matter.
         String outputFilePath = outputDirectory + "_FSN_tuples" + ".txt";
 
         System.out.println("Printing FSN tuples for definitions to: " + outputFilePath);
@@ -112,7 +112,7 @@ public class RF2Printer extends Printer {
         System.out.println("Representations size: " + representations.size());
     }
 
-    //TODO: code reused from ClassificationResultsWriter in toolkit
+    //code reused from ClassificationResultsWriter in IHTSDO owl toolkit
     private void writeRelationshipChanges(
             BufferedWriter writer,
             Map<Long, Set<Relationship>> addedStatements,
@@ -143,7 +143,7 @@ public class RF2Printer extends Printer {
             }
         }
         // Write redundant relationships
-        /* TODO: currently no redundant relationships -- run is fresh each time with no delta.*/
+        /*currently no redundant relationships -- run is fresh each time with no delta.*/
     }
 
     private void writeRelationship(BufferedWriter writer, String status, String sourceTerm, String destinationTerm, String relationshipTypeTerm, String existentialRestrictionModifier) throws IOException {
@@ -167,7 +167,6 @@ public class RF2Printer extends Printer {
             writer.newLine();
         }
         catch(NullPointerException e) {
-            //TODO: implement proper handling.
             System.out.println("Null exception.");
         }
     }
@@ -223,7 +222,11 @@ public class RF2Printer extends Printer {
         writer.flush();
 
         for(AxiomRepresentation rep:representations) {
+            if(rep.getLeftHandSideNamedConcept().toString().contains("owl:Nothing")) { //TODO: 10-06-21 temp, nothing should not be included
+                continue;
+            }
             Long conceptID = rep.getLeftHandSideNamedConcept();
+
             Map<Integer, List<Relationship>> rightHandSideRelationshipsMap = rep.getRightHandSideRelationships();
 
             Iterator<Map.Entry<Integer, List<Relationship>>> iter = rightHandSideRelationshipsMap.entrySet().iterator();

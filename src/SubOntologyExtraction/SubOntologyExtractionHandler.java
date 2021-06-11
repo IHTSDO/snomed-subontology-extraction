@@ -565,8 +565,9 @@ public class SubOntologyExtractionHandler {
                 parentsOfPrimitive.add(parent);
             }
 
-            //TODO 04-06-21: ensure axioms of form A <= P1 and ... and Pi and ... and Pn reduced correctly (remove Pi but retain axiom)
+            //ensure axioms of form A <= P1 and ... and Pi and ... and Pn reduced correctly (remove Pi but retain axiom)
             Set<OWLClass> childrenOfPrimitive = subOntologyReasoningService.getDirectDescendants(primitive);
+            childrenOfPrimitive.remove(df.getOWLNothing()); // TODO: handling?
             //change child parents to exclude the removed primitive(s)
             for (OWLClass child : childrenOfPrimitive) {
                 if(child.toString().contains("45486003")) {
@@ -611,6 +612,7 @@ public class SubOntologyExtractionHandler {
         subOntologyReasoningService.classifyOntology();
         DefinitionGenerator nnfDefinitionsGenerator = new DefinitionGeneratorNNF(subOntology, subOntologyReasoningService, subOntologyNamer);
 
+        classes.remove(df.getOWLNothing());
         for(OWLClass cls:classes) {
             nnfDefinitionsGenerator.generateDefinition(cls, redundancyOptions);
         }

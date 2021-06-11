@@ -17,25 +17,25 @@ import java.util.Set;
 public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
-        String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
+        String inputPath = "C:/Users/warre/Documents/aPostdoc/SCT-files/";
         File inputOntologyFile = new File(inputPath + "sct-injury.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/injury/injury_refset.txt");
+        File inputRefsetFile = new File("C:/Users/warre/Documents/aPostdoc/IAA-content-extraction/refsets/injury/injury_refset.txt");
 
         //background RF2 for RF2 conversion //ensure same as version used for subontology generation (above).
-        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-injury.zip";
+        String backgroundFilePath = "C:/Users/warre/Documents/aPostdoc/SCT-files/sct-injury.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/injury/";
+        String outputPath = "C:/Users/warre/Documents/aPostdoc/subontologies/injury/";
         boolean computeRF2 = true;
-        boolean verifySubontology = true;
+        boolean verifySubontology = false;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
-        Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
-        //Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
-        //OWLDataFactory df = man.getOWLDataFactory();
-        //conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/871927008")));
-        //conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/282095007")));
+        //Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+        Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
+        OWLDataFactory df = man.getOWLDataFactory();
+        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/128069005")));
+        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/48125009")));
         //conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/177866001")));
         //conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/76876009")));
 
