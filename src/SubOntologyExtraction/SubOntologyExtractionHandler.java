@@ -164,7 +164,9 @@ public class SubOntologyExtractionHandler {
 
         Set<OWLClass> gciNamesInFocusConceptDefinitions = new HashSet<OWLClass>();
         for(OWLClass focusConcept:focusConcepts) {
+            System.out.println("Concept: " + focusConcept.toString());
             if(!sourceOntologyNamer.returnNamesOfGCIsForSuperConcept(focusConcept).isEmpty()) {
+                System.out.println("Has GCIs.");
                 gciNamesInFocusConceptDefinitions.addAll(sourceOntologyNamer.returnNamesOfGCIsForSuperConcept(focusConcept));
             }
         }
@@ -494,8 +496,10 @@ public class SubOntologyExtractionHandler {
             boolean usedElsewhere = false;
             //sole parent of primitive -- check if already removed by this process. If so, check for multiple parents. If any exist, do not remove this primitive.
             OWLClass parentOfPrimitive = new ArrayList<OWLClass>(subOntologyReasoningService.getDirectAncestors(primitive)).get(0);
-            ListIterator<OWLClass> parentIterator = new ArrayList<OWLClass>(Arrays.asList(parentOfPrimitive)).listIterator();
-            boolean nowConjunctive = false;
+
+            //TODO: these two variables needed, 16-06-21?
+            //ListIterator<OWLClass> parentIterator = new ArrayList<OWLClass>(Arrays.asList(parentOfPrimitive)).listIterator();
+            //boolean nowConjunctive = false;
 
             for(OWLLogicalAxiom ax:axiomsContainingPrimitive) {
                 if(ax instanceof OWLSubClassOfAxiom && ((OWLSubClassOfAxiom)ax).getSubClass().equals(primitive)) {//exclude definition for primitive itself.
@@ -518,6 +522,10 @@ public class SubOntologyExtractionHandler {
                         }
                     }
                 }
+                else if(((OWLSubClassOfAxiom)ax).getSubClass() instanceof OWLObjectIntersectionOf) { //do not remove primitives used on LHS of GCIs //TODO: necessary?
+                    usedElsewhere = true;
+                    break;
+                }
                 //else if(!(((OWLSubClassOfAxiom)ax).getSuperClass().equals(primitive))) { too general.
                 //}
             }
@@ -536,9 +544,6 @@ public class SubOntologyExtractionHandler {
             //remove class axioms & references, shrink hierarchy to next parent up
             for (OWLAxiom ax : subOntology.getLogicalAxioms()) {
                 if (ax.containsEntityInSignature(primitive)) {
-                    if(ax.toString().contains("418560003") || ax.toString().contains("45486003") ) {
-                        System.out.println("AXIOMOFINTEREST: " + ax.toString());
-                    }
                     //man.removeAxiom(subOntology, ax);
                     axiomsToRemove.add(ax);
                     axiomsToRemove.addAll(subOntology.getAnnotationAssertionAxioms(primitive.getIRI()));
@@ -606,6 +611,7 @@ public class SubOntologyExtractionHandler {
      */
     private void computeNNFDefinitions(Set<OWLClass> classes, Set<RedundancyOptions> redundancyOptions) throws ReasonerException, OWLOntologyCreationException {
         System.out.println("Computing necessary normal form (inferred relationships).");
+
         IntroducedNameHandler subOntologyNamer = new IntroducedNameHandler(subOntology);
         OWLOntology subOntologyWithNamings = subOntologyNamer.returnOntologyWithNamings();
         OntologyReasoningService subOntologyReasoningService = new OntologyReasoningService(subOntologyWithNamings);

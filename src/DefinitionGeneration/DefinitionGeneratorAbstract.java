@@ -42,7 +42,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
         //remove classes representing introduced names
         primitiveAncestors.removeAll(ancestorRenamedPVs);
-        primitiveAncestors.removeAll(extractNamedGCIs(primitiveAncestors));
+        primitiveAncestors.removeAll(extractNamedGCIs(primitiveAncestors)); //note, operation fine here since all GCI names are defined by nature
 
         Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();

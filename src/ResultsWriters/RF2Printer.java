@@ -204,7 +204,17 @@ public class RF2Printer extends Printer {
         axiomsMap.put((long) 1, nnfOntology.getAxioms());
         Map<Long, Set<AxiomRepresentation>> representationsMap = converter.convertAxiomsToRelationships(axiomsMap, false);
 
-        Set<AxiomRepresentation> representations = representationsMap.get((long)1);
+        Set<AxiomRepresentation> representations = new HashSet<AxiomRepresentation>();
+        for(OWLAxiom axiom:nnfOntology.getAxioms()) {
+            representations.add(converter.convertAxiomToRelationships(axiom));
+        }
+
+
+        //Set<AxiomRepresentation> representations = representationsMap.get((long)1);
+
+        System.out.println("NNF ontology size: " + nnfOntology.getLogicalAxiomCount());
+        System.out.println("Rep map size: " + representationsMap.size());
+        System.out.println("Rep size: " + representations.size());
 
         BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
         StringBuilder sb = new StringBuilder();
@@ -225,6 +235,7 @@ public class RF2Printer extends Printer {
             if(rep.getLeftHandSideNamedConcept().toString().contains("owl:Nothing")) { //TODO: 10-06-21 temp, nothing should not be included
                 continue;
             }
+
             Long conceptID = rep.getLeftHandSideNamedConcept();
 
             Map<Integer, List<Relationship>> rightHandSideRelationshipsMap = rep.getRightHandSideRelationships();

@@ -35,7 +35,12 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
 
         //remove all introduced classes to name PVs and name GCIs
         parentNamedClasses.removeAll(ancestorRenamedPVs);
-        parentNamedClasses.removeAll(extractNamedGCIs(parentNamedClasses));
+        //parentNamedClasses.removeAll(extractNamedGCIs(parentNamedClasses)); //TODO: 16-06-21 it takes the GCI *names* as direct ancestors, which are then being removed! Fix.
+        for(OWLClass gciNameParent:extractNamedGCIs(parentNamedClasses)) {
+            parentNamedClasses.remove(gciNameParent);
+            //parentNamedClasses.addAll(reasonerService.getDirectAncestors(gciNameParent));
+            parentNamedClasses.add(namer.retrieveSuperClassFromNamedGCI(gciNameParent));
+        }
 
         Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
