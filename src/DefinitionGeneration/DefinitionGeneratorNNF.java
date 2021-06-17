@@ -36,21 +36,28 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         //remove all introduced classes to name PVs and name GCIs
         parentNamedClasses.removeAll(ancestorRenamedPVs);
 
-        if(inputClass.toString().contains("425576009")) {
-            System.out.println("PARENT CLASSES NNF: " + parentNamedClasses);
-        }
-
         //parentNamedClasses.removeAll(extractNamedGCIs(parentNamedClasses)); //TODO: 16-06-21 it takes the GCI *names* as direct ancestors, which are then being removed! Fix.
+        List<OWLClass> parentsToCheckForGCIs = new ArrayList<OWLClass>(extractNamedGCIs(parentNamedClasses));
+        ListIterator<OWLClass> iterator = parentsToCheckForGCIs.listIterator();
+        while(iterator.hasNext()) {
+            OWLClass parentToCheck = iterator.next();
+            if(namer.isNamedGCI(parentToCheck)) {
+                parentNamedClasses.remove(parentToCheck);
+                for(OWLClass nextParent:reasonerService.getDirectAncestors(parentToCheck)) {
+                    parentNamedClasses.add(nextParent);
+                    iterator.add(nextParent);
+                    iterator.previous();
+                }
+            }
+        }
+        /*
         for(OWLClass gciNameParent:extractNamedGCIs(parentNamedClasses)) {
             parentNamedClasses.remove(gciNameParent);
             //parentNamedClasses.addAll(reasonerService.getDirectAncestors(gciNameParent));
             //parentNamedClasses.add(namer.retrieveSuperClassFromNamedGCI(gciNameParent));
             parentNamedClasses.addAll(reasonerService.getDirectAncestors(gciNameParent));
         }
-
-        if(inputClass.toString().contains("425576009")) {
-            System.out.println("PARENT CLASSES NNF AFTER GCI REPLACEMENT: " + parentNamedClasses);
-        }
+         */
 
         Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
