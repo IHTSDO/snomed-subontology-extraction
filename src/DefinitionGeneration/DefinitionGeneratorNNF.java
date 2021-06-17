@@ -44,9 +44,11 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
             if(namer.isNamedGCI(parentToCheck)) {
                 parentNamedClasses.remove(parentToCheck);
                 for(OWLClass nextParent:reasonerService.getDirectAncestors(parentToCheck)) {
-                    parentNamedClasses.add(nextParent);
-                    iterator.add(nextParent);
-                    iterator.previous();
+                    if(!namer.isNamedPV(nextParent)) {
+                        parentNamedClasses.add(nextParent);
+                        iterator.add(nextParent);
+                        iterator.previous();
+                    }
                 }
             }
         }
