@@ -94,6 +94,12 @@ public class SubOntologyExtractionHandler {
     //TODO: refactor, split
     public void computeSubontology(boolean computeRF2, Set<RedundancyOptions> inputRedundancyOptions) throws OWLException, ReasonerException {
         redundancyOptions = inputRedundancyOptions;
+
+        //add necessary metadata concepts to concept list.
+        if(computeRF2) {
+            addMetaConceptsForBrowserRF2();
+        }
+
         //Compute initial abstract (authoring) form definitions for focus classes
         computeFocusConceptDefinitions();
 
@@ -110,6 +116,17 @@ public class SubOntologyExtractionHandler {
         //add necessary metadata
         //add relevant annotation axioms
         addAnnotationAssertions();
+    }
+
+    private void addMetaConceptsForBrowserRF2() {
+        //language concepts for description loading
+        focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/900000000000509007")));
+        focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/900000000000508004")));
+
+        //refset concept
+        focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/733073007")));
+        focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/900000000000455006")));
+        
     }
 
     private void computeFocusConceptDefinitions() {

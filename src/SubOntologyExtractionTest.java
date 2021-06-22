@@ -18,13 +18,13 @@ public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         //test run
         String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-injury.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/injury/injury_refset.txt");
+        File inputOntologyFile = new File(inputPath + "sct-july-2018.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/nursing/nursing_full_refset.txt");
 
         //background RF2 for RF2 conversion //ensure same as version used for subontology generation (above).
-        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-injury.zip";
+        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2018.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/injury/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/nursing/";
         boolean computeRF2 = true;
         boolean verifySubontology = false;
 
