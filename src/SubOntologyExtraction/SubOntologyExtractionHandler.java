@@ -126,7 +126,7 @@ public class SubOntologyExtractionHandler {
         //refset concept
         focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/733073007")));
         focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/900000000000455006")));
-        
+        focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/900000000000506000")));
     }
 
     private void computeFocusConceptDefinitions() {

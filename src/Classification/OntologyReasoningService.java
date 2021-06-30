@@ -26,11 +26,9 @@ public class OntologyReasoningService {
     }
 
     public void classifyOntology() {
-        //03-09-20 QUESTION: return ontology, or just return precomputed inferences?
         System.out.println("Classifying ontology (precomputing hierarchy).");
         reasoner.flush();
         reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
-
     }
 
     public OWLOntology getClassifiedOntology() throws OWLOntologyCreationException {
@@ -238,5 +236,9 @@ public class OntologyReasoningService {
         reasoner.dispose();
         reasoner = getReasonerFactory(reasonerName).createReasoner(newSourceOntology, configuration);
         this.classifyOntology();
+    }
+
+    public OWLReasoner getReasoner() {
+        return reasoner;
     }
 }

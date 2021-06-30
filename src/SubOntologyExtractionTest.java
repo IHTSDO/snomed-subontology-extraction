@@ -32,14 +32,6 @@ public class SubOntologyExtractionTest {
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 
         Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
-        /*
-        Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
-        OWLDataFactory df = man.getOWLDataFactory();
-        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/425576009")));
-        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/417746004")));
-        //conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/128126004")));
-        //conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/76876009")));
-         */
 
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
         generator.computeSubontology(computeRF2);

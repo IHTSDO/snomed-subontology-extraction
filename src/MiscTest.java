@@ -2,6 +2,8 @@ import Classification.OntologyReasoningService;
 import ExceptionHandlers.ReasonerException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
+import org.semanticweb.owlapi.reasoner.InferenceType;
+import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import tools.InputSignatureHandler;
 
 import java.io.File;
@@ -16,23 +18,37 @@ public class MiscTest {
         File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
-        OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
-        OWLDataFactory df =man.getOWLDataFactory();
+        OWLOntology inputOntology = man.createOntology();
+        OWLDataFactory df = man.getOWLDataFactory();
 
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/test/auth_form_bug_list.txt");
+        OWLClass A = df.getOWLClass(IRI.create("http://snomed.info/id/" + "A"));
+        OWLClass B = df.getOWLClass(IRI.create("http://snomed.info/id/" + "D"));
+        OWLClass C = df.getOWLClass(IRI.create("http://snomed.info/id/" + "C"));
+        OWLClass D = df.getOWLClass(IRI.create("http://snomed.info/id/" + "P"));
+        OWLClass E = df.getOWLClass(IRI.create("http://snomed.info/id/" + "P2"));
+        OWLClass F = df.getOWLClass(IRI.create("http://snomed.info/id/" + "E"));
 
-        Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+        OWLObjectProperty r = df.getOWLObjectProperty(IRI.create("http://snomed.info/id/" + "r"));
+
+        OWLEquivalentClassesAxiom ax1 = df.getOWLEquivalentClassesAxiom(A, df.getOWLObjectIntersectionOf(B, df.getOWLObjectSomeValuesFrom(r, C)));
+        OWLEquivalentClassesAxiom ax2 = df.getOWLEquivalentClassesAxiom(B, df.getOWLObjectIntersectionOf(D, df.getOWLObjectSomeValuesFrom(r, E)));
+        OWLSubClassOfAxiom ax3 = df.getOWLSubClassOfAxiom(df.getOWLObjectSomeValuesFrom(r, C), df.getOWLObjectSomeValuesFrom(r, E));
+
+        man.addAxioms(inputOntology, new HashSet<OWLAxiom>(Arrays.asList(ax1, ax2, ax3)));
+
 
         OntologyReasoningService reasoningService = new OntologyReasoningService(inputOntology);
         reasoningService.classifyOntology();
 
-        for(OWLClass cls:conceptsToDefine) {
-            if(!reasoningService.getAncestors(cls).contains(df.getOWLClass(IRI.create("http://snomed.info/id/763158003")))) {
-                System.out.println("Not subclass of medicinal product: " + cls.toString());
-            }
-        }
+        OWLReasoner reasoner = reasoningService.getReasoner();
+        reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
 
+        OWLClassExpression exp = df.getOWLObjectSomeValuesFrom(r, C);
 
+        System.out.println(reasoner.getSuperClasses(exp, false));
+        System.out.println(reasoner.getSubClasses(exp, false));
+        System.out.println(reasoner.getSuperClasses(exp, true));
+        System.out.println(reasoner.getSubClasses(exp, true));
 
     }
 }
