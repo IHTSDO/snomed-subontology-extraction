@@ -11,29 +11,30 @@ import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import tools.InputSignatureHandler;
 
 import java.io.*;
-import java.util.HashSet;
 import java.util.Set;
 
 public class SubOntologyExtractionTest {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
-        //test run
-        String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-july-2018.owl");
+        /*
+        * Input for subontology extraction: source ontology (path), focus concepts (list, refset as .txt), source RF2 file for OWL to RF2 conversion
+         */
+        File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2018.owl");
         File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/nursing/nursing_full_refset.txt");
 
-        //background RF2 for RF2 conversion //ensure same as version used for subontology generation (above).
-        String backgroundFilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2018.zip";
+        //ensure same version as source ontology OWL file
+        String sourceRF2File = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2018.zip";
 
         String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/nursing/";
+        
         boolean computeRF2 = true;
         boolean verifySubontology = false;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
-        OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
+        OWLOntology sourceOntology = man.loadOntologyFromOntologyDocument(sourceOntologyFile);
 
         Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
 
-        SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(inputOntology, conceptsToDefine);
+        SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(sourceOntology, conceptsToDefine);
         generator.computeSubontology(computeRF2);
 
         OWLOntology subOntology = generator.getCurrentSubOntology();
@@ -47,7 +48,7 @@ public class SubOntologyExtractionTest {
             OWLOntology nnfOntology = generator.getNnfOntology();
             OntologySaver.saveOntology(nnfOntology, outputPath+"subOntologyNNFs.owl");
 
-            SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputPath, backgroundFilePath);
+            SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputPath, sourceRF2File);
         }
 
         if(verifySubontology) {
@@ -55,13 +56,13 @@ public class SubOntologyExtractionTest {
             System.out.println("==========================");
             System.out.println("VERIFICATION: Step (1) focus concept equivalence");
             System.out.println("==========================");
-            boolean satisfiesEquivalentFocusConceptsRequirement = checker.namedFocusConceptsSatisfyEquivalence(generator.getFocusConcepts(), subOntology, inputOntology);
+            boolean satisfiesEquivalentFocusConceptsRequirement = checker.namedFocusConceptsSatisfyEquivalence(generator.getFocusConcepts(), subOntology, sourceOntology);
             System.out.println("Satisfies equivalence of focus classes requirement?" + satisfiesEquivalentFocusConceptsRequirement);
 
             System.out.println("==========================");
             System.out.println("VERIFICATION: Step (2) transitive closure equal within sig(subOntology)");
             System.out.println("==========================");
-            boolean satisfiesTransitiveClosureReq = checker.satisfiesTransitiveClosureRequirement(subOntology, inputOntology);
+            boolean satisfiesTransitiveClosureReq = checker.satisfiesTransitiveClosureRequirement(subOntology, sourceOntology);
             System.out.println("Satisfies transitive closure requirement?" + satisfiesTransitiveClosureReq);
 
             if (!satisfiesEquivalentFocusConceptsRequirement || !satisfiesTransitiveClosureReq) {
@@ -82,8 +83,8 @@ public class SubOntologyExtractionTest {
             }
             else {
                 System.out.println("Verification passed.");
-                System.out.println("Input ontology num axioms: " + inputOntology.getLogicalAxiomCount());
-                System.out.println("Input ontology num classes: " + inputOntology.getClassesInSignature().size() + " and properties: " + inputOntology.getObjectPropertiesInSignature().size());
+                System.out.println("Input ontology num axioms: " + sourceOntology.getLogicalAxiomCount());
+                System.out.println("Input ontology num classes: " + sourceOntology.getClassesInSignature().size() + " and properties: " + sourceOntology.getObjectPropertiesInSignature().size());
                 System.out.println("Subontology Stats");
                 System.out.println("Num axioms: " + subOntology.getLogicalAxiomCount());
                 System.out.println("Num classes: " + subOntology.getClassesInSignature().size() + " and properties: " + subOntology.getObjectPropertiesInSignature().size());
