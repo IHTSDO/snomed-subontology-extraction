@@ -25,7 +25,7 @@ public class SubOntologyExtractionTest {
         String sourceRF2File = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2018.zip";
 
         String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/nursing/";
-        
+
         boolean computeRF2 = true;
         boolean verifySubontology = false;
 

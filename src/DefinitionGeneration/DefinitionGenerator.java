@@ -26,27 +26,26 @@ public abstract class DefinitionGenerator {
         this.namer = namer;
         man = OWLManager.createOWLOntologyManager();
         df = man.getOWLDataFactory();
-        //subPropertiesOfreflexiveProperties = new ArrayList<OWLObjectPropertyExpression>();
         generatedDefinitions = new ArrayList<OWLAxiom>();
         gciDefinitions = new ArrayList<OWLAxiom>();
-        undefinedClasses = new HashSet<OWLAxiom>(); //TODO: add "memory" of generated defs somewhere?
+        undefinedClasses = new HashSet<OWLAxiom>();
     }
 
     public abstract void generateDefinition(OWLClass cls, Set<RedundancyOptions> redundancyOptions);
 
     public Set<OWLClass> reduceClassSet(Set<OWLClass> inputClassSet) {
         inputClassSet = reasonerService.eliminateWeakerClasses(inputClassSet);
-        return (inputClassSet); //TODO: return as list or set?
+        return (inputClassSet);
     }
 
-    //TODO: max nesting is RG(R some C ...) correct? If so, no "depth" parameter needed here.
+    //Eliminates redundant PVs nested under role groups. Assumes max nesting is RG(R some C ...).
     public Set<OWLObjectSomeValuesFrom> eliminateRoleGroupRedundancies(Set<OWLObjectSomeValuesFrom> inputPVs) {
         Set<OWLObjectSomeValuesFrom> reducedInputPVs = new HashSet<OWLObjectSomeValuesFrom>();
 
         for(OWLObjectSomeValuesFrom pv:inputPVs) {
             if(pv.getFiller() instanceof OWLObjectIntersectionOf) {
                 Set<OWLObjectSomeValuesFrom> pvFillers = new HashSet<OWLObjectSomeValuesFrom>();
-                for(OWLClassExpression filler:pv.getFiller().asConjunctSet()) { //TODO: note, unnecessary if we know all role groups only contain pvs
+                for(OWLClassExpression filler:pv.getFiller().asConjunctSet()) {
                     if(filler instanceof OWLObjectSomeValuesFrom) {
                         pvFillers.add((OWLObjectSomeValuesFrom) filler);
                     }
@@ -67,7 +66,7 @@ public abstract class DefinitionGenerator {
         return reducedInputPVs;
     }
 
-    //TODO: use of this?
+    //TODO: not needed
     /*
     public void computeSubPropertiesOfReflexiveProperties() {
         System.out.println("Computing reflexive properties.");
@@ -108,7 +107,6 @@ public abstract class DefinitionGenerator {
             boolean isReflexiveProperty = checkIfReflexiveProperty(pv.getProperty().asOWLObjectProperty());
             if (isReflexiveProperty) {
                 if(reasonerService.getAncestors(inputClass).contains(pv.getFiller()) || pv.getFiller().equals(inputClass)) {
-                    //System.out.println("Is reflexive redundancy: " + pv);
                     continue;
                 }
             }
@@ -120,13 +118,11 @@ public abstract class DefinitionGenerator {
     public boolean checkIfReflexiveProperty(OWLObjectPropertyExpression r) {
         EntitySearcher searcher = new EntitySearcher();
         if(searcher.isReflexive(r, backgroundOntology)) {
-            //System.out.println("Property: " + r.toString() + " is reflexive.");
             return true;
         }
         return false;
     }
 
-    //TODO: refactor, some of these bit redundant with renamer.
     protected Set<OWLClass> extractNamedPVs(Set<OWLClass> classes) {
         Set<OWLClass> renamedPVs = new HashSet<OWLClass>();
 
@@ -159,12 +155,11 @@ public abstract class DefinitionGenerator {
     }
 
     protected void constructDefinitionAxiom(OWLClass definedClass, Set<OWLClassExpression> definingConditions) {
-        //TODO: 28-05-21 -- issues with defined concepts that have a separate necessary condition that is not also sufficient, authoring form not equivalent!
+        //TODO: 28-05-21 -- issues with defined concepts that have a separate necessary condition that is not also sufficient. Need to handle these separately at generation.
         definingConditions.remove(df.getOWLThing());
         definingConditions.remove(df.getOWLNothing());
         if (definingConditions.size() == 0) {
             System.out.println("Undefined class: " + definedClass);
-            //generatedDefinitions.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
             undefinedClasses.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
             return;
         }
@@ -172,23 +167,17 @@ public abstract class DefinitionGenerator {
         if(definingConditions.size() == 1) {
             OWLClassExpression definingCondition = (new ArrayList<OWLClassExpression>(definingConditions)).get(0);
             if(!backgroundOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
-                //System.out.println("Equivalent class axiom for class: " + definedClass);
-                //generatedDefinitions.add(df.getOWLEquivalentClassesAxiom(definedClass, definingCondition));
                 definingAxiom = df.getOWLEquivalentClassesAxiom(definedClass, definingCondition);
             }
             else {
-                //System.out.println("Necessary class axiom for class: " + definedClass);
-                //generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, definingCondition));
                 definingAxiom = df.getOWLSubClassOfAxiom(definedClass, definingCondition);
             }
         }
         else {
             if (!backgroundOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
-                //generatedDefinitions.add(df.getOWLEquivalentClassesAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
                 definingAxiom = df.getOWLEquivalentClassesAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions));
 
             } else {
-                //generatedDefinitions.add(df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions)));
                 definingAxiom = df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions));
             }
         }
