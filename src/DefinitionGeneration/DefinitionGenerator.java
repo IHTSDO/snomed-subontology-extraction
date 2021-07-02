@@ -10,23 +10,23 @@ import java.util.*;
 
 public abstract class DefinitionGenerator {
 
-    protected OWLOntology backgroundOntology;
+    protected OWLOntology sourceOntology;
     protected OntologyReasoningService reasonerService;
     protected IntroducedNameHandler namer;
     private OWLOntologyManager man;
     protected OWLDataFactory df;
-    protected List<OWLAxiom> generatedDefinitions;
+    protected List<Set<OWLAxiom>> generatedDefinitions;
     protected List<OWLAxiom> gciDefinitions;
     protected Set<OWLClassExpression> latestNecessaryConditions;
     protected Set<OWLAxiom> undefinedClasses;
 
     public DefinitionGenerator(OWLOntology inputOntology, OntologyReasoningService reasonerService, IntroducedNameHandler namer) {
-        backgroundOntology = inputOntology;
+        sourceOntology = inputOntology;
         this.reasonerService = reasonerService;
         this.namer = namer;
         man = OWLManager.createOWLOntologyManager();
         df = man.getOWLDataFactory();
-        generatedDefinitions = new ArrayList<OWLAxiom>();
+        generatedDefinitions = new ArrayList<Set<OWLAxiom>>();
         gciDefinitions = new ArrayList<OWLAxiom>();
         undefinedClasses = new HashSet<OWLAxiom>();
     }
@@ -117,7 +117,7 @@ public abstract class DefinitionGenerator {
 
     public boolean checkIfReflexiveProperty(OWLObjectPropertyExpression r) {
         EntitySearcher searcher = new EntitySearcher();
-        if(searcher.isReflexive(r, backgroundOntology)) {
+        if(searcher.isReflexive(r, sourceOntology)) {
             return true;
         }
         return false;
@@ -154,52 +154,64 @@ public abstract class DefinitionGenerator {
         return namer.retrieveNamesFromPVs(pvs);
     }
 
-    protected void constructDefinitionAxiom(OWLClass definedClass, Set<OWLClassExpression> definingConditions) {
-        //TODO: 28-05-21 -- issues with defined concepts that have a separate necessary condition that is not also sufficient. Need to handle these separately at generation.
-        definingConditions.remove(df.getOWLThing());
-        definingConditions.remove(df.getOWLNothing());
-        if (definingConditions.size() == 0) {
+    protected void constructDefinition(OWLClass definedClass, Set<Set<OWLClassExpression>> definingConditionsByAxiom) {
+        //TODO: 28-05-21 -- issues with defined concepts that have a separate necessary condition that is not also sufficient. Need to handle these separately at generation
+        Set<OWLAxiom> definitionAxioms = new HashSet<OWLAxiom>();
+        for(Set<OWLClassExpression> definingConditions:definingConditionsByAxiom) {
+            definingConditions.remove(df.getOWLThing());
+            definingConditions.remove(df.getOWLNothing());
+            if (definingConditions.size() == 0) {
+                continue;
+            }
+            OWLAxiom definingAxiom = null;
+            if (definingConditions.size() == 1) {
+                OWLClassExpression definingCondition = (new ArrayList<OWLClassExpression>(definingConditions)).get(0);
+                if (!sourceOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
+                    definingAxiom = df.getOWLEquivalentClassesAxiom(definedClass, definingCondition);
+                } else {
+                    definingAxiom = df.getOWLSubClassOfAxiom(definedClass, definingCondition);
+                }
+            } else {
+                if (!sourceOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
+                    definingAxiom = df.getOWLEquivalentClassesAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions));
+
+                } else {
+                    definingAxiom = df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions));
+                }
+            }
+
+            latestNecessaryConditions = definingConditions;
+            //store gci definitions separately. //TODO: fix in line with multi-axiom handling
+            if (namer.isNamedGCI(definedClass)) {
+                System.out.println("GCI DEFINITION ADDED: " + definingAxiom);
+                gciDefinitions.add(definingAxiom);
+                continue;
+            }
+            //generatedDefinitions.add(definingAxiom);
+            definitionAxioms.add(definingAxiom);
+            //return;
+        }
+
+        //make generatedDefinitions a set of sets, go from there? //TODO: "get latest necessary conditions" might be broken...
+        if(definitionAxioms.size() == 0) {
             System.out.println("Undefined class: " + definedClass);
             undefinedClasses.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
             return;
         }
-        OWLAxiom definingAxiom = null;
-        if(definingConditions.size() == 1) {
-            OWLClassExpression definingCondition = (new ArrayList<OWLClassExpression>(definingConditions)).get(0);
-            if(!backgroundOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
-                definingAxiom = df.getOWLEquivalentClassesAxiom(definedClass, definingCondition);
-            }
-            else {
-                definingAxiom = df.getOWLSubClassOfAxiom(definedClass, definingCondition);
-            }
-        }
-        else {
-            if (!backgroundOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
-                definingAxiom = df.getOWLEquivalentClassesAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions));
-
-            } else {
-                definingAxiom = df.getOWLSubClassOfAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions));
-            }
-        }
-
-        latestNecessaryConditions = definingConditions;
-        //store gci definitions separately.
-        if(namer.isNamedGCI(definedClass)) {
-            System.out.println("GCI DEFINITION ADDED: " + definingAxiom);
-            gciDefinitions.add(definingAxiom);
-            return;
-        }
-        generatedDefinitions.add(definingAxiom);
+        generatedDefinitions.add(definitionAxioms);
         return;
-
     }
 
-    public List<OWLAxiom> getGeneratedDefinitions() {
-        return this.generatedDefinitions;
+    public Set<OWLAxiom> getAllGeneratedDefinitions() {
+        Set<OWLAxiom> allDefinitions = new HashSet<OWLAxiom>();
+        for(Set<OWLAxiom> definitionsForClass:generatedDefinitions) {
+            allDefinitions.addAll(definitionsForClass);
+        }
+        return allDefinitions;
     }
 
-    public OWLAxiom getLastDefinitionGenerated() {
-        OWLAxiom latestDefinition = null;
+    public Set<OWLAxiom> getLastDefinitionGenerated() {
+        Set<OWLAxiom> latestDefinition = null;
         if (generatedDefinitions != null && !generatedDefinitions.isEmpty()) {
              latestDefinition = generatedDefinitions.get(generatedDefinitions.size()-1);
         }
@@ -214,5 +226,5 @@ public abstract class DefinitionGenerator {
         return this.latestNecessaryConditions;
     }
     public Set<OWLAxiom> getUndefinedClassAxioms() { return this.undefinedClasses; }
-    protected OWLOntology getBackgroundOntology() { return this.backgroundOntology; }
+    protected OWLOntology getSourceOntology() { return this.sourceOntology; }
 }

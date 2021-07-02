@@ -3,7 +3,6 @@ package DefinitionGeneration;
 import Classification.OntologyReasoningService;
 import NamingApproach.IntroducedNameHandler;
 import org.semanticweb.owlapi.model.*;
-import org.semanticweb.owlapi.model.parameters.Imports;
 
 import java.util.*;
 
@@ -92,7 +91,9 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         nonRedundantAncestors.addAll(reducedParentNamedClasses);
         nonRedundantAncestors.addAll(reducedAncestorPVs);
 
-        constructDefinitionAxiom(inputClass, nonRedundantAncestors);
+        Set<Set<OWLClassExpression>> nonRedundantAncestorsSet = new HashSet<Set<OWLClassExpression>>();
+        nonRedundantAncestorsSet.add(nonRedundantAncestors);
+        constructDefinition(inputClass, nonRedundantAncestorsSet);
 
         System.out.println("INPUT CLASS: " + inputClass);
         System.out.println("Nonredundant ancestors: " + nonRedundantAncestors);

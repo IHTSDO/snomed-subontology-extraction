@@ -83,7 +83,7 @@ public class ComputeDefinitionsTest {
             definitionGenerator.generateDefinition(cls, redundancyOptions);
         }
 
-        definitions.addAll(definitionGenerator.getGeneratedDefinitions());
+        definitions.addAll(definitionGenerator.getAllGeneratedDefinitions());
 
         OWLOntology definitionsOnt = man.createOntology();
         man.addAxioms(definitionsOnt, definitions);
@@ -107,7 +107,7 @@ public class ComputeDefinitionsTest {
         rf2Printer.printNNFsAsFSNTuples(definitionsOnt);
         System.out.println("Num undefined classes: " + definitionGenerator.getUndefinedClassAxioms().size());
         System.out.println("Undefined classes: " + definitionGenerator.getUndefinedClassAxioms());
-        System.out.println("Num defined classes:"  + definitionGenerator.getGeneratedDefinitions().size());
+        System.out.println("Num defined classes:"  + definitionGenerator.getAllGeneratedDefinitions().size());
 
         System.out.println("Printing pv map.");
         namer.printNameAndPvPairs(inputPath);

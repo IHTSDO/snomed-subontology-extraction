@@ -135,7 +135,7 @@ public class SubOntologyExtractionHandler {
         for(OWLClass cls: focusConcepts) {
             abstractDefinitionsGenerator.generateDefinition(cls, redundancyOptions);
         }
-        focusConceptDefinitions.addAll(abstractDefinitionsGenerator.getGeneratedDefinitions());
+        focusConceptDefinitions.addAll(abstractDefinitionsGenerator.getAllGeneratedDefinitions());
     }
 
     private void populateSubOntology() throws OWLOntologyCreationException, ReasonerException {
@@ -274,7 +274,7 @@ public class SubOntologyExtractionHandler {
             if(newDefinitionAdded) {
                 //definition generated for clsBeingChecked in loop above.
                 System.out.println("latest def being added: " + abstractDefinitionsGenerator.getLastDefinitionGenerated());
-                additionalSupportingConceptDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
+                additionalSupportingConceptDefinitions.addAll(abstractDefinitionsGenerator.getLastDefinitionGenerated());
 
                 //add authoring form for any GCIs associated with newly defined class
                 Set<OWLSubClassOfAxiom> addedGCIs = addSupportingConceptGCIs(clsBeingChecked);
@@ -614,7 +614,7 @@ public class SubOntologyExtractionHandler {
         for(OWLClass cls:classes) {
             nnfDefinitionsGenerator.generateDefinition(cls, redundancyOptions);
         }
-        nnfDefinitions.addAll(nnfDefinitionsGenerator.getGeneratedDefinitions());
+        nnfDefinitions.addAll(nnfDefinitionsGenerator.getAllGeneratedDefinitions());
     }
 
     private void addAnnotationAssertions() {

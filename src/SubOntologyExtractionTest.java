@@ -11,6 +11,7 @@ import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import tools.InputSignatureHandler;
 
 import java.io.*;
+import java.util.HashSet;
 import java.util.Set;
 
 public class SubOntologyExtractionTest {
@@ -19,12 +20,12 @@ public class SubOntologyExtractionTest {
         * Input for subontology extraction: source ontology (path), focus concepts (list, refset as .txt), source RF2 file for OWL to RF2 conversion
          */
         File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2018.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/nursing/nursing_full_refset.txt");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal-products/medicinal_products_refset.txt");
 
         //ensure same version as source ontology OWL file
         String sourceRF2File = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2018.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/nursing/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/medicinal-products/";
 
         boolean computeRF2 = true;
         boolean verifySubontology = false;
