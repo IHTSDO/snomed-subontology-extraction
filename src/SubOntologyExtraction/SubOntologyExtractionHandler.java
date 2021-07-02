@@ -156,15 +156,12 @@ public class SubOntologyExtractionHandler {
         completeSubsumptionTransitiveClosure();
 
         System.out.println("Classifying subontology for hierarchy shrinking.");
-        subOntologyReasoningService.classifyOntology(); //TODO: currently needing to classify twice. May be possible to make more efficient (all at once, or only use source reasoner).
+        subOntologyReasoningService.classifyOntology(); //currently needing to classify twice. May be possible to make more efficient (all at once, or only use source reasoner).
 
         //shrinking hierarchy. P1 <= P2 <= P3   where P2 has no conjunctive definition (i.e. just P2 <= P3)
         shrinkAtomicHierarchy();
 
-        //add top level classes
-        //addTopLevelClasses();
-
-        //TODO: temp printing, get stats handler and remove.
+        //TODO: make stats handler, separate functionality.
         System.out.println("Added classes: " + additionalConceptsInExpandedSignature);
     }
 
@@ -234,7 +231,6 @@ public class SubOntologyExtractionHandler {
                 //add filler as defined supporting class
                 OWLObjectSomeValuesFrom pv = sourceOntologyNamer.retrievePVForName(clsBeingChecked);
                 if(pv.getFiller() instanceof OWLClass) {
-                    //System.out.println("Filler is class");
                     //generate authoring form for filler class + check role chain requirement
                     abstractDefinitionsGenerator.generateDefinition((OWLClass) pv.getFiller(), redundancyOptions);
                     if(supportingDefinitionRequired(pv, abstractDefinitionsGenerator.getLatestNecessaryConditions())) {
@@ -244,12 +240,10 @@ public class SubOntologyExtractionHandler {
                     }
                 }
                 else if(pv.getFiller() instanceof OWLObjectSomeValuesFrom) {
-                    //System.out.println("Filler is R some");
                     checkingIterator.add(sourceOntologyNamer.retrieveNameForPV((OWLObjectSomeValuesFrom) pv.getFiller()));
                     checkingIterator.previous();
                 }
                 else if(pv.getFiller() instanceof OWLObjectIntersectionOf) {
-                    //System.out.println("Filler is RG some");
                     for(OWLClassExpression conj:pv.getFiller().asConjunctSet()) {
                         if(conj instanceof OWLClass) {
                             //break into separate cases to be checked
@@ -402,23 +396,17 @@ public class SubOntologyExtractionHandler {
         }
         grouperConcepts.add(sctTop);
     }
-    /*
-    private void addTopLevelClasses() {
 
-    }
-     */
     private void completeSubsumptionTransitiveClosure() throws ReasonerException {
         Set<OWLClass> partiallyDefinedSupportingClasses = new HashSet<>();
         partiallyDefinedSupportingClasses.addAll(subOntology.getClassesInSignature());
         partiallyDefinedSupportingClasses.removeAll(focusConcepts);
         partiallyDefinedSupportingClasses.removeAll(definedSupportingConcepts);
-        //partiallyDefinedSupportingClasses.remove(sctTop);
 
         //also include groupers
         partiallyDefinedSupportingClasses.addAll(grouperConcepts);
 
         for (OWLClass cls : partiallyDefinedSupportingClasses) {
-            //if(subOntology.getEquivalentClassesAxioms(cls).isEmpty() && subOntology.getSubClassAxiomsForSubClass(cls).isEmpty()) {
             Set<OWLClass> sourceOntologyAncestors = sourceOntologyReasoningService.getAncestors(cls);
             Set<OWLClass> subOntologyAncestors = subOntologyReasoningService.getAncestors(cls);
 
@@ -440,7 +428,6 @@ public class SubOntologyExtractionHandler {
             for (OWLClass ancestor : reducedAncestors) {
                 //TODO: this check not needed?
                 if (!subOntologyReasoningService.getAncestors(cls).contains(ancestor)) {
-                    //man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(cls, ancestor));
                     nonRedundantAncestors.add(ancestor);
                 }
             }
@@ -514,10 +501,6 @@ public class SubOntologyExtractionHandler {
             //sole parent of primitive -- check if already removed by this process. If so, check for multiple parents. If any exist, do not remove this primitive.
             OWLClass parentOfPrimitive = new ArrayList<OWLClass>(subOntologyReasoningService.getDirectAncestors(primitive)).get(0);
 
-            //TODO: these two variables needed, 16-06-21?
-            //ListIterator<OWLClass> parentIterator = new ArrayList<OWLClass>(Arrays.asList(parentOfPrimitive)).listIterator();
-            //boolean nowConjunctive = false;
-
             for(OWLLogicalAxiom ax:axiomsContainingPrimitive) {
                 if(ax instanceof OWLSubClassOfAxiom && ((OWLSubClassOfAxiom)ax).getSubClass().equals(primitive)) {//exclude definition for primitive itself.
                     continue;
@@ -543,8 +526,6 @@ public class SubOntologyExtractionHandler {
                     usedElsewhere = true;
                     break;
                 }
-                //else if(!(((OWLSubClassOfAxiom)ax).getSuperClass().equals(primitive))) { too general.
-                //}
             }
             if(!usedElsewhere) {
                 System.out.println("Removing primitive: " + primitive.toString());
@@ -561,13 +542,10 @@ public class SubOntologyExtractionHandler {
             //remove class axioms & references, shrink hierarchy to next parent up
             for (OWLAxiom ax : subOntology.getLogicalAxioms()) {
                 if (ax.containsEntityInSignature(primitive)) {
-                    //man.removeAxiom(subOntology, ax);
                     axiomsToRemove.add(ax);
                     axiomsToRemove.addAll(subOntology.getAnnotationAssertionAxioms(primitive.getIRI()));
                 }
             }
-            //System.out.println("Removing axioms for hierarchy shrinking"); //TODO: here or at end?
-            //man.removeAxioms(subOntology, axiomsToRemove);
 
             //ensure that parent of the primitive concept is not already removed. Avoids re-adding removed primitives when bridging gap to children.
             List<OWLClass> parentsOfPrimitive = new ArrayList<OWLClass>();
@@ -589,7 +567,7 @@ public class SubOntologyExtractionHandler {
 
             //ensure axioms of form A <= P1 and ... and Pi and ... and Pn reduced correctly (remove Pi but retain axiom)
             Set<OWLClass> childrenOfPrimitive = subOntologyReasoningService.getDirectDescendants(primitive);
-            childrenOfPrimitive.remove(df.getOWLNothing()); // TODO: handling?
+            childrenOfPrimitive.remove(df.getOWLNothing());
             //change child parents to exclude the removed primitive(s)
             for (OWLClass child : childrenOfPrimitive) {
                 if(child.toString().contains("45486003")) {
@@ -622,10 +600,7 @@ public class SubOntologyExtractionHandler {
             man.removeAxioms(subOntology, axiomsToRemove);
         }
     }
-    /*
-    private void addMinimalSupportingClassDefinitions() throws OWLOntologyCreationException {
-    }
-     */
+
     private void computeNNFDefinitions(Set<OWLClass> classes, Set<RedundancyOptions> redundancyOptions) throws ReasonerException, OWLOntologyCreationException {
         System.out.println("Computing necessary normal form (inferred relationships).");
 
@@ -698,8 +673,5 @@ public class SubOntologyExtractionHandler {
     public int getNumberOfClassesAddedDuringSignatureExpansion() { return additionalConceptsInExpandedSignature.size();}
     public int getNumberOfAdditionalSupportingClassDefinitionsAdded() {return additionalSupportingConceptDefinitions.size();}
     public Set<OWLClass> getFocusConcepts() {return focusConcepts;}
-
-    //public void setFocusClasses(Set<OWLClass> newFocusClasses) {focusClasses = newFocusClasses;}
-    //public void resetSubOntology(){man.removeOntology(subOntology);}
 
 }

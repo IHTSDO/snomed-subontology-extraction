@@ -66,7 +66,7 @@ public abstract class DefinitionGenerator {
         return reducedInputPVs;
     }
 
-    //TODO: not needed
+    //not currently needed
     /*
     public void computeSubPropertiesOfReflexiveProperties() {
         System.out.println("Computing reflexive properties.");

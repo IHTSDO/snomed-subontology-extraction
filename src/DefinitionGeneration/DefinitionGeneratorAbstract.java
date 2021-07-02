@@ -15,7 +15,6 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         super(inputOntology, reasonerService, namer);
     }
 
-    //TODO: refactor, move to super (?)
     public void generateDefinition(OWLClass inputClass) {
         //default: all redundancy removed
         Set<RedundancyOptions> defaultOptions = new HashSet<RedundancyOptions>();
@@ -26,7 +25,6 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         this.generateDefinition(inputClass, defaultOptions);
     }
 
-    //TODO: move to super, code duplication with NNF
     public void generateDefinition(OWLClass classToDefine, Set<RedundancyOptions> redundancyOptions) {
         //separate authoring form for GCIs: do not want to inherit PVs and ancestors from "above", i.e., from necessary conditions.
         if(namer.isNamedGCI(classToDefine)) {
