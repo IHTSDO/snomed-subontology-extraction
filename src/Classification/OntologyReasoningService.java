@@ -108,6 +108,7 @@ public class OntologyReasoningService {
     public Set<OWLClass> getDescendants(OWLClass cls) {
         return reasoner.getSubClasses(cls, false).getFlattened();
     }
+
     //ELK does not support
     /*
     public Set<OWLObjectPropertyExpression> getDescendants(OWLObjectPropertyExpression role) {
@@ -121,14 +122,14 @@ public class OntologyReasoningService {
     }
      */
 
-    public OWLClass getTopClassForHierarchy() {
+    public OWLClass getTopClass() {
         ArrayList<OWLEntity> topEntities = new ArrayList<OWLEntity>(reasoner.getTopClassNode().getEntities());
 
-        //TODO: does it matter which one we use, if equivalent? Add functionality if so.
         OWLClass topClass = topEntities.get(0).asOWLClass();
         return topClass;
     }
 
+    // Currently assumes no equivalent classes: would be problematic if we have equivalent named classes or PVs, since this will mean both are removed. //TODO: store equivalent cases, remove only one.
     public Set<OWLClass> eliminateWeakerClasses(Set<OWLClass> inputClassSet) {
         Set<OWLClass> redundantClasses = new HashSet<OWLClass>();
 
@@ -139,7 +140,6 @@ public class OntologyReasoningService {
                 redundantClasses.add(cls);
             }
             otherClasses.add(cls); //retain redundancies to check against (?)
-            // TODO: check, would be problematic if we have equivalent named classes or PVs, since this will mean both are removed. Is this ever the case with SCT?
         }   // TODO:...but if A |= B, then we have B |= C, via this approach we can safely remove them as we identify them? Check.
 
         inputClassSet.removeAll(redundantClasses);
