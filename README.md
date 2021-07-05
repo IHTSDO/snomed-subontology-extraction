@@ -2,7 +2,7 @@
 Author: Warren Del-Pinto (warren.del-pinto@manchester.ac.uk)\
 Produces an extracted subontology for a given background ontology and set of concepts, with the aim of satisfying the following criteria:\
     1) All focus (input) concept definitions are equivalent in the source and sub ontologies.\
-    2) The transitive closure between all concepts in the final subontology is equal (up to the signature of the subontology) in the source and sub ontologies.\
+    2) The transitive closure between all concepts in the final subontology is equal (up to the signature of the subontology) in the source and sub ontologies.
 
 Steps outline (see documentation for full details):\
   : (i)   Compute abstract (authoring) form definitions for each focus concept in the input set (including GCI axioms for these concepts)\
@@ -14,7 +14,7 @@ Steps outline (see documentation for full details):\
 
 When computing the subontology in RF2 format, the following steps are also included:\
         : Automatic addition of required metadata concepts (for loading into subontology browser, e.g. language concepts)\
-        : Computation of NNF definitions for Relationship RF2 file\
+        : Computation of NNF definitions for Relationship RF2 file
 
 # Running the prototype
 Currently, the prototype can be run from the RunSubontologyExtraction.java file. In the main class, replace the paths with local ones. The following must be specified\
