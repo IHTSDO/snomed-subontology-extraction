@@ -24,7 +24,7 @@ Currently, the prototype can be run from the RunSubontologyExtraction.java file.
 
 Two options can also be specified:\
   : computeRF2 - computes the RF2 format of the subontology, alongside the default .owl file\
-  : verifySubontology - runs verification for the computed subontology to check critera (1) and (2) above **WARNING: can be expensive for larger subontologies**\\
+  : verifySubontology - runs verification for the computed subontology to check critera (1) and (2) above **WARNING: can be expensive for larger subontologies**\
 
 If computing RF2, the following must also be specified:\
   : sourceRF2FilePath - path to the RF2 format associated with the Source ontology OWL file specified above
@@ -37,10 +37,10 @@ Currently RF2 files are printed as follows\
   : **Relationship RF2 file** placed inside same directory as above folder, to compile RF2 move this to Snapshot/Terminology subdirectory in subontologyRF2\
   : **authoring_OWLRefset_RF2** two files should be copied from this folder to the Snapshot/Terminology subdirectory of the subontologyRF2 folder:\
                 *sct2_sRefset_OWLExpressionSnapshot_*.txt : contains the OWL definitions associated with the subontology\
-                *sct2_TextDefinition_Snapshot_*.txt: contains the associated descriptions etc required for the browser\
+                *sct2_TextDefinition_Snapshot_*.txt: contains the associated descriptions etc required for the browser
 
 # Dependency Notes
-Printing uses the content-extraction branch as a dependency to convert from OWL-to-RF2 and vice versa.\
+Printing uses the content-extraction branch as a dependency to convert from OWL-to-RF2 and vice versa.
 
 To print results in FSN format (source type destination), you will need to include the latest SCT description RF2 file (e.g. sct2_Description_Snapshot-en_INT_20200731.zip) in the following directory:\
 src/resources
