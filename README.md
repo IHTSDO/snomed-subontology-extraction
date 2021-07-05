@@ -1,15 +1,15 @@
 # Subontology Extraction Prototype
-Author: Warren Del-Pinto (warren.del-pinto@manchester.ac.uk)
-Produces an extracted subontology for a given background ontology and set of concepts, with the aim of satisfying the following criteria:
-    1) All focus (input) concept definitions are equivalent in the source and sub ontologies.
-    2) The transitive closure between all concepts in the final subontology is equal (up to the signature of the subontology) in the source and sub ontologies.
-Steps outline (see documentation for full details):
-        : (i)   Compute abstract (authoring) form definitions for each focus concept in the input set (including GCI axioms for these concepts)
-        : (ii)  Definition expansion: automatically identify required supporting concept definitions to satisfy the above criteria
-        : (iii) Populate RBox (currently star module of roles appearing in the definitions added during steps (i) and (ii)
-        : (iv)  Addition of top-level SCT groupers (later may expand to utilise grouper selection algorithms)
-        : (v)   Completion of the transitive closure between all concepts in the subontology, using atomic inclusions A1 <= A2 only where necessary
-        : (vi)  Shrinking of subontology hierarchy (i.e., removal of unnecessary supporting concepts)
+Author: Warren Del-Pinto (warren.del-pinto@manchester.ac.uk)\
+Produces an extracted subontology for a given background ontology and set of concepts, with the aim of satisfying the following criteria:\
+    1) All focus (input) concept definitions are equivalent in the source and sub ontologies.\
+    2) The transitive closure between all concepts in the final subontology is equal (up to the signature of the subontology) in the source and sub ontologies.\
+Steps outline (see documentation for full details):\
+        : (i)   Compute abstract (authoring) form definitions for each focus concept in the input set (including GCI axioms for these concepts)\
+        : (ii)  Definition expansion: automatically identify required supporting concept definitions to satisfy the above criteria\
+        : (iii) Populate RBox (currently star module of roles appearing in the definitions added during steps (i) and (ii)\
+        : (iv)  Addition of top-level SCT groupers (later may expand to utilise grouper selection algorithms)\
+        : (v)   Completion of the transitive closure between all concepts in the subontology, using atomic inclusions A1 <= A2 only where necessary\
+        : (vi)  Shrinking of subontology hierarchy (i.e., removal of unnecessary supporting concepts)\
 
 When computing the subontology in RF2 format, the following steps are also included:
         : Automatic addition of required metadata concepts (for loading into subontology browser, e.g. language concepts)
