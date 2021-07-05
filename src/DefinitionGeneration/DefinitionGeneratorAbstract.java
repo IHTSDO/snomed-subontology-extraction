@@ -22,7 +22,8 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         this.generateDefinition(inputClass, defaultOptions);
     }
 
-    /* //TODO: code before multi-axiom extension 02-07-2021. Probably keep as the "single axiom" case
+    //TODO: code before multi-axiom extension 02-07-2021. Probably keep as the "single axiom" case
+    /*
     public void generateDefinition(OWLClass classToDefine, Set<RedundancyOptions> redundancyOptions) {
         //separate authoring form for GCIs: do not want to inherit PVs and ancestors from "above", i.e., from necessary conditions.
         if(namer.isNamedGCI(classToDefine)) {
@@ -101,37 +102,12 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         nonRedundantAncestors.addAll(reducedParentNamedClasses);
         nonRedundantAncestors.addAll(reducedAncestorPVs);
 
-        constructDefinitionAxiom(classToDefine, nonRedundantAncestors);
+        Set<Set<OWLClassExpression>> definitionSet = new HashSet<Set<OWLClassExpression>>();
+        definitionSet.add(nonRedundantAncestors);
+        constructDefinition(classToDefine, definitionSet);
     }
-
-    //possibly quicker than taking all primitive ancestors & redundancy checking?
-    private Set<OWLClass> computeClosestPrimitiveAncestors(OWLClass classToDefine) {
-        List<OWLClass> currentClassesToExpand = new ArrayList<OWLClass>();
-        Set<OWLClass> closestPrimitives = new HashSet<OWLClass>();
-
-        currentClassesToExpand.add(classToDefine);
-
-        ListIterator<OWLClass> iterator = currentClassesToExpand.listIterator();
-        while(iterator.hasNext()) {
-            OWLClass cls = iterator.next();
-            Set<OWLClass> parentClasses = reasonerService.getDirectAncestors(cls);
-            Set<OWLClass> namedPVs = extractNamedPVs(parentClasses);
-            parentClasses.removeAll(namedPVs);
-            for(OWLClass parent:parentClasses) {
-                //If is primitive, add to returned set
-                if(reasonerService.isPrimitive(parent)) {
-                    closestPrimitives.add(parent);
-                    continue;
-                }
-                //If not primitive, add to check
-                iterator.add(parent);
-                iterator.previous();
-            }
-        }
-
-        return closestPrimitives;
-    }
-     */
+    */
+    //multi-axiom case
     public void generateDefinition(OWLClass classToDefine, Set<RedundancyOptions> redundancyOptions) {
         //separate authoring form for GCIs: do not want to inherit PVs and ancestors from "above", i.e., from necessary conditions.
         if(namer.isNamedGCI(classToDefine)) {

@@ -11,23 +11,23 @@ import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import tools.InputSignatureHandler;
 
 import java.io.*;
-import java.util.HashSet;
 import java.util.Set;
 
-public class SubOntologyExtractionTest {
+public class RunSubontologyExtraction {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         /*
         * Input for subontology extraction: source ontology (path), focus concepts (list, refset as .txt), source RF2 file for OWL to RF2 conversion
          */
-        File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2018.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal-products/medicinal_products_refset.txt");
+        File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2020.owl");
+        //File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal-products/medicinal_products_refset.txt");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/ips/ips_refset.txt");
 
         //ensure same version as source ontology OWL file
-        String sourceRF2File = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2018.zip";
+        String sourceRF2FilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-july-2020.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/medicinal-products/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/ips/";
 
-        boolean computeRF2 = true;
+        boolean computeRF2 = false;
         boolean verifySubontology = false;
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
@@ -49,7 +49,7 @@ public class SubOntologyExtractionTest {
             OWLOntology nnfOntology = generator.getNnfOntology();
             OntologySaver.saveOntology(nnfOntology, outputPath+"subOntologyNNFs.owl");
 
-            SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputPath, sourceRF2File);
+            SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputPath, sourceRF2FilePath);
         }
 
         if(verifySubontology) {

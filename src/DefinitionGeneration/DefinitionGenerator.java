@@ -193,7 +193,7 @@ public abstract class DefinitionGenerator {
         }
 
         //make generatedDefinitions a set of sets, go from there? //TODO: "get latest necessary conditions" might be broken...
-        if(definitionAxioms.size() == 0) {
+        if(definitionAxioms.size() == 0 && !namer.isNamedGCI(definedClass)) {
             System.out.println("Undefined class: " + definedClass);
             undefinedClasses.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
             return;

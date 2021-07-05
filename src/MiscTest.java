@@ -14,41 +14,28 @@ import java.util.Set;
 public class MiscTest {
 
     public static void main(String[] args) throws OWLOntologyCreationException, OWLOntologyStorageException, ReasonerException {
-        String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
-        File inputOntologyFile = new File(inputPath + "sct-jan-2021.owl");
+        String inputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/era/";
+        File inputOntologyFile1 = new File(inputPath + "era_edta_preMultiAxiom.owl");
+        File inputOntologyFile2 = new File(inputPath + "subOntology.owl");
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
-        OWLOntology inputOntology = man.createOntology();
+        OWLOntologyManager man2 = OWLManager.createOWLOntologyManager();
+
+        OWLOntology inputOntology1 = man.loadOntologyFromOntologyDocument(inputOntologyFile1);
+        OWLOntology inputOntology2 = man2.loadOntologyFromOntologyDocument(inputOntologyFile2);
+
+        Set<OWLClass> classes1 = inputOntology1.getClassesInSignature();
+        Set<OWLClass> classes2 = inputOntology2.getClassesInSignature();
+
+        Set<OWLClass> diffIn1 = new HashSet<OWLClass>(classes1);
+        diffIn1.removeAll(classes2);
+        Set<OWLClass> diffIn2 = new HashSet<OWLClass>(classes2);
+        diffIn2.removeAll(classes1);
+        System.out.println("In 1, not 2: " + diffIn1);
+        System.out.println("In 2, not 1: " + diffIn2);
+
         OWLDataFactory df = man.getOWLDataFactory();
 
-        OWLClass A = df.getOWLClass(IRI.create("http://snomed.info/id/" + "A"));
-        OWLClass B = df.getOWLClass(IRI.create("http://snomed.info/id/" + "D"));
-        OWLClass C = df.getOWLClass(IRI.create("http://snomed.info/id/" + "C"));
-        OWLClass D = df.getOWLClass(IRI.create("http://snomed.info/id/" + "P"));
-        OWLClass E = df.getOWLClass(IRI.create("http://snomed.info/id/" + "P2"));
-        OWLClass F = df.getOWLClass(IRI.create("http://snomed.info/id/" + "E"));
-
-        OWLObjectProperty r = df.getOWLObjectProperty(IRI.create("http://snomed.info/id/" + "r"));
-
-        OWLEquivalentClassesAxiom ax1 = df.getOWLEquivalentClassesAxiom(A, df.getOWLObjectIntersectionOf(B, df.getOWLObjectSomeValuesFrom(r, C)));
-        OWLEquivalentClassesAxiom ax2 = df.getOWLEquivalentClassesAxiom(B, df.getOWLObjectIntersectionOf(D, df.getOWLObjectSomeValuesFrom(r, E)));
-        OWLSubClassOfAxiom ax3 = df.getOWLSubClassOfAxiom(df.getOWLObjectSomeValuesFrom(r, C), df.getOWLObjectSomeValuesFrom(r, E));
-
-        man.addAxioms(inputOntology, new HashSet<OWLAxiom>(Arrays.asList(ax1, ax2, ax3)));
-
-
-        OntologyReasoningService reasoningService = new OntologyReasoningService(inputOntology);
-        reasoningService.classifyOntology();
-
-        OWLReasoner reasoner = reasoningService.getReasoner();
-        reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
-
-        OWLClassExpression exp = df.getOWLObjectSomeValuesFrom(r, C);
-
-        System.out.println(reasoner.getSuperClasses(exp, false));
-        System.out.println(reasoner.getSubClasses(exp, false));
-        System.out.println(reasoner.getSuperClasses(exp, true));
-        System.out.println(reasoner.getSubClasses(exp, true));
 
     }
 }
