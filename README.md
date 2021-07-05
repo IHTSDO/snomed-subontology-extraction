@@ -24,7 +24,7 @@ Currently, the prototype can be run from the RunSubontologyExtraction.java file.
 
 Two options can also be specified:\
   : computeRF2 - computes the RF2 format of the subontology, alongside the default .owl file\
-  : verifySubontology - runs verification for the computed subontology to check critera (1) and (2) above **WARNING: can be expensive for larger subontologies**\
+  : verifySubontology - runs verification for the computed subontology to check critera (1) and (2) above **WARNING: can be expensive for larger subontologies**
 
 If computing RF2, the following must also be specified:\
   : sourceRF2FilePath - path to the RF2 format associated with the Source ontology OWL file specified above
