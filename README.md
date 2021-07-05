@@ -10,7 +10,7 @@ Steps outline (see documentation for full details):\
   : (iii) Populate RBox (currently star module of roles appearing in the definitions added during steps (i) and (ii)\
   : (iv)  Addition of top-level SCT groupers (later may expand to utilise grouper selection algorithms)\
   : (v)   Completion of the transitive closure between all concepts in the subontology, using atomic inclusions A1 <= A2 only where necessary\
-  : (vi)  Shrinking of subontology hierarchy (i.e., removal of unnecessary supporting concepts)\
+  : (vi)  Shrinking of subontology hierarchy (i.e., removal of unnecessary supporting concepts)
 
 When computing the subontology in RF2 format, the following steps are also included:\
         : Automatic addition of required metadata concepts (for loading into subontology browser, e.g. language concepts)\
@@ -27,9 +27,9 @@ Two options can also be specified:\
   : verifySubontology - runs verification for the computed subontology to check critera (1) and (2) above **WARNING: can be expensive for larger subontologies**\\
 
 If computing RF2, the following must also be specified:\
-  : sourceRF2FilePath - path to the RF2 format associated with the Source ontology OWL file specified above\
+  : sourceRF2FilePath - path to the RF2 format associated with the Source ontology OWL file specified above
         
-**NOTE: command line and executable jar options will be added later**\
+**NOTE: command line and executable jar options will be added later**
    
 # Compiling RF2 notes (to be improved later)
 Currently RF2 files are printed as follows\
