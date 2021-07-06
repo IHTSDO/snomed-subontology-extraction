@@ -46,3 +46,5 @@ To print results in FSN format (source type destination), you will need to inclu
 src/resources
 
 Easier integration will be provided as the prototype develops.
+
+**temporary -- should not be necessary shortly**
