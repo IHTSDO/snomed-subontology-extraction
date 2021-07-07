@@ -5,7 +5,8 @@ import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
-import org.snomed.otf.owltoolkit.conversion.OWLtoRF2Service;
+//import org.snomed.otf.owltoolkit.conversion.OWLtoRF2Service;
+import ResultsWriters.OWLtoRF2Service;
 import org.snomed.otf.owltoolkit.service.RF2ExtractionService;
 import org.snomed.otf.owltoolkit.util.InputStreamSet;
 

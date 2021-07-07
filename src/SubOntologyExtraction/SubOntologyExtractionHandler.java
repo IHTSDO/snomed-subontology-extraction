@@ -94,7 +94,6 @@ public class SubOntologyExtractionHandler {
         this.computeSubontology(computeRF2, defaultOptions);
     }
 
-    //TODO: refactor, split
     public void computeSubontology(boolean computeRF2, Set<RedundancyOptions> inputRedundancyOptions) throws OWLException, ReasonerException {
         redundancyOptions = inputRedundancyOptions;
 
@@ -148,7 +147,7 @@ public class SubOntologyExtractionHandler {
         //add property inclusion axioms for properties
         populateRBox();
 
-        //add grouper classes
+        //add grouper classes -- currently only top level groupers (if using grouper selection algorithms, place functionality here
         addGrouperConcepts();
 
         System.out.println("Classifying subontology for transitive closure completion.");
@@ -164,7 +163,6 @@ public class SubOntologyExtractionHandler {
         //shrinking hierarchy. P1 <= P2 <= P3   where P2 has no conjunctive definition (i.e. just P2 <= P3)
         shrinkAtomicHierarchy();
 
-        //TODO: make stats handler, separate functionality.
         System.out.println("Added classes: " + additionalConceptsInExpandedSignature);
     }
 

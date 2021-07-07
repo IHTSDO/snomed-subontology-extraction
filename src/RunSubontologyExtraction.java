@@ -19,16 +19,17 @@ public class RunSubontologyExtraction {
         * Input for subontology extraction: source ontology (path), focus concepts (list, refset as .txt), source RF2 file for OWL to RF2 conversion
          */
         File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2020.owl");
-        //File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal-products/medicinal_products_refset.txt");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/ips/ips_refset.txt");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/era/era_edta_refset.txt");
 
         //ensure same version as source ontology OWL file
-        String sourceRF2FilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-july-2020.zip";
+        String sourceRF2FilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2020.zip";
 
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/ips/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/era/";
 
-        boolean computeRF2 = false;
+        boolean computeRF2 = true;
         boolean verifySubontology = false;
+
+        //TODO: specifying redundancy options
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology sourceOntology = man.loadOntologyFromOntologyDocument(sourceOntologyFile);
@@ -55,10 +56,10 @@ public class RunSubontologyExtraction {
         if(verifySubontology) {
             VerificationChecker checker = new VerificationChecker();
             System.out.println("==========================");
-            System.out.println("VERIFICATION: Step (1) focus concept equivalence");
+            System.out.println("VERIFICATION: Step (1) (defined) focus concept equivalence");
             System.out.println("==========================");
             boolean satisfiesEquivalentFocusConceptsRequirement = checker.namedFocusConceptsSatisfyEquivalence(generator.getFocusConcepts(), subOntology, sourceOntology);
-            System.out.println("Satisfies equivalence of focus classes requirement?" + satisfiesEquivalentFocusConceptsRequirement);
+            System.out.println("Satisfies equivalence of (defined) focus classes requirement?" + satisfiesEquivalentFocusConceptsRequirement);
 
             System.out.println("==========================");
             System.out.println("VERIFICATION: Step (2) transitive closure equal within sig(subOntology)");
