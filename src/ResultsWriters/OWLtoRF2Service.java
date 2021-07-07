@@ -36,6 +36,7 @@ import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 
+//used from content-extraction branch of SNOMED OWL toolkit
 public class OWLtoRF2Service {
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
     private Map<Long, String> conceptDescriptionsFSN;
