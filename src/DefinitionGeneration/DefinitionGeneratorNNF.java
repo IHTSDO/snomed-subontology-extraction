@@ -91,9 +91,11 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         nonRedundantAncestors.addAll(reducedParentNamedClasses);
         nonRedundantAncestors.addAll(reducedAncestorPVs);
 
-        Set<Set<OWLClassExpression>> nonRedundantAncestorsSet = new HashSet<Set<OWLClassExpression>>();
-        nonRedundantAncestorsSet.add(nonRedundantAncestors);
-        constructDefinition(inputClass, nonRedundantAncestorsSet);
+        //Set<Set<OWLClassExpression>> nonRedundantAncestorsSet = new HashSet<Set<OWLClassExpression>>();
+        Map<Set<OWLClassExpression>, Boolean> nonRedundantAncestorsMap = new HashMap<Set<OWLClassExpression>, Boolean>();
+        //nonRedundantAncestorsSet.add(nonRedundantAncestors);
+        nonRedundantAncestorsMap.put(nonRedundantAncestors, false);
+        constructDefinition(inputClass, nonRedundantAncestorsMap);
 
         System.out.println("INPUT CLASS: " + inputClass);
         System.out.println("Nonredundant ancestors: " + nonRedundantAncestors);

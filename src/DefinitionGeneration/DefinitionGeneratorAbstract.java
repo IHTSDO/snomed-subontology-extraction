@@ -115,16 +115,26 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             return;
         }
 
+        if(classToDefine.toString().contains("87784001")) {
+            System.out.println("SOFT TISSUES: " + classToDefine);
+        }
+
         //if class has multiple definitional axioms (i.e. == and ==, or == and <=), handle each separately.
         Set<OWLAxiom> sourceDefinitionsForClass = new HashSet<OWLAxiom>();
         sourceDefinitionsForClass.addAll(sourceOntology.getEquivalentClassesAxioms(classToDefine));
         sourceDefinitionsForClass.addAll(sourceOntology.getSubClassAxiomsForSubClass(classToDefine));
 
-        Set<Set<OWLClassExpression>> definingConditionsForEachAxiom = new HashSet<Set<OWLClassExpression>>();
+        //Set<Set<OWLClassExpression>> definingConditionsForEachAxiom = new HashSet<Set<OWLClassExpression>>();
+        Map<Set<OWLClassExpression>, Boolean> definingConditionsForEachAxiom = new HashMap<Set<OWLClassExpression>, Boolean>(); //TODO: better type than map, perhaps custom tuple
+        boolean isEquivalence = false;
         for(OWLAxiom sourceAx:sourceDefinitionsForClass) {
+            if(sourceAx.getAxiomType().equals(AxiomType.EQUIVALENT_CLASSES)) {
+                isEquivalence = true;
+            }
             Set<OWLClass> closestParentClasses = new HashSet<OWLClass>();
             Set<OWLClass> closestParentPVs = new HashSet<OWLClass>();
-            //extract RHS of definition axiom for each source axiom
+
+            //extract RHS of definition axiom for each source axiom, split into parent classes and parent PVs
             if (sourceAx instanceof OWLSubClassOfAxiom) {
                 Set<OWLClassExpression> closestParents = ((OWLSubClassOfAxiom) sourceAx).getSuperClass().asConjunctSet();
                 for (OWLClassExpression exp : closestParents) {
@@ -168,6 +178,8 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
                 ancestors.addAll(reasonerService.getAncestors(parentPV));
             }
 
+            //TODO: check 09-08-21, must add proximal primitives such that PVi <= ... <= Pi where PVi is direct parent of A?
+
             Set<OWLClass> ancestorRenamedPVs = extractNamedPVs(ancestors);
             //Set<OWLClass> ancestorClasses = ancestors;
             //ancestorClasses.removeAll(ancestorRenamedPVs);
@@ -178,6 +190,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
             Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
 
+            //TODO: check, if this form of redundancy was non-optional, could skip the reduction step entirely? Just compute closest primitive parents & PVs?
             if (redundancyOptions.contains(RedundancyOptions.eliminateLessSpecificRedundancy)) {
                 reducedParentNamedClasses = reduceClassSet(closestPrimitives);
                 System.out.println("Parents before GCI check: " + reducedParentNamedClasses);
@@ -236,7 +249,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             nonRedundantAncestors.addAll(reducedAncestorPVs);
 
             //constructDefinitionAxiom(classToDefine, nonRedundantAncestors);
-            definingConditionsForEachAxiom.add(nonRedundantAncestors);
+            definingConditionsForEachAxiom.put(nonRedundantAncestors, isEquivalence);
         }
         constructDefinition(classToDefine, definingConditionsForEachAxiom);
     }
@@ -379,10 +392,12 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
         System.out.println("Authoring form parents for class: " + gciName + " are: " + authoringForm);
 
-        Set<Set<OWLClassExpression>> authoringFormSet = new HashSet<Set<OWLClassExpression>>();
-        authoringFormSet.add(authoringForm);
-        constructDefinition(gciName, authoringFormSet);
+        //Set<Set<OWLClassExpression>> authoringFormSet = new HashSet<Set<OWLClassExpression>>();
+        //TODO: 11/08/21 temp
+        Map<Set<OWLClassExpression>, Boolean> authoringFormSet = new HashMap<Set<OWLClassExpression>, Boolean>();
 
+        authoringFormSet.put(authoringForm, false);
+        constructDefinition(gciName, authoringFormSet);
     }
 
 }

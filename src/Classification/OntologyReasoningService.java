@@ -78,7 +78,7 @@ public class OntologyReasoningService {
         return reasoner.getSuperClasses(cls, true).getFlattened();
     }
 
-    /* //ELK does not support
+    /* //ELK does not support directly
     public Set<OWLObjectPropertyExpression> getDirectAncestors(OWLObjectPropertyExpression role) {
         return reasoner.getSuperObjectProperties(role, false).getFlattened();
     }
@@ -104,12 +104,42 @@ public class OntologyReasoningService {
         return reasoner.getSubObjectProperties(role, true).getFlattened();
     }
      */
+    //start at s <= r, then move down through t <= s etc, to return t, s etc for role r
+    public Set<OWLObjectPropertyExpression> getDescendantProperties(OWLObjectPropertyExpression role) {
+        ListIterator<OWLObjectPropertyExpression> rolesIterator = new ArrayList<OWLObjectPropertyExpression>(Arrays.asList(role)).listIterator();
+        Set<OWLObjectPropertyExpression> descendantProperties = new HashSet<OWLObjectPropertyExpression>();
+
+        //recursively add all subproperties of reflexive properties as reflexive (ELK does not support finding superproperties)
+        while(rolesIterator.hasNext()) {
+            OWLObjectPropertyExpression prop = rolesIterator.next();
+            System.out.println("Current prop: " + prop.toString());
+
+            for(OWLSubObjectPropertyOfAxiom propAx:reasoner.getRootOntology().getObjectSubPropertyAxiomsForSuperProperty(prop)) {
+                descendantProperties.add(propAx.getSubProperty());
+                rolesIterator.add(propAx.getSubProperty());
+                rolesIterator.previous();
+            }
+            /*
+            for(OWLSubObjectPropertyOfAxiom propAx:backgroundOntology.getObjectSubPropertyAxiomsForSuperProperty(prop)) {
+                System.out.println("Propax: " + propAx.toString());
+                if(!additionalReflexiveProperties.contains(propAx.getSubProperty())) {
+                    reflexiveIterator.add(propAx.getSubProperty());
+                    reflexiveIterator.previous();
+                    additionalReflexiveProperties.add(propAx.getSubProperty());
+                    System.out.println("Reflexive property added: " + propAx.getSubProperty().toString());
+                }
+            }
+             */
+        }
+        return descendantProperties;
+    }
+
 
     public Set<OWLClass> getDescendants(OWLClass cls) {
         return reasoner.getSubClasses(cls, false).getFlattened();
     }
 
-    //ELK does not support
+    //ELK does not support , have to work around (see below)
     /*
     public Set<OWLObjectPropertyExpression> getDescendants(OWLObjectPropertyExpression role) {
         return reasoner.getSubObjectProperties(role, false).getFlattened();

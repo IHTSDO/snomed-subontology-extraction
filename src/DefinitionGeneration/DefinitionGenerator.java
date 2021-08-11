@@ -105,7 +105,7 @@ public abstract class DefinitionGenerator {
         //retrieve reflexive PVs in definition
         for(OWLObjectSomeValuesFrom pv:inputPVs) {
             boolean isReflexiveProperty = checkIfReflexiveProperty(pv.getProperty().asOWLObjectProperty());
-            if (isReflexiveProperty) {
+            if(isReflexiveProperty) {
                 if(reasonerService.getAncestors(inputClass).contains(pv.getFiller()) || pv.getFiller().equals(inputClass)) {
                     continue;
                 }
@@ -154,10 +154,15 @@ public abstract class DefinitionGenerator {
         return namer.retrieveNamesFromPVs(pvs);
     }
 
-    protected void constructDefinition(OWLClass definedClass, Set<Set<OWLClassExpression>> definingConditionsByAxiom) {
+    //protected void constructDefinition(OWLClass definedClass, Set<Set<OWLClassExpression>> definingConditionsByAxiom) {
+    protected void constructDefinition(OWLClass definedClass, Map<Set<OWLClassExpression>, Boolean> definingConditionsByAxiom) {
         //TODO: 28-05-21 -- issues with defined concepts that have a separate necessary condition that is not also sufficient. Need to handle these separately at generation
         Set<OWLAxiom> definitionAxioms = new HashSet<OWLAxiom>();
-        for(Set<OWLClassExpression> definingConditions:definingConditionsByAxiom) {
+
+        //for(Set<OWLClassExpression> definingConditions:definingConditionsByAxiom) {
+        for(Map.Entry<Set<OWLClassExpression>, Boolean> entry:definingConditionsByAxiom.entrySet()) {
+            Set<OWLClassExpression> definingConditions = entry.getKey();
+            Boolean isEquivalence = entry.getValue();
             definingConditions.remove(df.getOWLThing());
             definingConditions.remove(df.getOWLNothing());
             if (definingConditions.size() == 0) {
@@ -166,13 +171,15 @@ public abstract class DefinitionGenerator {
             OWLAxiom definingAxiom = null;
             if (definingConditions.size() == 1) {
                 OWLClassExpression definingCondition = (new ArrayList<OWLClassExpression>(definingConditions)).get(0);
-                if (!sourceOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
+                //if (!sourceOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
+                if(isEquivalence) {
                     definingAxiom = df.getOWLEquivalentClassesAxiom(definedClass, definingCondition);
                 } else {
                     definingAxiom = df.getOWLSubClassOfAxiom(definedClass, definingCondition);
                 }
             } else {
-                if (!sourceOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
+                //if (!sourceOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
+                if(isEquivalence) {
                     definingAxiom = df.getOWLEquivalentClassesAxiom(definedClass, df.getOWLObjectIntersectionOf(definingConditions));
 
                 } else {
