@@ -1,5 +1,5 @@
 # Subontology Extraction Prototype
-Author: Warren Del-Pinto (warren.del-pinto@manchester.ac.uk)\
+Author: Warren Del-Pinto (warren.del-pinto@manchester.ac.uk, warren.delpinto@gmail.com)\
 Produces an extracted subontology for a given background ontology and set of concepts, with the aim of satisfying the following criteria:\
     1) All focus (input) concept definitions are equivalent in the source and sub ontologies.\
     2) The transitive closure between all concepts in the final subontology is equal (up to the signature of the subontology) in the source and sub ontologies.
