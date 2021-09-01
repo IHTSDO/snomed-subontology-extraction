@@ -17,33 +17,38 @@ import java.util.Set;
 
 public class RunSubontologyExtraction {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
+        OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         /*
         * Input for subontology extraction: source ontology (path), inputRefsetFile for focus concepts (list, refset as .txt)
          */
-        File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/anatomy/anatomy_20210810.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/anatomy-skin/input_limb_finger.txt");
+        File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2020.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal-products/medicinal_products_refset_TEST_BUG.txt");
 
+        //if focus concepts specified as refset
+        Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+
+        //alternatively, can specify concepts directly as a set
+        /*
+        Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
+        OWLDataFactory df = man.getOWLDataFactory();
+        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + "conceptID")));
+         */
 
         boolean computeRF2 = false;
         //if computing RF2, provide RF2 files corresponding to the sourceOntologyFile OWL file for OWL to RF2 conversion -- ensure same ontology version as sourceOntologyFile
         String sourceRF2FilePath = "";
         if(computeRF2) {
-            sourceRF2FilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2020.zip";
+            sourceRF2FilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-july-2020.zip";
         }
 
-        boolean verifySubontology = true;
+        boolean verifySubontology = false;
 
         //output path
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/anatomy/skin/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/medicinal-products/";
 
-        OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology sourceOntology = man.loadOntologyFromOntologyDocument(sourceOntologyFile);
-        Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
-
         //generating subontology
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(sourceOntology, conceptsToDefine);
-
-
 
         //redundancy elimination options -- optional, if not specified, default will be used
         Set<RedundancyOptions> customRedundancyOptions = new HashSet<RedundancyOptions>();

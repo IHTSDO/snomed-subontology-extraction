@@ -114,11 +114,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             computeAuthoringFormForGCI(classToDefine);
             return;
         }
-
-        if(classToDefine.toString().contains("87784001")) {
-            System.out.println("SOFT TISSUES: " + classToDefine);
-        }
-
+        
         //if class has multiple definitional axioms (i.e. == and ==, or == and <=), handle each separately.
         Set<OWLAxiom> sourceDefinitionsForClass = new HashSet<OWLAxiom>();
         sourceDefinitionsForClass.addAll(sourceOntology.getEquivalentClassesAxioms(classToDefine));

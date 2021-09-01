@@ -83,10 +83,6 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
             reducedAncestorPVs = eliminateReflexivePVRedundancies(inputClass, reducedAncestorPVs);
         }
 
-        if(inputClass.toString().contains("425576009")) {
-            System.out.println("REDUCED PARENT CLASSES NNF: " + reducedParentNamedClasses);
-        }
-
         Set<OWLClassExpression> nonRedundantAncestors = new HashSet<OWLClassExpression>();
         nonRedundantAncestors.addAll(reducedParentNamedClasses);
         nonRedundantAncestors.addAll(reducedAncestorPVs);
