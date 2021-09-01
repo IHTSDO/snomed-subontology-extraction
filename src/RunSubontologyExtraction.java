@@ -18,18 +18,23 @@ import java.util.Set;
 public class RunSubontologyExtraction {
     public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
         /*
-        * Input for subontology extraction: source ontology (path), focus concepts (list, refset as .txt), source RF2 file for OWL to RF2 conversion
+        * Input for subontology extraction: source ontology (path), inputRefsetFile for focus concepts (list, refset as .txt)
          */
         File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/anatomy/anatomy_20210810.owl");
         File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/anatomy-skin/input_limb_finger.txt");
 
-        //ensure same version as source ontology OWL file
-        String sourceRF2FilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2020.zip";
-
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/anatomy/skin/";
 
         boolean computeRF2 = false;
+        //if computing RF2, provide RF2 files corresponding to the sourceOntologyFile OWL file for OWL to RF2 conversion -- ensure same ontology version as sourceOntologyFile
+        String sourceRF2FilePath = "";
+        if(computeRF2) {
+            sourceRF2FilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2020.zip";
+        }
+
         boolean verifySubontology = true;
+
+        //output path
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/anatomy/skin/";
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
         OWLOntology sourceOntology = man.loadOntologyFromOntologyDocument(sourceOntologyFile);
@@ -38,34 +43,40 @@ public class RunSubontologyExtraction {
         //generating subontology
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(sourceOntology, conceptsToDefine);
 
-        //with default redundancy elimination -- if using non-default (below), comment out this line and uncomment the next block
-        generator.computeSubontology(computeRF2);
+
+
+        //redundancy elimination options -- optional, if not specified, default will be used
+        Set<RedundancyOptions> customRedundancyOptions = new HashSet<RedundancyOptions>();
 
         //Example of specifying non-default redundancy elimination options.
         /*
-        Set<RedundancyOptions> options = new HashSet<RedundancyOptions>();
-        options.add(RedundancyOptions.eliminateLessSpecificRedundancy);
-        options.add(RedundancyOptions.eliminateRoleGroupRedundancy);
-        options.add(RedundancyOptions.eliminateSufficientProximalGCIs);
-        generator.computeSubontology(computeRF2, options);
+        Set<RedundancyOptions> customRedundancyOptions = new HashSet<RedundancyOptions>();
+        customRedundancyOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
+        customRedundancyOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
+        customRedundancyOptions.add(RedundancyOptions.eliminateSufficientProximalGCIs);
          */
 
+        //with default redundancy elimination -- if using non-default (below), comment out this line and uncomment the next block
+        if(customRedundancyOptions.isEmpty()) {
+            generator.computeSubontology(computeRF2);
+        }
+        else {
+            //with non-default redundancy elimination options specified by user
+            generator.computeSubontology(computeRF2, customRedundancyOptions);
+        }
 
         OWLOntology subOntology = generator.getCurrentSubOntology();
-
         OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
-
 
         //Extract RF2 for subontology
         if(computeRF2) {
             generator.generateNNFs();
 
             OWLOntology nnfOntology = generator.getNnfOntology();
-            OntologySaver.saveOntology(nnfOntology, outputPath+"subOntologyNNFs.owl");
+            OntologySaver.saveOntology(nnfOntology, outputPath + "subOntologyNNFs.owl");
 
             SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputPath, sourceRF2FilePath);
         }
-
         if(verifySubontology) {
             VerificationChecker checker = new VerificationChecker();
             System.out.println("==========================");
