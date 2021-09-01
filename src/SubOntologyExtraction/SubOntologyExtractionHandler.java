@@ -65,6 +65,7 @@ public class SubOntologyExtractionHandler {
         this.renamePVsAndClassify();
         focusConceptDefinitions = new HashSet<>();
         nnfDefinitions = new HashSet<>();
+        nnfOntology = man.createOntology();
 
         abstractDefinitionsGenerator = new DefinitionGeneratorAbstract(sourceOntology, sourceOntologyReasoningService, sourceOntologyNamer);
     }
@@ -113,7 +114,9 @@ public class SubOntologyExtractionHandler {
         //include authoring definitions, role inclusions (rbox?), GCIs for defined classes
         populateSubOntology();
 
-        generateNNFs();
+        if(computeRF2) {
+            generateNNFs();
+        }
 
         //add necessary metadata
         //add relevant annotation axioms
@@ -169,7 +172,8 @@ public class SubOntologyExtractionHandler {
     public void generateNNFs() throws OWLOntologyCreationException, ReasonerException {
         //Compute NNFs
         computeNNFDefinitions(subOntology.getClassesInSignature(), redundancyOptions);
-        nnfOntology = man.createOntology(nnfDefinitions);
+        //nnfOntology = man.createOntology(nnfDefinitions);
+        man.addAxioms(nnfOntology, nnfDefinitions);
     }
 
     private void addFocusConceptGCIAxioms() {
@@ -706,6 +710,7 @@ public class SubOntologyExtractionHandler {
 
         subOntologyEntities.addAll(nnfOntology.getClassesInSignature());
         subOntologyEntities.addAll(nnfOntology.getObjectPropertiesInSignature());
+
         Set<OWLAnnotationAssertionAxiom> annotationAssertionAxioms = new HashSet<>();
         for (OWLEntity ent : subOntologyEntities) {
             annotationAssertionAxioms.addAll(sourceOntology.getAnnotationAssertionAxioms(ent.getIRI()));

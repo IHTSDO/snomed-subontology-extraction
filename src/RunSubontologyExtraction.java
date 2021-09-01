@@ -22,7 +22,7 @@ public class RunSubontologyExtraction {
         * Input for subontology extraction: source ontology (path), inputRefsetFile for focus concepts (list, refset as .txt)
          */
         File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2020.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal-products/medicinal_products_refset_TEST_BUG.txt");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal-products/medicinal_products_refset.txt");
 
         //if focus concepts specified as refset
         Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);

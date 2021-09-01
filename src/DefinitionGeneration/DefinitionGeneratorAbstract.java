@@ -114,7 +114,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             computeAuthoringFormForGCI(classToDefine);
             return;
         }
-        
+
         //if class has multiple definitional axioms (i.e. == and ==, or == and <=), handle each separately.
         Set<OWLAxiom> sourceDefinitionsForClass = new HashSet<OWLAxiom>();
         sourceDefinitionsForClass.addAll(sourceOntology.getEquivalentClassesAxioms(classToDefine));
