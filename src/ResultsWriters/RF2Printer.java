@@ -208,18 +208,12 @@ public class RF2Printer extends Printer {
         for(OWLAxiom axiom:nnfOntology.getAxioms()) {
             representations.add(converter.convertAxiomToRelationships(axiom));
         }
-
-
-        //Set<AxiomRepresentation> representations = representationsMap.get((long)1);
-
-        System.out.println("NNF ontology size: " + nnfOntology.getLogicalAxiomCount());
-        System.out.println("Rep map size: " + representationsMap.size());
-        System.out.println("Rep size: " + representations.size());
+        
 
         BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
         StringBuilder sb = new StringBuilder();
 
-        Map<Long, List<Relationship>> definedConceptRelationshipsMap = new HashMap<Long, List<Relationship>>();
+        //Map<Long, List<Relationship>> definedConceptRelationshipsMap = new HashMap<Long, List<Relationship>>();
         int i = 100;
         int check = 0;
         Random random = new Random();

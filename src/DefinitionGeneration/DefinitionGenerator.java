@@ -234,4 +234,52 @@ public abstract class DefinitionGenerator {
     }
     public Set<OWLAxiom> getUndefinedClassAxioms() { return this.undefinedClasses; }
     protected OWLOntology getSourceOntology() { return this.sourceOntology; }
+
+    //currently not storing property definitions, may make sense to combine these two generateDefinitions to operate simply over entities and decide based on type
+    public Set<OWLAxiom> generatePropertyDefinition(OWLObjectProperty propToDefine) {
+        //TODO: 03-09-21 -- is this sufficient for RBox?
+        Set<OWLSubObjectPropertyOfAxiom> propAxioms = sourceOntology.getAxioms(AxiomType.SUB_OBJECT_PROPERTY);
+        System.out.println("propAxioms: " + propAxioms);
+        //collect stated super properties of property to define
+        Set<OWLObjectPropertyExpression> statedSuperProps = new HashSet<OWLObjectPropertyExpression>();
+        for(OWLSubObjectPropertyOfAxiom ax:propAxioms) {
+            if(ax.getSubProperty().equals(propToDefine)) {
+                statedSuperProps.add(ax.getSuperProperty());
+            }
+        }
+
+        //eliminate non-direct super properties
+        Set<OWLObjectPropertyExpression> otherSuperProps = new HashSet<OWLObjectPropertyExpression>();
+        Set<OWLObjectPropertyExpression> directSuperProps = new HashSet<OWLObjectPropertyExpression>();
+
+        for(OWLObjectPropertyExpression superProp:statedSuperProps) {
+            otherSuperProps.remove(superProp);
+            if(isDirectSuperProperty(superProp, otherSuperProps)) {
+                directSuperProps.add(superProp);
+            }
+            otherSuperProps.add(superProp);
+        }
+
+        System.out.println("STATED SUPER PROPS: " + statedSuperProps);
+        System.out.println("DIRECT SUPER PROPS: " + directSuperProps);
+        //return set of inclusion axioms of form r <= s for each direct super property s
+        Set<OWLAxiom> definitionalAxioms = new HashSet<OWLAxiom>();
+        for(OWLObjectPropertyExpression directSuperProp:directSuperProps) {
+            System.out.println("Definition axiom to add: " + df.getOWLSubObjectPropertyOfAxiom(propToDefine,directSuperProp));
+            definitionalAxioms.add(df.getOWLSubObjectPropertyOfAxiom(propToDefine, directSuperProp));
+        }
+        return definitionalAxioms;
+    }
+
+    private boolean isDirectSuperProperty(OWLObjectPropertyExpression superProperty, Set<OWLObjectPropertyExpression> otherSuperProperties) {
+        Set<OWLSubObjectPropertyOfAxiom> propAxioms = sourceOntology.getAxioms(AxiomType.SUB_OBJECT_PROPERTY);
+        for (OWLObjectPropertyExpression otherProp : otherSuperProperties) {
+            for (OWLSubObjectPropertyOfAxiom propAx : propAxioms) {
+                if (propAx.getSubProperty().equals(superProperty) && otherSuperProperties.contains(propAx.getSuperProperty())) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }

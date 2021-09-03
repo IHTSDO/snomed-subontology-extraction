@@ -115,7 +115,8 @@ public class SubOntologyExtractionHandler {
         populateSubOntology();
 
         if(computeRF2) {
-            generateNNFs();
+            //generateNNFs();
+            generateNNFs(redundancyOptions);
         }
 
         //add necessary metadata
@@ -167,13 +168,6 @@ public class SubOntologyExtractionHandler {
         shrinkAtomicHierarchy();
 
         System.out.println("Added classes: " + additionalConceptsInExpandedSignature);
-    }
-
-    public void generateNNFs() throws OWLOntologyCreationException, ReasonerException {
-        //Compute NNFs
-        computeNNFDefinitions(subOntology.getClassesInSignature(), redundancyOptions);
-        //nnfOntology = man.createOntology(nnfDefinitions);
-        man.addAxioms(nnfOntology, nnfDefinitions);
     }
 
     private void addFocusConceptGCIAxioms() {
@@ -685,8 +679,18 @@ public class SubOntologyExtractionHandler {
         }
     }
 
-    private void computeNNFDefinitions(Set<OWLClass> classes, Set<RedundancyOptions> redundancyOptions) throws ReasonerException, OWLOntologyCreationException {
-        System.out.println("Computing necessary normal form (inferred relationships).");
+    /*
+    public void generateNNFs() throws OWLOntologyCreationException, ReasonerException {
+        //Compute NNFs
+        computeNNFDefinitions(subOntology.getClassesInSignature(), redundancyOptions);
+        //nnfOntology = man.createOntology(nnfDefinitions);
+        man.addAxioms(nnfOntology, nnfDefinitions);
+    }
+     */
+
+    //private void computeNNFDefinitions(Set<OWLClass> classes, Set<RedundancyOptions> redundancyOptions) throws ReasonerException, OWLOntologyCreationException {
+    private void generateNNFs(Set<RedundancyOptions> redundancyOptions) throws ReasonerException, OWLOntologyCreationException {
+        System.out.println("Computing necessary normal form (inferred relationships) for subontology entities.");
 
         IntroducedNameHandler subOntologyNamer = new IntroducedNameHandler(subOntology);
         OWLOntology subOntologyWithNamings = subOntologyNamer.returnOntologyWithNamings();
@@ -694,11 +698,20 @@ public class SubOntologyExtractionHandler {
         subOntologyReasoningService.classifyOntology();
         DefinitionGenerator nnfDefinitionsGenerator = new DefinitionGeneratorNNF(subOntology, subOntologyReasoningService, subOntologyNamer);
 
+        Set<OWLClass> classes = subOntology.getClassesInSignature();
+        Set<OWLObjectProperty> props = subOntology.getObjectPropertiesInSignature();
+
         classes.remove(df.getOWLNothing());
         for(OWLClass cls:classes) {
             nnfDefinitionsGenerator.generateDefinition(cls, redundancyOptions);
         }
         nnfDefinitions.addAll(nnfDefinitionsGenerator.getAllGeneratedDefinitions());
+
+        for(OWLObjectProperty prop:props) {
+            System.out.println("Generating defs for property: " + prop);
+            nnfDefinitions.addAll(nnfDefinitionsGenerator.generatePropertyDefinition(prop));
+        }
+        man.addAxioms(nnfOntology, nnfDefinitions);
     }
 
     private void addAnnotationAssertions() {

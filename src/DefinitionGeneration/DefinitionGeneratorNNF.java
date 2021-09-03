@@ -95,6 +95,5 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
 
         System.out.println("INPUT CLASS: " + inputClass);
         System.out.println("Nonredundant ancestors: " + nonRedundantAncestors);
-
     }
 }

@@ -22,7 +22,7 @@ public class RunSubontologyExtraction {
         * Input for subontology extraction: source ontology (path), inputRefsetFile for focus concepts (list, refset as .txt)
          */
         File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2020.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal-products/medicinal_products_refset.txt");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/era/era_edta_refset.txt");
 
         //if focus concepts specified as refset
         Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
@@ -34,17 +34,17 @@ public class RunSubontologyExtraction {
         conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + "conceptID")));
          */
 
-        boolean computeRF2 = false;
+        boolean computeRF2 = true;
         //if computing RF2, provide RF2 files corresponding to the sourceOntologyFile OWL file for OWL to RF2 conversion -- ensure same ontology version as sourceOntologyFile
         String sourceRF2FilePath = "";
         if(computeRF2) {
             sourceRF2FilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-july-2020.zip";
         }
 
-        boolean verifySubontology = false;
+        boolean verifySubontology = true;
 
         //output path
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/medicinal-products/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/era/";
 
         OWLOntology sourceOntology = man.loadOntologyFromOntologyDocument(sourceOntologyFile);
         //generating subontology
@@ -75,8 +75,7 @@ public class RunSubontologyExtraction {
 
         //Extract RF2 for subontology
         if(computeRF2) {
-            generator.generateNNFs();
-
+            //generator.generateNNFs();
             OWLOntology nnfOntology = generator.getNnfOntology();
             OntologySaver.saveOntology(nnfOntology, outputPath + "subOntologyNNFs.owl");
 
