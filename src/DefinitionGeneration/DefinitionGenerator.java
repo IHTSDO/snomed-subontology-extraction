@@ -239,7 +239,6 @@ public abstract class DefinitionGenerator {
     public Set<OWLAxiom> generatePropertyDefinition(OWLObjectProperty propToDefine) {
         //TODO: 03-09-21 -- is this sufficient for RBox?
         Set<OWLSubObjectPropertyOfAxiom> propAxioms = sourceOntology.getAxioms(AxiomType.SUB_OBJECT_PROPERTY);
-        System.out.println("propAxioms: " + propAxioms);
         //collect stated super properties of property to define
         Set<OWLObjectPropertyExpression> statedSuperProps = new HashSet<OWLObjectPropertyExpression>();
         for(OWLSubObjectPropertyOfAxiom ax:propAxioms) {
@@ -260,12 +259,9 @@ public abstract class DefinitionGenerator {
             otherSuperProps.add(superProp);
         }
 
-        System.out.println("STATED SUPER PROPS: " + statedSuperProps);
-        System.out.println("DIRECT SUPER PROPS: " + directSuperProps);
         //return set of inclusion axioms of form r <= s for each direct super property s
         Set<OWLAxiom> definitionalAxioms = new HashSet<OWLAxiom>();
         for(OWLObjectPropertyExpression directSuperProp:directSuperProps) {
-            System.out.println("Definition axiom to add: " + df.getOWLSubObjectPropertyOfAxiom(propToDefine,directSuperProp));
             definitionalAxioms.add(df.getOWLSubObjectPropertyOfAxiom(propToDefine, directSuperProp));
         }
         return definitionalAxioms;

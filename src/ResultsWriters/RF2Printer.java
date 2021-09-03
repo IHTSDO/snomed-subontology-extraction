@@ -208,7 +208,7 @@ public class RF2Printer extends Printer {
         for(OWLAxiom axiom:nnfOntology.getAxioms()) {
             representations.add(converter.convertAxiomToRelationships(axiom));
         }
-        
+
 
         BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
         StringBuilder sb = new StringBuilder();
