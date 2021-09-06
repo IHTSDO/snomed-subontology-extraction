@@ -19,8 +19,8 @@ When computing the subontology in RF2 format, the following steps are also inclu
 # Running the prototype
 Currently, the prototype can be run from the RunSubontologyExtraction.java file. In the main class, replace the paths with local ones. The following must be specified\
   : Source ontology file (by path, an OWL file)\
-  : Focus concept list (by path, as inputRefsetFile - a text file containing a single column of concept identifiers)\
-  : Output path\
+  : Focus concept list (by path, as inputRefsetFile - a text file containing a single column of concept identifiers. Note: preprocessing refset files - can just extract conceptID column and save separately)\
+  : Output path
 
 Two options can also be specified:\
   : computeRF2 - computes the RF2 format of the subontology, alongside the default .owl file\
