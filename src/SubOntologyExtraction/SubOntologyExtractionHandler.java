@@ -385,7 +385,6 @@ public class SubOntologyExtractionHandler {
                     //if r is transitive...
                     else if(!sourceOntology.getTransitiveObjectPropertyAxioms(pv.getProperty()).isEmpty()) {
                         Set<OWLObjectPropertyExpression> subPropertiesOfTransitiveProperty = sourceOntologyReasoningService.getDescendantProperties(pv.getProperty());
-                        //System.out.println("TRANSITIVE CASE.");
                         //gather sub properties of r
                         //if filler definition contains r...
                         if(topLevelPropertiesInFillerDefinition.contains(pv.getProperty())) {
@@ -404,16 +403,13 @@ public class SubOntologyExtractionHandler {
             else if(ax.getAxiomType().equals(AxiomType.TRANSITIVE_OBJECT_PROPERTY)) {
                 if(ax.getObjectPropertiesInSignature().contains(pv.getProperty())) {
                     Set<OWLObjectPropertyExpression> subPropertiesOfTransitiveProperty = sourceOntologyReasoningService.getDescendantProperties(pv.getProperty());
-                    System.out.println("TRANSITIVE CASE: " + pv);
                     //gather sub properties of r
                     //if filler definition contains r...
                     if(topLevelPropertiesInFillerDefinition.contains(pv.getProperty())) {
-                        System.out.println("TRANSITIVE PROP.");
                         definitionRequired = true;
                     }
                     //or if filler definition contains subproperty of r, i.e. r o s <= r o r <= r
                     else if(!Collections.disjoint(topLevelPropertiesInFillerDefinition, subPropertiesOfTransitiveProperty)) {
-                        System.out.println("TRANSITIVE SUBPROP.");
                         definitionRequired = true;
                     }
                 }
@@ -427,9 +423,8 @@ public class SubOntologyExtractionHandler {
     private Set<OWLSubClassOfAxiom> addSupportingConceptGCIs(OWLClass suppCls) {
         Set<OWLSubClassOfAxiom> associatedGCIs = new HashSet<OWLSubClassOfAxiom>();
         if(sourceOntologyNamer.hasAssociatedGCIs(suppCls)) {
-            System.out.println("GCI AXIOMS FOR DEFINED SUPP CLS: " + suppCls);
+            //System.out.println("GCI AXIOMS FOR DEFINED SUPP CLS: " + suppCls);
             Set<OWLClass> gciNames = sourceOntologyNamer.returnNamesOfGCIsForSuperConcept(suppCls);
-            System.out.println("GCINAMES: " + gciNames);
             for(OWLClass gciName:gciNames) {
                 abstractDefinitionsGenerator.generateDefinition(gciName, redundancyOptions);
                 //TODO: 02-06-21, need better handling of this issue here -- do not want to store GCI definitions (would introduce fresh concept names into subontology)

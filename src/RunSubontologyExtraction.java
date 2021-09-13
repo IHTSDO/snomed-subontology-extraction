@@ -21,30 +21,29 @@ public class RunSubontologyExtraction {
         /*
         * Input for subontology extraction: source ontology (path), inputRefsetFile for focus concepts (list, refset as .txt)
          */
-        File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2020.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/era/era_edta_refset.txt");
+        File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/anatomy/anatomy_20210810.owl");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/medicinal-products/medicinal_products_refset.txt");
 
         //if focus concepts specified as refset
-        Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+        //Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
 
         //alternatively, can specify concepts directly as a set
-        /*
+
         Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
         OWLDataFactory df = man.getOWLDataFactory();
-        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + "conceptID")));
-         */
+        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + 22688005)));
 
-        boolean computeRF2 = true;
+        boolean computeRF2 = false;
         //if computing RF2, provide RF2 files corresponding to the sourceOntologyFile OWL file for OWL to RF2 conversion -- ensure same ontology version as sourceOntologyFile
         String sourceRF2FilePath = "";
         if(computeRF2) {
-            sourceRF2FilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-july-2020.zip";
+            sourceRF2FilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2021.zip";
         }
 
-        boolean verifySubontology = true;
+        boolean verifySubontology = false;
 
         //output path
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/era/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/test/";
 
         OWLOntology sourceOntology = man.loadOntologyFromOntologyDocument(sourceOntologyFile);
         //generating subontology
@@ -62,6 +61,7 @@ public class RunSubontologyExtraction {
          */
 
         //with default redundancy elimination -- if using non-default (below), comment out this line and uncomment the next block
+        long startTime = System.currentTimeMillis();
         if(customRedundancyOptions.isEmpty()) {
             generator.computeSubontology(computeRF2);
         }
@@ -69,10 +69,10 @@ public class RunSubontologyExtraction {
             //with non-default redundancy elimination options specified by user
             generator.computeSubontology(computeRF2, customRedundancyOptions);
         }
-
+        long endTime = System.currentTimeMillis();
         OWLOntology subOntology = generator.getCurrentSubOntology();
         OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
-
+        System.out.println("Time taken: " + (endTime - startTime)/1000 + " seconds");
         //Extract RF2 for subontology
         if(computeRF2) {
             //generator.generateNNFs();

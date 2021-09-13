@@ -122,9 +122,11 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
         //Set<Set<OWLClassExpression>> definingConditionsForEachAxiom = new HashSet<Set<OWLClassExpression>>();
         Map<Set<OWLClassExpression>, Boolean> definingConditionsForEachAxiom = new HashMap<Set<OWLClassExpression>, Boolean>(); //TODO: better type than map, perhaps custom tuple
-        boolean isEquivalence = false;
         for(OWLAxiom sourceAx:sourceDefinitionsForClass) {
+            boolean isEquivalence = false;
+            System.out.println("DEFINING AXIOM: " + sourceAx);
             if(sourceAx.getAxiomType().equals(AxiomType.EQUIVALENT_CLASSES)) {
+                System.out.println("IS EQUIVALENCE.");
                 isEquivalence = true;
             }
             Set<OWLClass> closestParentClasses = new HashSet<OWLClass>();
@@ -175,7 +177,6 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             }
 
             //TODO: check 09-08-21, must add proximal primitives such that PVi <= ... <= Pi where PVi is direct parent of A?
-
             Set<OWLClass> ancestorRenamedPVs = extractNamedPVs(ancestors);
             //Set<OWLClass> ancestorClasses = ancestors;
             //ancestorClasses.removeAll(ancestorRenamedPVs);
@@ -244,7 +245,6 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             nonRedundantAncestors.addAll(reducedParentNamedClasses);
             nonRedundantAncestors.addAll(reducedAncestorPVs);
 
-            //constructDefinitionAxiom(classToDefine, nonRedundantAncestors);
             definingConditionsForEachAxiom.put(nonRedundantAncestors, isEquivalence);
         }
         constructDefinition(classToDefine, definingConditionsForEachAxiom);
