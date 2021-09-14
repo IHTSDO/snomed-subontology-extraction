@@ -57,10 +57,6 @@ public class SubOntologyExtractionHandler {
         df = man.getOWLDataFactory();
         sctTop = df.getOWLClass(IRI.create("http://snomed.info/id/138875005"));
 
-        OWLObjectProperty prop1 = df.getOWLObjectProperty(IRI.create("http://snomed.info/id/363701004"));
-        OWLObjectProperty prop2 = df.getOWLObjectProperty(IRI.create("http://snomed.info/id/762951001"));
-        man.addAxiom(sourceOntology, df.getOWLSubPropertyChainOfAxiom(Arrays.asList(prop1, prop2), prop1));
-
         System.out.println("Initialising ELK taxonomy graph.");
         this.renamePVsAndClassify();
         focusConceptDefinitions = new HashSet<>();
@@ -226,11 +222,13 @@ public class SubOntologyExtractionHandler {
         //check for each supporting class & pv if a definition is required
         while(checkingIterator.hasNext()) {
             OWLClass clsBeingChecked = checkingIterator.next();
+            previouslyChecked.add(clsBeingChecked);
+            boolean newDefinitionAdded = false;
+
             if(clsBeingChecked.equals(df.getOWLThing())) {
                 continue;
             }
-            previouslyChecked.add(clsBeingChecked);
-            boolean newDefinitionAdded = false;
+
             System.out.println("Checking required definition status for class: " + clsBeingChecked);
             if(sourceOntologyNamer.isNamedPV(clsBeingChecked)) { //pv case
                 //add filler as defined supporting class
@@ -299,23 +297,6 @@ public class SubOntologyExtractionHandler {
                         checkingIterator.previous();
                     }
                 }
-                /*
-                for(OWLClassExpression exp:abstractDefinitionsGenerator.getLatestNecessaryConditions()) {
-                    if(exp instanceof OWLObjectSomeValuesFrom) {
-                        if(!previouslyChecked.contains(sourceOntologyNamer.retrieveNameForPV((OWLObjectSomeValuesFrom)exp))) {
-                            checkingIterator.add(sourceOntologyNamer.retrieveNameForPV((OWLObjectSomeValuesFrom) exp));
-                            System.out.println("ADDING TO CHECK: " + ((OWLObjectSomeValuesFrom) exp).getFiller());
-                            checkingIterator.previous();
-                        }
-                    }
-                    else if(exp instanceof OWLClass) {
-                        if(!previouslyChecked.contains((OWLClass)exp)) {
-                            checkingIterator.add((OWLClass) exp);
-                            checkingIterator.previous();
-                        }
-                    }
-                }
-                 */
 
                 for (OWLClassExpression defExp : expressionsInNewDefinition) {
                     //new classes
@@ -346,7 +327,7 @@ public class SubOntologyExtractionHandler {
         System.out.println("Added classes: " + additionalSupportingClasses);
     }
 
-    //Expansion rule 1
+    //Expansion rule 1 -- has become very general, could be reduced...?
     private boolean supportingDefinitionRequired(OWLClass cls) {
         return !Collections.disjoint(sourceOntologyReasoningService.getDescendants(cls), focusConcepts);
     }
@@ -354,21 +335,18 @@ public class SubOntologyExtractionHandler {
     //Expansion rule 2
     private boolean supportingDefinitionRequired(OWLObjectSomeValuesFrom pv, Set<OWLClassExpression> fillerNecessaryConditions) {
         boolean definitionRequired = false;
-        System.out.println("CHECKING EXPANSION RULE 2.");
+        System.out.println("CHECKING  EXPANSION RULE 2.");
         Set<OWLObjectPropertyExpression> topLevelPropertiesInFillerDefinition = new HashSet<>();
         for(OWLClassExpression exp:fillerNecessaryConditions) {
             if(exp instanceof OWLObjectSomeValuesFrom) {
                 topLevelPropertiesInFillerDefinition.add(((OWLObjectSomeValuesFrom) exp).getProperty());
             }
         }
-        System.out.println("For pv: " + pv);
-        System.out.println("Top level props in filler def: " + topLevelPropertiesInFillerDefinition);
         //checking role chain axioms
         // //TODO: including transitivity! Make sure.
         //TODO: 10-08-21, spotted bug in handling: SUB_PROPERTY_CHAIN_OF does not include transitivity axioms.
         Set<OWLAxiom> axiomsToCheck = new HashSet<OWLAxiom>(sourceOntology.getAxioms(AxiomType.SUB_PROPERTY_CHAIN_OF));
         axiomsToCheck.addAll(sourceOntology.getAxioms(AxiomType.TRANSITIVE_OBJECT_PROPERTY));
-        //for(OWLSubPropertyChainOfAxiom chainAx:sourceOntology.getAxioms(AxiomType.SUB_PROPERTY_CHAIN_OF)) {
         for(OWLAxiom ax:axiomsToCheck) {
             //chain case
             if(ax.getAxiomType().equals(AxiomType.SUB_PROPERTY_CHAIN_OF)) {
@@ -376,8 +354,8 @@ public class SubOntologyExtractionHandler {
                 if(chainAx.getSuperProperty().equals(pv.getProperty())) {//|| subPropertiesOfTransitiveProperty.contains(chainAx.getSuperProperty())) {
                     Set<OWLObjectPropertyExpression> otherPropertiesInChain = new HashSet<OWLObjectPropertyExpression>(chainAx.getPropertyChain());
                     otherPropertiesInChain.remove(pv.getProperty());
-                    //System.out.println("CHECKING FOR PROPERTY: " + pv.getProperty());
-                    //r o s <= r case
+
+                    //r o s <= r case //TODO 14-09-2021 -- subproperties of s, r?
                     if(!Collections.disjoint(topLevelPropertiesInFillerDefinition, otherPropertiesInChain)) {
                         definitionRequired = true;
                     }
@@ -388,18 +366,16 @@ public class SubOntologyExtractionHandler {
                         //gather sub properties of r
                         //if filler definition contains r...
                         if(topLevelPropertiesInFillerDefinition.contains(pv.getProperty())) {
-                            //System.out.println("TRANSITIVE PROP.");
                             definitionRequired = true;
                         }
                         //or if filler definition contains subproperty of r, i.e. r o s <= r o r <= r
                         else if(!Collections.disjoint(topLevelPropertiesInFillerDefinition, subPropertiesOfTransitiveProperty)) {
-                            //System.out.println("TRANSITIVE SUBPROP.");
                             definitionRequired = true;
                         }
                     }
                 }
             }
-            //transitive case
+            //transitive case //TODO: 14-09-2021, needed with above?
             else if(ax.getAxiomType().equals(AxiomType.TRANSITIVE_OBJECT_PROPERTY)) {
                 if(ax.getObjectPropertiesInSignature().contains(pv.getProperty())) {
                     Set<OWLObjectPropertyExpression> subPropertiesOfTransitiveProperty = sourceOntologyReasoningService.getDescendantProperties(pv.getProperty());
@@ -413,9 +389,7 @@ public class SubOntologyExtractionHandler {
                         definitionRequired = true;
                     }
                 }
-                OWLTransitiveObjectPropertyAxiom transAx = (OWLTransitiveObjectPropertyAxiom) ax;
             }
-            //System.out.println("Pvprop: " + pv.getProperty() + " chainProp: " + chainAx.getSuperProperty());
         }
         return definitionRequired;
     }
@@ -423,7 +397,6 @@ public class SubOntologyExtractionHandler {
     private Set<OWLSubClassOfAxiom> addSupportingConceptGCIs(OWLClass suppCls) {
         Set<OWLSubClassOfAxiom> associatedGCIs = new HashSet<OWLSubClassOfAxiom>();
         if(sourceOntologyNamer.hasAssociatedGCIs(suppCls)) {
-            //System.out.println("GCI AXIOMS FOR DEFINED SUPP CLS: " + suppCls);
             Set<OWLClass> gciNames = sourceOntologyNamer.returnNamesOfGCIsForSuperConcept(suppCls);
             for(OWLClass gciName:gciNames) {
                 abstractDefinitionsGenerator.generateDefinition(gciName, redundancyOptions);
@@ -454,7 +427,6 @@ public class SubOntologyExtractionHandler {
         Set<OWLClass> topLevelSCTGroupers = new HashSet<>();
         for(OWLSubClassOfAxiom ax: sourceOntology.getSubClassAxiomsForSuperClass(sctTop)) {
             OWLClassExpression subClass = ax.getSubClass();
-            //System.out.println("subClass: " + subClass);
             if(subClass instanceof OWLClass) {
                 topLevelSCTGroupers.add((OWLClass) ax.getSubClass());
             }
@@ -643,17 +615,10 @@ public class SubOntologyExtractionHandler {
             childrenOfPrimitive.remove(df.getOWLNothing());
             //change child parents to exclude the removed primitive(s)
             for (OWLClass child : childrenOfPrimitive) {
-                if(child.toString().contains("45486003")) {
-                    System.out.println("APLASIA AS CHILD.");
-                    System.out.println("Primitive: " + primitive + " parents replacing: " + parentsOfPrimitive);
-                }
                 if(!primitivesToRemove.contains(child)) {
-
                     //gather existing parents for child
                     Set<OWLClass> otherParents = subOntologyReasoningService.getDirectAncestors(child);
                     otherParents.removeAll(primitivesToRemove);
-
-                    System.out.println("Other parents: " + otherParents);
 
                     System.out.println("setting child: " + child + " as child of primitive parents: " + parentsOfPrimitive);
 
