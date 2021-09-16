@@ -329,7 +329,13 @@ public class SubOntologyExtractionHandler {
 
     //Expansion rule 1 -- has become very general, could be reduced...?
     private boolean supportingDefinitionRequired(OWLClass cls) {
-        return !Collections.disjoint(sourceOntologyReasoningService.getDescendants(cls), focusConcepts);
+        //return !Collections.disjoint(sourceOntologyReasoningService.getDescendants(cls), focusConcepts); //TODO: 14-09-21 check new version below
+        if(!Collections.disjoint(sourceOntologyReasoningService.getDescendants(cls), focusConcepts) && !sourceOntologyReasoningService.isPrimitive(cls)) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     //Expansion rule 2
@@ -343,8 +349,6 @@ public class SubOntologyExtractionHandler {
             }
         }
         //checking role chain axioms
-        // //TODO: including transitivity! Make sure.
-        //TODO: 10-08-21, spotted bug in handling: SUB_PROPERTY_CHAIN_OF does not include transitivity axioms.
         Set<OWLAxiom> axiomsToCheck = new HashSet<OWLAxiom>(sourceOntology.getAxioms(AxiomType.SUB_PROPERTY_CHAIN_OF));
         axiomsToCheck.addAll(sourceOntology.getAxioms(AxiomType.TRANSITIVE_OBJECT_PROPERTY));
         for(OWLAxiom ax:axiomsToCheck) {

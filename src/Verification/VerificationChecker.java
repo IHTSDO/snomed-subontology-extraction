@@ -25,6 +25,8 @@ public class VerificationChecker {
         //df = man.getOWLDataFactory();
     }
 
+    //NOTE: this is not extensive, will need improvement to fully check final requirements.
+
     //TODO: note, temporarily check would require external reasoner...
     public boolean axiomsInSubOntologyEntailedBySource(OWLOntology subOntology, OWLOntology sourceOntology) {
 

@@ -54,7 +54,6 @@ public abstract class DefinitionGenerator {
                     }
                 }
 
-                Set<OWLClass> fillerNames = replacePVsWithNames(pvFillers);
                 Set<OWLObjectSomeValuesFrom> reducedFillers = replaceNamesWithPVs(reduceClassSet(replacePVsWithNames(pvFillers)));
 
                 reducedInputPVs.add(df.getOWLObjectSomeValuesFrom(pv.getProperty(), df.getOWLObjectIntersectionOf(reducedFillers)));

@@ -19,7 +19,6 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         defaultOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
         defaultOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
         this.generateDefinition(inputClass, defaultOptions);
-        this.generateDefinition(inputClass, defaultOptions);
     }
 
     //TODO: code before multi-axiom extension 02-07-2021. Probably keep as the "single axiom" case
@@ -57,7 +56,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
                 removedParents.addAll(reducedParentNamedClasses);
                 removedParents.removeAll(parentsAfterCheckingGCIs);
 
-                parentsAfterCheckingGCIs = reduceClassSet(parentsAfterCheckingGCIs); //TODO: unnecessary additional call?
+                parentsAfterCheckingGCIs = reduceClassSet(parentsAfterCheckingGCIs)
 
                 if(!parentsAfterCheckingGCIs.equals(reducedParentNamedClasses)) {
                     gciParentsChanged = true;
@@ -75,12 +74,11 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
                     boolean pvInheritedFromTypeOneGCI = false;
                     for(OWLClass parent:reducedParentNamedClasses) {
                         //if an ancestor of a retained parent, or a direct ancestor of the class being defined, keep.
-                        //TODO: edited 07-06-21
                         if(removedParents.contains(parent)) {
                             pvInheritedFromTypeOneGCI = true;
                         }
                     }
-                    if(pvInheritedFromTypeOneGCI) { //TODO: edited 07-06-21 -- check, is this too strong? Should an additional check be added in case the PV is a mutual ancestor of removed & non-removed parent?
+                    if(pvInheritedFromTypeOneGCI) {
                         ancestorRenamedPVs.remove(pv);
                     }
                 }
@@ -107,7 +105,8 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         constructDefinition(classToDefine, definitionSet);
     }
     */
-    //multi-axiom case
+    //multi-axiom case -- key part here, must obtain closest classes (i.e. in def) then ancestors *of those classes*, then reduce.
+    //                 -- this way, the ancestors associated with each individual *axiom* are kept together.
     public void generateDefinition(OWLClass classToDefine, Set<RedundancyOptions> redundancyOptions) {
         //separate authoring form for GCIs: do not want to inherit PVs and ancestors from "above", i.e., from necessary conditions.
         if(namer.isNamedGCI(classToDefine)) {
@@ -120,72 +119,62 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         sourceDefinitionsForClass.addAll(sourceOntology.getEquivalentClassesAxioms(classToDefine));
         sourceDefinitionsForClass.addAll(sourceOntology.getSubClassAxiomsForSubClass(classToDefine));
 
-        //Set<Set<OWLClassExpression>> definingConditionsForEachAxiom = new HashSet<Set<OWLClassExpression>>();
-        Map<Set<OWLClassExpression>, Boolean> definingConditionsForEachAxiom = new HashMap<Set<OWLClassExpression>, Boolean>(); //TODO: better type than map, perhaps custom tuple
+        Map<Set<OWLClassExpression>, Boolean> definingConditionsForEachAxiom = new HashMap<Set<OWLClassExpression>, Boolean>(); //better type than map?
         for(OWLAxiom sourceAx:sourceDefinitionsForClass) {
             boolean isEquivalence = false;
-            System.out.println("DEFINING AXIOM: " + sourceAx);
             if(sourceAx.getAxiomType().equals(AxiomType.EQUIVALENT_CLASSES)) {
-                System.out.println("IS EQUIVALENCE.");
                 isEquivalence = true;
             }
-            Set<OWLClass> closestParentClasses = new HashSet<OWLClass>();
-            Set<OWLClass> closestParentPVs = new HashSet<OWLClass>();
+            Set<OWLClass> statedDirectParents = new HashSet<OWLClass>();
+            //Set<OWLClass> closestParentPVs = new HashSet<OWLClass>();
 
-            //extract RHS of definition axiom for each source axiom, split into parent classes and parent PVs
+            //gather the stated direct parents of the class to be defined
             if (sourceAx instanceof OWLSubClassOfAxiom) {
-                Set<OWLClassExpression> closestParents = ((OWLSubClassOfAxiom) sourceAx).getSuperClass().asConjunctSet();
-                for (OWLClassExpression exp : closestParents) {
+                Set<OWLClassExpression> closestParentExpressions = ((OWLSubClassOfAxiom) sourceAx).getSuperClass().asConjunctSet();
+                for (OWLClassExpression exp : closestParentExpressions) {
                     //should only be classes and PVs (R some or RG some)
                     if (exp instanceof OWLClass) {
-                        closestParentClasses.add((OWLClass) exp);
+                        statedDirectParents.add((OWLClass) exp);
                     } else if (exp instanceof OWLObjectSomeValuesFrom) {
-                        closestParentPVs.add(namer.retrieveNameForPV((OWLObjectSomeValuesFrom) exp));
+                        statedDirectParents.add(namer.retrieveNameForPV((OWLObjectSomeValuesFrom) exp));
                     }
                 }
             } else if (sourceAx instanceof OWLEquivalentClassesAxiom) {
                 Set<OWLSubClassOfAxiom> axs = ((OWLEquivalentClassesAxiom)sourceAx).asOWLSubClassOfAxioms();
                 for(OWLSubClassOfAxiom ax:axs) {
                     if(ax.getSubClass().equals(classToDefine)) {
-                        Set<OWLClassExpression> closestParents = ax.getSuperClass().asConjunctSet();
-                        for(OWLClassExpression exp:closestParents) {
+                        Set<OWLClassExpression> closestParentsExpressions = ax.getSuperClass().asConjunctSet();
+                        for(OWLClassExpression exp:closestParentsExpressions) {
                             if(exp instanceof OWLClass) {
-                                closestParentClasses.add((OWLClass) exp);
+                                statedDirectParents.add((OWLClass) exp);
                             }
                             else if(exp instanceof OWLObjectSomeValuesFrom) {
-                                closestParentPVs.add(namer.retrieveNameForPV((OWLObjectSomeValuesFrom) exp));
+                                statedDirectParents.add(namer.retrieveNameForPV((OWLObjectSomeValuesFrom) exp));
                             }
                         }
                     }
                 }
             }
 
-            //for each of these, calculate all the ancestors (including the entities in the definition axiom itself)
-            Set<OWLClass> ancestors = new HashSet<OWLClass>(closestParentClasses);
-            ancestors.addAll(closestParentPVs);
+            //calculate ancestors of stated parents, + store all. Store "proximal" primitives (prior to reduction).
+            Set<OWLClass> ancestors = new HashSet<OWLClass>(statedDirectParents);
             Set<OWLClass> closestPrimitives = new HashSet<OWLClass>();
-            for (OWLClass parent : closestParentClasses) {
+            for (OWLClass parent : statedDirectParents) {
                 ancestors.addAll(reasonerService.getAncestors(parent));
-                if (reasonerService.isPrimitive(parent)) {
+                if (!namer.isNamedPV(parent) && reasonerService.isPrimitive(parent)) {
                     closestPrimitives.add(parent);
                 } else {
                     closestPrimitives.addAll(computeClosestPrimitiveAncestors(parent));
                 }
             }
-            for (OWLClass parentPV : closestParentPVs) {
-                ancestors.addAll(reasonerService.getAncestors(parentPV));
-            }
 
-            //TODO: check 09-08-21, must add proximal primitives such that PVi <= ... <= Pi where PVi is direct parent of A?
             Set<OWLClass> ancestorRenamedPVs = extractNamedPVs(ancestors);
-            //Set<OWLClass> ancestorClasses = ancestors;
-            //ancestorClasses.removeAll(ancestorRenamedPVs);
 
             closestPrimitives.removeAll(ancestorRenamedPVs);
             closestPrimitives.removeAll(extractNamedGCIs(closestPrimitives));
 
-            Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
-            Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
+            Set<OWLClass> reducedParentNamedClasses;
+            Set<OWLObjectSomeValuesFrom> reducedAncestorPVs;
 
             //TODO: check, if this form of redundancy was non-optional, could skip the reduction step entirely? Just compute closest primitive parents & PVs?
             if (redundancyOptions.contains(RedundancyOptions.eliminateLessSpecificRedundancy)) {
@@ -201,7 +190,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
                     removedParents.addAll(reducedParentNamedClasses);
                     removedParents.removeAll(parentsAfterCheckingGCIs);
 
-                    parentsAfterCheckingGCIs = reduceClassSet(parentsAfterCheckingGCIs); //TODO: unnecessary additional call?
+                    parentsAfterCheckingGCIs = reduceClassSet(parentsAfterCheckingGCIs);
 
                     if (!parentsAfterCheckingGCIs.equals(reducedParentNamedClasses)) {
                         gciParentsChanged = true;
@@ -219,12 +208,11 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
                         boolean pvInheritedFromTypeOneGCI = false;
                         for (OWLClass parent : reducedParentNamedClasses) {
                             //if an ancestor of a retained parent, or a direct ancestor of the class being defined, keep.
-                            //TODO: edited 07-06-21
                             if (removedParents.contains(parent)) {
                                 pvInheritedFromTypeOneGCI = true;
                             }
                         }
-                        if (pvInheritedFromTypeOneGCI) { //TODO: edited 07-06-21 -- check, is this too strong? Should an additional check be added in case the PV is a mutual ancestor of removed & non-removed parent?
+                        if (pvInheritedFromTypeOneGCI) {
                             ancestorRenamedPVs.remove(pv);
                         }
                     }
