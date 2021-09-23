@@ -21,7 +21,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         this.generateDefinition(inputClass, defaultOptions);
     }
 
-    //TODO: code before multi-axiom extension 02-07-2021. Probably keep as the "single axiom" case
+    //TODO: code before multi-axiom extension. Possibly reuse as the "single axiom" case, may be more efficient
     /*
     public void generateDefinition(OWLClass classToDefine, Set<RedundancyOptions> redundancyOptions) {
         //separate authoring form for GCIs: do not want to inherit PVs and ancestors from "above", i.e., from necessary conditions.
@@ -176,7 +176,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
             Set<OWLClass> reducedParentNamedClasses;
             Set<OWLObjectSomeValuesFrom> reducedAncestorPVs;
 
-            //TODO: check, if this form of redundancy was non-optional, could skip the reduction step entirely? Just compute closest primitive parents & PVs?
+            //TODO: check, if this form of redundancy was non-optional, could skip the reduction step entirely? Would be more efficient.
             if (redundancyOptions.contains(RedundancyOptions.eliminateLessSpecificRedundancy)) {
                 reducedParentNamedClasses = reduceClassSet(closestPrimitives);
                 System.out.println("Parents before GCI check: " + reducedParentNamedClasses);
@@ -312,7 +312,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
     }
 
     private void computeAuthoringFormForGCI(OWLClass gciName) {
-        //TODO: improve implementation.
+        //TODO: improve.
         //Given axiom of the form B and R some C <= A, where "A" is the GCI concept, have name GCI_A == B and R some C.
         //Process is then to compute the authoring form "up to the sufficient condition".
 
@@ -377,7 +377,6 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
         System.out.println("Authoring form parents for class: " + gciName + " are: " + authoringForm);
 
         //Set<Set<OWLClassExpression>> authoringFormSet = new HashSet<Set<OWLClassExpression>>();
-        //TODO: 11/08/21 temp
         Map<Set<OWLClassExpression>, Boolean> authoringFormSet = new HashMap<Set<OWLClassExpression>, Boolean>();
 
         authoringFormSet.put(authoringForm, false);

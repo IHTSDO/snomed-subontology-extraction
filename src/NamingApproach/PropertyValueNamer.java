@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+//TODO: defunct with introduction of GCI renamings -- see IntroducedNameHandler.
 public class PropertyValueNamer {
 
     public Map<OWLObjectSomeValuesFrom, OWLClass> pvNamingMap;

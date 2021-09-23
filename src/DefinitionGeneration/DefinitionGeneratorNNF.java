@@ -35,7 +35,7 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         //remove all introduced classes to name PVs and name GCIs
         parentNamedClasses.removeAll(ancestorRenamedPVs);
 
-        //parentNamedClasses.removeAll(extractNamedGCIs(parentNamedClasses)); //TODO: 16-06-21 it takes the GCI *names* as direct ancestors, which are then being removed! Fix.
+        //ensure renamed GCIs (e.g. "GCI_0") are being ignored here.
         List<OWLClass> parentsToCheckForGCIs = new ArrayList<OWLClass>(extractNamedGCIs(parentNamedClasses));
         ListIterator<OWLClass> iterator = parentsToCheckForGCIs.listIterator();
         while(iterator.hasNext()) {
@@ -51,14 +51,6 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
                 }
             }
         }
-        /*
-        for(OWLClass gciNameParent:extractNamedGCIs(parentNamedClasses)) {
-            parentNamedClasses.remove(gciNameParent);
-            //parentNamedClasses.addAll(reasonerService.getDirectAncestors(gciNameParent));
-            //parentNamedClasses.add(namer.retrieveSuperClassFromNamedGCI(gciNameParent));
-            parentNamedClasses.addAll(reasonerService.getDirectAncestors(gciNameParent));
-        }
-         */
 
         Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
         Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
@@ -92,8 +84,5 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
         //nonRedundantAncestorsSet.add(nonRedundantAncestors);
         nonRedundantAncestorsMap.put(nonRedundantAncestors, false);
         constructDefinition(inputClass, nonRedundantAncestorsMap);
-
-        System.out.println("INPUT CLASS: " + inputClass);
-        System.out.println("Nonredundant ancestors: " + nonRedundantAncestors);
     }
 }

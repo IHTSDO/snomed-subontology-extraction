@@ -14,6 +14,7 @@ import uk.ac.manchester.cs.owlapi.modularity.ModuleType;
 import java.util.*;
 
 /*
+PROTOTYPE subontology extraction tool, IAA Project University of Manchester / SNOMED International
 Author: Warren Del-Pinto (warren.del-pinto@manchester.ac.uk)
 Produces an extracted subontology for a given background ontology and set of concepts, with the aim of satisfying the following criteria:
     1) All focus (input) concept definitions are equivalent in the source and sub ontologies.
@@ -40,15 +41,17 @@ public class SubOntologyExtractionHandler {
     private final Set<OWLAxiom> focusConceptDefinitions;
     private final Set<OWLAxiom> nnfDefinitions;
     private final OWLClass sctTop;
-    //TODO: temp variables, implement data handler
     //classes and definitions added during signature expansion
     private Set<OWLClass> focusConcepts;
     private Set<OWLClass> grouperConcepts = new HashSet<>();
     private final Set<OWLClass> definedSupportingConcepts = new HashSet<>();
+    private final DefinitionGenerator abstractDefinitionsGenerator;
+    private Set<RedundancyOptions> authoringFormRedundancyOptions;
+    private Set<RedundancyOptions> nnfRedundancyOptions;
+
+    //TODO: temp variables, implement data handler
     private Set<OWLClass> additionalConceptsInExpandedSignature = new HashSet<>();
     private final Set<OWLAxiom> additionalSupportingConceptDefinitions = new HashSet<>();
-    private final DefinitionGenerator abstractDefinitionsGenerator;
-    private Set<RedundancyOptions> redundancyOptions;
 
     public SubOntologyExtractionHandler(OWLOntology backgroundOntology, Set<OWLClass> inputClasses) throws OWLOntologyCreationException, ReasonerException {
         this.sourceOntology = backgroundOntology;
@@ -88,16 +91,34 @@ public class SubOntologyExtractionHandler {
         defaultOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
         defaultOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
         defaultOptions.add(RedundancyOptions.eliminateSufficientProximalGCIs);
-        this.computeSubontology(computeRF2, defaultOptions);
+        this.computeSubontology(computeRF2, defaultOptions, false);
     }
 
     public void computeSubontology(boolean computeRF2, Set<RedundancyOptions> inputRedundancyOptions) throws OWLException, ReasonerException {
-        redundancyOptions = inputRedundancyOptions;
+        this.computeSubontology(computeRF2, inputRedundancyOptions, false);
+    }
+
+    public void computeSubontology(boolean computeRF2, Set<RedundancyOptions> inputRedundancyOptions, boolean customAuthoringForm) throws OWLException, ReasonerException {
+        authoringFormRedundancyOptions = inputRedundancyOptions;
 
         //add necessary metadata concepts to concept list.
         if(computeRF2) {
             addMetaConceptsForBrowserRF2();
         }
+
+        if(customAuthoringForm) {
+            authoringFormRedundancyOptions = inputRedundancyOptions;
+        }
+        else {
+            Set<RedundancyOptions> defaultOptions = new HashSet<RedundancyOptions>();
+            defaultOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
+            defaultOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
+            defaultOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
+            defaultOptions.add(RedundancyOptions.eliminateSufficientProximalGCIs);
+            authoringFormRedundancyOptions = defaultOptions;
+        }
+
+        nnfRedundancyOptions = inputRedundancyOptions;
 
         //Compute initial abstract (authoring) form definitions for focus classes
         computeFocusConceptDefinitions();
@@ -112,7 +133,7 @@ public class SubOntologyExtractionHandler {
 
         if(computeRF2) {
             //generateNNFs();
-            generateNNFs(redundancyOptions);
+            generateNNFs(authoringFormRedundancyOptions);
         }
 
         //add necessary metadata
@@ -135,7 +156,7 @@ public class SubOntologyExtractionHandler {
         System.out.println("Computing authoring form.");
         focusConcepts.remove(df.getOWLNothing());
         for(OWLClass cls: focusConcepts) {
-            abstractDefinitionsGenerator.generateDefinition(cls, redundancyOptions);
+            abstractDefinitionsGenerator.generateDefinition(cls, authoringFormRedundancyOptions);
         }
         focusConceptDefinitions.addAll(abstractDefinitionsGenerator.getAllGeneratedDefinitions());
     }
@@ -183,7 +204,7 @@ public class SubOntologyExtractionHandler {
         //if GCI is in focus definition, or a focus concept is a descendent of this definition, then compute authoring form of GCI LHS and add.
         for(OWLClass name:namedGCIs) {
             if(!Collections.disjoint(sourceOntologyReasoningService.getDescendants(name), focusConcepts) || gciNamesInFocusConceptDefinitions.contains(name)) {
-                abstractDefinitionsGenerator.generateDefinition(name, redundancyOptions);
+                abstractDefinitionsGenerator.generateDefinition(name, authoringFormRedundancyOptions);
                 man.addAxiom(subOntology, df.getOWLSubClassOfAxiom(df.getOWLObjectIntersectionOf(abstractDefinitionsGenerator.getLatestNecessaryConditions()),
                                                       sourceOntologyNamer.retrieveSuperClassFromNamedGCI(name)));
             }
@@ -208,7 +229,7 @@ public class SubOntologyExtractionHandler {
             if(exp instanceof OWLObjectSomeValuesFrom) {
                 OWLClass pvName = sourceOntologyNamer.retrieveNameForPV((OWLObjectSomeValuesFrom)exp);
                 if(!Collections.disjoint(sourceOntologyReasoningService.getDescendants(pvName), focusConcepts)) {
-                    //TODO: 09/04/21 this check not needed? All PVs at this point will be in authoring defs of focus concepts anyway.
+                    //TODO: this check not needed? All PVs at this point will be in authoring defs of focus concepts anyway.
                     expressionsToCheck.add(pvName);
                 }
             }
@@ -217,7 +238,6 @@ public class SubOntologyExtractionHandler {
         ListIterator<OWLClass> checkingIterator = expressionsToCheck.listIterator();
         Set<OWLClass> additionalSupportingClasses = new HashSet<>();
 
-        //TODO:10-08-21 added history for previously checked classes, check this is OK
         Set<OWLClass> previouslyChecked = new HashSet<OWLClass>(expressionsToCheck);
         //check for each supporting class & pv if a definition is required
         while(checkingIterator.hasNext()) {
@@ -235,7 +255,7 @@ public class SubOntologyExtractionHandler {
                 OWLObjectSomeValuesFrom pv = sourceOntologyNamer.retrievePVForName(clsBeingChecked);
                 if(pv.getFiller() instanceof OWLClass) {
                     //generate authoring form for filler class + check role chain requirement
-                    abstractDefinitionsGenerator.generateDefinition((OWLClass) pv.getFiller(), redundancyOptions);
+                    abstractDefinitionsGenerator.generateDefinition((OWLClass) pv.getFiller(), authoringFormRedundancyOptions);
                     if(supportingDefinitionRequired(pv, abstractDefinitionsGenerator.getLatestNecessaryConditions())) {
                         definedSupportingConcepts.add((OWLClass) pv.getFiller());
                         System.out.println("ADDED DEF: " + pv.getFiller());
@@ -267,7 +287,7 @@ public class SubOntologyExtractionHandler {
                     definedSupportingConcepts.add(clsBeingChecked);
 
                     //generate and add authoring form def for cls, + iterate
-                    abstractDefinitionsGenerator.generateDefinition(clsBeingChecked, redundancyOptions);
+                    abstractDefinitionsGenerator.generateDefinition(clsBeingChecked, authoringFormRedundancyOptions);
                     //additionalSupportingClassDefinitions.add(abstractDefinitionsGenerator.getLastDefinitionGenerated());
                     newDefinitionAdded = true;
                 }
@@ -290,7 +310,6 @@ public class SubOntologyExtractionHandler {
                     expressionsInNewDefinition.addAll(gci.getSubClass().asConjunctSet());
                 }
 
-                //TODO: check 10-08-21, add parents of defined supporting concept to list to check
                 for(OWLClass parentCls:sourceOntologyReasoningService.getDirectAncestors(clsBeingChecked)) {
                     if(!previouslyChecked.contains(parentCls)) {
                         checkingIterator.add(parentCls);
@@ -301,14 +320,14 @@ public class SubOntologyExtractionHandler {
                 for (OWLClassExpression defExp : expressionsInNewDefinition) {
                     //new classes
                     if (defExp instanceof OWLClass) {
-                        if (!subOntology.getClassesInSignature().contains(defExp) && !definedSupportingConcepts.contains(defExp)) { //TODO: should be ancestor of focus concept?
+                        if (!subOntology.getClassesInSignature().contains(defExp) && !definedSupportingConcepts.contains(defExp)) {
                             checkingIterator.add((OWLClass) defExp);
                             additionalSupportingClasses.add((OWLClass) defExp);
                             checkingIterator.previous();
                         }
                     }
                     //new pvs
-                    else if (defExp instanceof OWLObjectSomeValuesFrom) { //TODO: should be ancestor of focus concept?
+                    else if (defExp instanceof OWLObjectSomeValuesFrom) {
                         OWLClass pvName = sourceOntologyNamer.retrieveNameForPV((OWLObjectSomeValuesFrom)defExp);
                         if (!Collections.disjoint(sourceOntologyReasoningService.getDescendants(pvName), focusConcepts)) {
                             checkingIterator.add(pvName);
@@ -329,7 +348,7 @@ public class SubOntologyExtractionHandler {
 
     //Expansion rule 1 -- has become very general, could be reduced...?
     private boolean supportingDefinitionRequired(OWLClass cls) {
-        //return !Collections.disjoint(sourceOntologyReasoningService.getDescendants(cls), focusConcepts); //TODO: 14-09-21 check new version below
+        //return !Collections.disjoint(sourceOntologyReasoningService.getDescendants(cls), focusConcepts);
         if(!Collections.disjoint(sourceOntologyReasoningService.getDescendants(cls), focusConcepts) && !sourceOntologyReasoningService.isPrimitive(cls)) {
             return true;
         }
@@ -359,7 +378,7 @@ public class SubOntologyExtractionHandler {
                     Set<OWLObjectPropertyExpression> otherPropertiesInChain = new HashSet<OWLObjectPropertyExpression>(chainAx.getPropertyChain());
                     otherPropertiesInChain.remove(pv.getProperty());
 
-                    //r o s <= r case //TODO 14-09-2021 -- subproperties of s, r?
+                    //r o s <= r case //TODO -- subproperties of s, r?
                     if(!Collections.disjoint(topLevelPropertiesInFillerDefinition, otherPropertiesInChain)) {
                         definitionRequired = true;
                     }
@@ -403,9 +422,7 @@ public class SubOntologyExtractionHandler {
         if(sourceOntologyNamer.hasAssociatedGCIs(suppCls)) {
             Set<OWLClass> gciNames = sourceOntologyNamer.returnNamesOfGCIsForSuperConcept(suppCls);
             for(OWLClass gciName:gciNames) {
-                abstractDefinitionsGenerator.generateDefinition(gciName, redundancyOptions);
-                //TODO: 02-06-21, need better handling of this issue here -- do not want to store GCI definitions (would introduce fresh concept names into subontology)
-
+                abstractDefinitionsGenerator.generateDefinition(gciName, authoringFormRedundancyOptions);
                 associatedGCIs.add(df.getOWLSubClassOfAxiom(df.getOWLObjectIntersectionOf(abstractDefinitionsGenerator.getLatestNecessaryConditions()),suppCls));
                 System.out.println("ADDED GCI AXIOM: " + df.getOWLSubClassOfAxiom(df.getOWLObjectIntersectionOf(abstractDefinitionsGenerator.getLatestNecessaryConditions()),suppCls));
             }
@@ -643,15 +660,6 @@ public class SubOntologyExtractionHandler {
         }
     }
 
-    /*
-    public void generateNNFs() throws OWLOntologyCreationException, ReasonerException {
-        //Compute NNFs
-        computeNNFDefinitions(subOntology.getClassesInSignature(), redundancyOptions);
-        //nnfOntology = man.createOntology(nnfDefinitions);
-        man.addAxioms(nnfOntology, nnfDefinitions);
-    }
-     */
-
     //private void computeNNFDefinitions(Set<OWLClass> classes, Set<RedundancyOptions> redundancyOptions) throws ReasonerException, OWLOntologyCreationException {
     private void generateNNFs(Set<RedundancyOptions> redundancyOptions) throws ReasonerException, OWLOntologyCreationException {
         System.out.println("Computing necessary normal form (inferred relationships) for subontology entities.");
@@ -667,7 +675,7 @@ public class SubOntologyExtractionHandler {
 
         classes.remove(df.getOWLNothing());
         for(OWLClass cls:classes) {
-            nnfDefinitionsGenerator.generateDefinition(cls, redundancyOptions);
+            nnfDefinitionsGenerator.generateDefinition(cls, nnfRedundancyOptions);
         }
         nnfDefinitions.addAll(nnfDefinitionsGenerator.getAllGeneratedDefinitions());
 
@@ -735,5 +743,4 @@ public class SubOntologyExtractionHandler {
     public int getNumberOfClassesAddedDuringSignatureExpansion() { return additionalConceptsInExpandedSignature.size();}
     public int getNumberOfAdditionalSupportingClassDefinitionsAdded() {return additionalSupportingConceptDefinitions.size();}
     public Set<OWLClass> getFocusConcepts() {return focusConcepts;}
-
 }

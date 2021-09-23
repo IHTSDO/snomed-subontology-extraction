@@ -22,7 +22,7 @@ public class RunSubontologyExtraction {
         * Input for subontology extraction: source ontology (path), inputRefsetFile for focus concepts (list, refset as .txt)
          */
         File sourceOntologyFile = new File("E:/Users/warren/Documents/aPostdoc/SCT-files/sct-july-2020.owl");
-        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/dentistry/dentistry_refset.txt");
+        File inputRefsetFile = new File("E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/orphanet/orphanet_refset.txt");
         //if focus concepts specified as refset
         Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
 
@@ -33,24 +33,32 @@ public class RunSubontologyExtraction {
         conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + 22688005)));
          */
 
-        boolean computeRF2 = false;
+        boolean computeRF2 = true;
         //if computing RF2, provide RF2 files corresponding to the sourceOntologyFile OWL file for OWL to RF2 conversion -- ensure same ontology version as sourceOntologyFile
         String sourceRF2FilePath = "";
         if(computeRF2) {
-            sourceRF2FilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-jan-2021.zip";
+            sourceRF2FilePath = "E:/Users/warren/Documents/aPostdoc/SCT-files/sct-snapshot-july-2020.zip";
         }
 
         boolean verifySubontology = false;
 
         //output path
-        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/dentistry/";
+        String outputPath = "E:/Users/warren/Documents/aPostdoc/subontologies/orphanet/";
 
         OWLOntology sourceOntology = man.loadOntologyFromOntologyDocument(sourceOntologyFile);
         //generating subontology
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(sourceOntology, conceptsToDefine);
 
+        ////////
+        //REDUNDANCY ELIMINATION OPTIONS
+        ////////
         //redundancy elimination options -- optional, if not specified, default will be used
         Set<RedundancyOptions> customRedundancyOptions = new HashSet<RedundancyOptions>();
+
+        //AUTHORING FORM -- recommended: leave as default (false). These axioms will appear as stated axioms in the subontology. Subontology behaviour not tested with custom "authoring forms".
+        //               -- "false": applies redundancy options only to nnf definitions (inferred relationship file)
+        //               -- "true": applies to both the authoring forms (stated axioms in subontology) and nnfs
+        boolean defaultAuthoringForm = true;
 
         //Example of specifying non-default redundancy elimination options.
         /*
@@ -60,15 +68,18 @@ public class RunSubontologyExtraction {
         customRedundancyOptions.add(RedundancyOptions.eliminateSufficientProximalGCIs);
          */
 
-        //with default redundancy elimination -- if using non-default (below), comment out this line and uncomment the next block
         long startTime = System.currentTimeMillis();
-        if(customRedundancyOptions.isEmpty()) {
+        if(customRedundancyOptions.isEmpty()) { //with default redundancy elimination on both authoring and NNF definitions (RECOMMENDED)
             generator.computeSubontology(computeRF2);
         }
-        else {
-            //with non-default redundancy elimination options specified by user
+        else if(defaultAuthoringForm) { //default authoring form, custom nnf
             generator.computeSubontology(computeRF2, customRedundancyOptions);
         }
+        else { //custom authoring and nnf (NOT RECOMMENDED)
+            //with non-default redundancy elimination options specified by user
+            generator.computeSubontology(computeRF2, customRedundancyOptions, defaultAuthoringForm);
+        }
+
         long endTime = System.currentTimeMillis();
         OWLOntology subOntology = generator.getCurrentSubOntology();
         OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");

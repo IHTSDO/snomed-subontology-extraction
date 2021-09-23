@@ -159,7 +159,7 @@ public class OntologyReasoningService {
         return topClass;
     }
 
-    // Currently assumes no equivalent classes: would be problematic if we have equivalent named classes or PVs, since this will mean both are removed. //TODO: store equivalent cases, remove only one.
+    // Currently assumes no equivalent classes: would be problematic if we have equivalent named classes or PVs, since this will mean both are removed. //TODO: detect equivalent cases, remove only one.
     public Set<OWLClass> eliminateWeakerClasses(Set<OWLClass> inputClassSet) {
         Set<OWLClass> redundantClasses = new HashSet<OWLClass>();
 
@@ -170,7 +170,7 @@ public class OntologyReasoningService {
                 redundantClasses.add(cls);
             }
             otherClasses.add(cls); //retain redundancies to check against (?)
-        }   // TODO:...but if A |= B, then we have B |= C, via this approach we can safely remove them as we identify them? Check.
+        }
 
         inputClassSet.removeAll(redundantClasses);
         return (inputClassSet);

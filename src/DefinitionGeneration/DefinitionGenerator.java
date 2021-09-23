@@ -155,7 +155,6 @@ public abstract class DefinitionGenerator {
 
     //protected void constructDefinition(OWLClass definedClass, Set<Set<OWLClassExpression>> definingConditionsByAxiom) {
     protected void constructDefinition(OWLClass definedClass, Map<Set<OWLClassExpression>, Boolean> definingConditionsByAxiom) {
-        //TODO: 28-05-21 -- issues with defined concepts that have a separate necessary condition that is not also sufficient. Need to handle these separately at generation
         Set<OWLAxiom> definitionAxioms = new HashSet<OWLAxiom>();
 
         //for(Set<OWLClassExpression> definingConditions:definingConditionsByAxiom) {
@@ -187,7 +186,7 @@ public abstract class DefinitionGenerator {
             }
 
             latestNecessaryConditions = definingConditions;
-            //store gci definitions separately. //TODO: fix in line with multi-axiom handling
+            //store gci definitions separately. //TODO: improve in line with multi-axiom handling
             if (namer.isNamedGCI(definedClass)) {
                 System.out.println("GCI DEFINITION ADDED: " + definingAxiom);
                 gciDefinitions.add(definingAxiom);
@@ -198,7 +197,7 @@ public abstract class DefinitionGenerator {
             //return;
         }
 
-        //make generatedDefinitions a set of sets, go from there? //TODO: "get latest necessary conditions" might be broken...
+        //make generatedDefinitions a set of sets, go from there? //check "get latest necessary conditions"
         if(definitionAxioms.size() == 0 && !namer.isNamedGCI(definedClass)) {
             System.out.println("Undefined class: " + definedClass);
             undefinedClasses.add(df.getOWLSubClassOfAxiom(df.getOWLThing(), definedClass));
@@ -236,7 +235,6 @@ public abstract class DefinitionGenerator {
 
     //currently not storing property definitions, may make sense to combine these two generateDefinitions to operate simply over entities and decide based on type
     public Set<OWLAxiom> generatePropertyDefinition(OWLObjectProperty propToDefine) {
-        //TODO: 03-09-21 -- is this sufficient for RBox?
         Set<OWLSubObjectPropertyOfAxiom> propAxioms = sourceOntology.getAxioms(AxiomType.SUB_OBJECT_PROPERTY);
         //collect stated super properties of property to define
         Set<OWLObjectPropertyExpression> statedSuperProps = new HashSet<OWLObjectPropertyExpression>();
