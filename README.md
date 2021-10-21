@@ -6,7 +6,7 @@ following criteria:
 - The transitive closure between all concepts in the final subontology is equal (up to the signature of the subontology)
   in the source and sub ontologies.
 
-**Author**: Warren Del-Pinto (warren.del-pinto@manchester.ac.uk, warren.delpinto@gmail.com)\
+**Author**: Warren Del-Pinto (warren.del-pinto@manchester.ac.uk, warren.delpinto@gmail.com)
 
 ### Process outline
 Steps:
@@ -23,8 +23,7 @@ When computing the subontology in RF2 format, the following steps are also inclu
 
 ## Running the prototype
 
-The application can be run from the command line using the 'executable' jar file available on the [latest release](https://github.
-com/IHTSDO/snomed-subontology-extraction/releases) page.
+The application can be run from the command line using the 'executable' jar file available on the [latest release](https://github.com/IHTSDO/snomed-subontology-extraction/releases) page.
 
 Command line options:
 ```
