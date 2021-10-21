@@ -9,7 +9,7 @@ following criteria:
 **Author**: Warren Del-Pinto (warren.del-pinto@manchester.ac.uk, warren.delpinto@gmail.com)\
 
 ### Process outline
-Steps outline:
+Steps:
 1) Compute abstract (authoring) form definitions for each focus concept in the input set (including GCI axioms for these concepts)
 2) Definition expansion: automatically identify required supporting concept definitions to satisfy the above criteria
 3) Populate RBox (currently star module of roles appearing in the definitions added during steps (1) and (2)
@@ -22,23 +22,44 @@ When computing the subontology in RF2 format, the following steps are also inclu
 - Computation of NNF definitions for Relationship RF2 file
 
 ## Running the prototype
-Currently, the prototype can be run from the RunSubontologyExtraction.java file. In the main class, replace the paths 
-with local ones.
 
-The following must be specified:
-- Source ontology file (by path, an OWL file)
-- Focus concept list (by path, as inputRefsetFile - a text file containing a single column of concept identifiers. 
-  Note: preprocessing refset files - can just extract conceptID column and save separately)
-- Output path
+The application can be run from the command line using the 'executable' jar file available on the [latest release](https://github.
+com/IHTSDO/snomed-subontology-extraction/releases) page.
 
-Two options can also be specified:
-- `computeRF2` - computes the RF2 format of the subontology, alongside the default .owl file
-- `verifySubontology` - runs verification for the computed subontology to check critera (1) and (2) above.
-**WARNING: can be expensive for larger subontologies**
+Command line options:
+```
+Usage:
+ -help                                  Print this help message.
 
-If computing RF2, the following must also be specified:
-- `sourceRF2FilePath` - path to the RF2 format associated with the Source ontology OWL file specified above
-        
+ -source-ontology                       Source ontology OWL file.
+                                        This can be generated using the snomed-owl-toolkit project.
+
+ -input-subset                          Input subset file.
+                                        Text file containing a newline separated list of identifiers of the SNOMED-CT concepts to extract into the subontology.
+
+
+
+Optional parameters for OWL conversion:
+ -output-rf2                            (Optional) This flag enables RF2 output.
+                                        If this flag is given then an RF2 snapshot to filter is required as input using -rf2-snapshot-archive.
+
+ -rf2-snapshot-archive                  This parameter is required when using -output-rf2.
+                                        A SNOMED CT RF2 archive containing a snapshot. The release version must match the source ontology OWL file.
+
+ -verify-subontology                    (Optional) runs verification for the computed subontology to check steps 1 and 2 above.
+                                        Warning: this can be expensive for larger subontologies.
+
+```
+
+### Example command line options
+```
+java -Xms4g -jar snomed-subontology-extraction-1.0.0-executable.jar \
+ -source-ontology ../release/snomed-int-20200731-ontology.owl \
+ -input-subset concept-ids-from-dentistry-refset.txt \
+ -output-rf2 \
+ -rf2-snapshot-archive ../release/SnomedCT_InternationalRF2_PRODUCTION_20200731T120000Z.zip 
+```
+
 ## Compiling RF2 notes
 Currently RF2 files are printed as follows:
 - **subontologyRF2 folder** contains all required RF2 files aside from the following...
@@ -48,9 +69,3 @@ Currently RF2 files are printed as follows:
   the subontologyRF2 folder:
   - _**sct2_sRefset_OWLExpressionSnapshot.txt**_ : contains the OWL definitions associated with the subontology
   - _**sct2_TextDefinition_Snapshot.txt**_: contains the associated descriptions etc required for the browser
-
-## Dependency Notes
-Printing uses the content-extraction branch as a dependency to convert from OWL-to-RF2 and vice versa.
-
-To print results in FSN format (source type destination), you will need to include the latest SCT description RF2 file
-(e.g. sct2_Description_Snapshot-en_INT_20200731.zip) in the following directory: `src/resources`

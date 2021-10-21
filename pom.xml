@@ -75,7 +75,7 @@
 						</goals>
 						<configuration>
 							<classifier>executable</classifier>
-							<mainClass>org.snomed.otf.owltoolkit.Application</mainClass>
+							<mainClass>org.snomed.ontology.extraction.SubontologyExtraction</mainClass>
 						</configuration>
 					</execution>
 				</executions>

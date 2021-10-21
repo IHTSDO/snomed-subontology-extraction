@@ -35,7 +35,8 @@ public class SubOntologyRF2ConversionService {
      */
 
     //TODO: reduce redundancy in file extraction, automatically construct RF2 zip file
-    public static void convertSubOntologytoRF2(OWLOntology subOntology, OWLOntology nnfOntology, String outputPath, String sourceFilePath) throws ReleaseImportException, IOException, OWLException, ConversionException {
+    public static void convertSubOntologytoRF2(OWLOntology subOntology, OWLOntology nnfOntology, String outputPath, File sourceFile) throws ReleaseImportException, IOException,
+			OWLException, ConversionException {
         //Extract the concept and description RF2 files, based on the source ontology (includes all entities in subontology)
         Set<OWLEntity> entitiesInSubontologyAndNNFs = new HashSet<OWLEntity>();
         entitiesInSubontologyAndNNFs.addAll(subOntology.getClassesInSignature());
@@ -56,7 +57,7 @@ public class SubOntologyRF2ConversionService {
         entitiesInSubontologyAndNNFs.remove(df.getOWLThing());
         entitiesInSubontologyAndNNFs.remove(df.getOWLNothing());
 
-        extractConceptAndDescriptionRF2(entitiesInSubontologyAndNNFs, outputPath, sourceFilePath);
+        extractConceptAndDescriptionRF2(entitiesInSubontologyAndNNFs, outputPath, sourceFile);
 
         //Extract relationship rf2 file from nnfs
         printRelationshipRF2(nnfOntology, outputPath);
@@ -65,7 +66,7 @@ public class SubOntologyRF2ConversionService {
         computeOWLRefsetAndTextDefinitions(outputPath);
     }
 
-    private static void extractConceptAndDescriptionRF2(Set<OWLEntity> entitiesToExtract, String outputPath, String backgroundFilePath) throws IOException, ReleaseImportException {
+    private static void extractConceptAndDescriptionRF2(Set<OWLEntity> entitiesToExtract, String outputPath, File backgroundFile) throws IOException, ReleaseImportException {
 		Set<Long> entityIDs = new HashSet<>();
         System.out.println("Extracting background RF2 information for entities in subontology.");
         System.out.println("Storing in " + outputPath + "subontologyRF2");
@@ -77,7 +78,7 @@ public class SubOntologyRF2ConversionService {
         //TODO: add metadata concepts manually for now, improve later. -- needed?
         entityIDs.addAll(Arrays.asList(Long.parseLong("116680003"), Long.parseLong("410662002"), Long.parseLong("900000000000441003"), Long.parseLong("138875005")));
 
-        new RF2ExtractionService().extractConcepts(new FileInputStream(backgroundFilePath), entityIDs, new File(outputPath + "subontologyRF2"));
+        new RF2ExtractionService().extractConcepts(new FileInputStream(backgroundFile), entityIDs, new File(outputPath + "subontologyRF2"));
     }
 
     private static void printRelationshipRF2(OWLOntology nnfOntology, String outputPath) throws IOException, ConversionException {

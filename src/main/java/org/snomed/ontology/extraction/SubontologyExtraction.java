@@ -1,31 +1,72 @@
 package org.snomed.ontology.extraction;
 
-import org.snomed.ontology.extraction.definitiongeneration.RedundancyOptions;
-import org.snomed.ontology.extraction.exception.ReasonerException;
-import org.snomed.ontology.extraction.writers.MapPrinter;
-import org.snomed.ontology.extraction.writers.OntologySaver;
-import org.snomed.ontology.extraction.services.SubOntologyExtractionHandler;
-import org.snomed.ontology.extraction.services.SubOntologyRF2ConversionService;
-import org.snomed.ontology.extraction.verification.VerificationChecker;
+import com.google.common.collect.Lists;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.model.*;
+import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLException;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.snomed.ontology.extraction.definitiongeneration.RedundancyOptions;
+import org.snomed.ontology.extraction.exception.ReasonerException;
+import org.snomed.ontology.extraction.services.SubOntologyExtractionHandler;
+import org.snomed.ontology.extraction.services.SubOntologyRF2ConversionService;
 import org.snomed.ontology.extraction.tools.InputSignatureHandler;
+import org.snomed.ontology.extraction.utils.MainMethodUtils;
+import org.snomed.ontology.extraction.verification.VerificationChecker;
+import org.snomed.ontology.extraction.writers.MapPrinter;
+import org.snomed.ontology.extraction.writers.OntologySaver;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-public class RunSubontologyExtraction {
+import static org.snomed.ontology.extraction.utils.MainMethodUtils.*;
 
-    public static void main(String[] args) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
-        OWLOntologyManager man = OWLManager.createOWLOntologyManager();
+public class SubontologyExtraction {
+
+	private static final String ARG_HELP = "-help";
+	private static final String ARG_SOURCE_ONTOLOGY_FILE = "-source-ontology";
+	private static final String ARG_INPUT_SUBSET = "-input-subset";
+	private static final String ARG_OUTPUT_RF2 = "-output-rf2";
+	private static final String ARG_RF2_SNAPSHOT_ARCHIVE = "-rf2-snapshot-archive";
+	private static final String ARG_VERIFY_SUBONTOLOGY = "-verify-subontology";
+
+	public static void main(String[] argsArray) {
+		try {
+			new SubontologyExtraction().run(argsArray);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+		System.exit(0);
+	}
+
+	public void run(String[] argsArray) throws OWLException, ReasonerException, IOException, ReleaseImportException, ConversionException {
+		List<String> args = Lists.newArrayList(argsArray);
+
+		MainMethodUtils.setPrintHelp(this::printHelp);
+		if (args.isEmpty() || args.contains(ARG_HELP)) {
+			// Help
+			printHelp();
+			System.exit(0);
+		}
+
+		final File sourceOntologyFile = getFile(getRequiredParameterValue(ARG_SOURCE_ONTOLOGY_FILE, args));
+
+		boolean outputRF2 = isFlag(ARG_OUTPUT_RF2, args);
+		//if computing RF2, provide RF2 files corresponding to the sourceOntologyFile OWL file for OWL to RF2 conversion -- ensure same ontology version as sourceOntologyFile
+		File sourceRF2File = null;
+		if(outputRF2) {
+			sourceRF2File =  getFile(getRequiredParameterValue(ARG_RF2_SNAPSHOT_ARCHIVE, args));
+		}
+
         /*
         * Input for subontology extraction: source ontology (path), inputRefsetFile for focus concepts (list, refset as .txt)
          */
-        File sourceOntologyFile = new File("../../release/snomed-int-20200731-ontology.owl");
-        File inputRefsetFile = new File("dent.txt");
+		File inputRefsetFile = getFile(getRequiredParameterValue(ARG_INPUT_SUBSET, args));
         // if focus concepts specified as refset
         Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
 
@@ -36,14 +77,7 @@ public class RunSubontologyExtraction {
         conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + 22688005)));
          */
 
-        boolean computeRF2 = true;
-        //if computing RF2, provide RF2 files corresponding to the sourceOntologyFile OWL file for OWL to RF2 conversion -- ensure same ontology version as sourceOntologyFile
-        String sourceRF2FilePath = "";
-        if(computeRF2) {
-            sourceRF2FilePath = "../../release/SnomedCT_InternationalRF2_PRODUCTION_20200731T120000Z.zip";
-        }
-
-        boolean verifySubontology = false;
+        boolean verifySubontology = isFlag(ARG_VERIFY_SUBONTOLOGY, args);
 
         //output path
         String outputPath = "output/";
@@ -52,7 +86,7 @@ public class RunSubontologyExtraction {
 			System.err.println("Failed to create output directory: " + outputPath);
 		}
 
-        OWLOntology sourceOntology = man.loadOntologyFromOntologyDocument(sourceOntologyFile);
+		OWLOntology sourceOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(sourceOntologyFile);
         //generating subontology
         SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(sourceOntology, conceptsToDefine);
 
@@ -77,14 +111,14 @@ public class RunSubontologyExtraction {
 
         long startTime = System.currentTimeMillis();
         if(customRedundancyOptions.isEmpty()) { //with default redundancy elimination on both authoring and NNF definitions (RECOMMENDED)
-            generator.computeSubontology(computeRF2);
+            generator.computeSubontology(outputRF2);
         }
         else if(defaultAuthoringForm) { //default authoring form, custom nnf
-            generator.computeSubontology(computeRF2, customRedundancyOptions);
+            generator.computeSubontology(outputRF2, customRedundancyOptions);
         }
         else { //custom authoring and nnf (NOT RECOMMENDED)
             //with non-default redundancy elimination options specified by user
-            generator.computeSubontology(computeRF2, customRedundancyOptions, defaultAuthoringForm);
+            generator.computeSubontology(outputRF2, customRedundancyOptions, defaultAuthoringForm);
         }
 
         long endTime = System.currentTimeMillis();
@@ -92,12 +126,12 @@ public class RunSubontologyExtraction {
         OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
         System.out.println("Time taken: " + (endTime - startTime)/1000 + " seconds");
         //Extract RF2 for subontology
-        if(computeRF2) {
+        if(outputRF2) {
             //generator.generateNNFs();
             OWLOntology nnfOntology = generator.getNnfOntology();
             OntologySaver.saveOntology(nnfOntology, outputPath + "subOntologyNNFs.owl");
 
-            SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputPath, sourceRF2FilePath);
+            SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputPath, sourceRF2File);
         }
         if(verifySubontology) {
             VerificationChecker checker = new VerificationChecker();
@@ -146,4 +180,44 @@ public class RunSubontologyExtraction {
             }
         }
     }
+
+	private void printHelp() {
+		System.out.println(
+				"Usage:\n" +
+						pad(ARG_HELP) +
+						"Print this help message.\n" +
+						"\n" +
+
+						pad(ARG_SOURCE_ONTOLOGY_FILE) +
+						"Source ontology OWL file.\n" +
+						pad("") + "This can be generated using the snomed-owl-toolkit project.\n" +
+						"\n" +
+
+						pad(ARG_INPUT_SUBSET) +
+						"Input subset file.\n" +
+						pad("") + "Text file containing a newline separated list of identifiers of the SNOMED-CT concepts to extract into the subontology.\n" +
+						"\n" +
+
+						"\n" +
+						"\n" +
+						"Optional parameters for OWL conversion:\n" +
+
+						pad(ARG_OUTPUT_RF2) +
+						"(Optional) This flag enables RF2 output.\n" +
+						pad("") + "If this flag is given then an RF2 snapshot to filter is required as input using " + ARG_RF2_SNAPSHOT_ARCHIVE + ".\n" +
+						"\n" +
+
+						pad(ARG_RF2_SNAPSHOT_ARCHIVE) +
+						"This parameter is required when using " + ARG_OUTPUT_RF2 + ".\n" +
+						pad("") + "A SNOMED CT RF2 archive containing a snapshot. The release version must match the source ontology OWL file.\n" +
+						"\n" +
+
+						pad(ARG_VERIFY_SUBONTOLOGY) +
+						"(Optional) runs verification for the computed subontology to check steps 1 and 2 above.\n" +
+						pad("") + "Warning: this can be expensive for larger subontologies.\n" +
+						"\n" +
+
+						"");
+	}
+
 }

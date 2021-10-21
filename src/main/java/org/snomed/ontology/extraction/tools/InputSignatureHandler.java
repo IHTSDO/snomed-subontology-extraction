@@ -76,7 +76,7 @@ public abstract class InputSignatureHandler {
 
     private static Set<OWLClass> readRefsetTxt(File refsetFile) {
         OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
-        Set<OWLClass> classes = new HashSet<OWLClass>();
+        Set<OWLClass> classes = new HashSet<>();
         try (BufferedReader br = new BufferedReader(new FileReader(refsetFile))) {
             String inLine = "";
             //br.readLine();
@@ -84,7 +84,7 @@ public abstract class InputSignatureHandler {
                 // process the line, remove whitespace
                 if(inLine.matches(".*\\d+.*")) {
                     inLine = inLine.replaceAll("[\\s\\p{Z}]+", "").trim();
-                    System.out.println("Adding class: " + inLine + " to input");
+//                    System.out.println("Adding class: " + inLine + " to input");
                     //if()
                     classes.add(df.getOWLClass(IRI.create(snomedIRIString + inLine)));
                 }
@@ -94,6 +94,7 @@ public abstract class InputSignatureHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+		System.out.println(classes.size() + " identifiers read from input subset.");
         return classes;
     }
 
