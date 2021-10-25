@@ -6,7 +6,7 @@ following criteria:
 - The transitive closure between all concepts in the final subontology is equal (up to the signature of the subontology)
   in the source and sub ontologies.
 
-**Author**: Warren Del-Pinto (warren.del-pinto@manchester.ac.uk, warren.delpinto@gmail.com)
+**Working Group**: Warren Del-Pinto (warren.del-pinto@manchester.ac.uk), Renate A. Schmidt (renate.schmidt@manchester.ac.uk), Yongsheng Gao (SNOMED International), Kai Kewley (SNOMED International)
 
 ### Process outline
 Steps:
