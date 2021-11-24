@@ -54,7 +54,7 @@ public class SubontologyExtractionTest {
 
 		// RF2 Relationship assertions
 		File relationshipOutputFile = new File(tempOutputDirectory,
-				String.format("sct2_Relationship_Snapshot_INT%s.txt", new SimpleDateFormat("yyyyMMdd").format(new Date())));
+				String.format("RF2/Snapshot/Terminology/sct2_Relationship_Snapshot_INT_%s.txt", new SimpleDateFormat("yyyyMMdd").format(new Date())));
 		assertTrue(relationshipOutputFile.isFile());
 		Map<String, Set<String>> parents = extractParents(relationshipOutputFile);
 		assertTrue(parents.containsKey(CLINICAL_FINDING));

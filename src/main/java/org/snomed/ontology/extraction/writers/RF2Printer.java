@@ -194,7 +194,9 @@ public class RF2Printer extends Printer {
 
     public void printRelationshipRF2File(OWLOntology nnfOntology) throws ConversionException, IOException {
         String date = SIMPLE_DATE_FORMAT.format(new Date().getTime());
-        File outputFile = new File(outputDirectory, "sct2_Relationship_Snapshot_INT" + date + ".txt");
+        File terminologyDirectory = new File(outputDirectory, "RF2/Snapshot/Terminology");
+        terminologyDirectory.mkdirs();
+        File outputFile = new File(terminologyDirectory, "sct2_Relationship_Snapshot_INT_" + date + ".txt");
 
         System.out.println("Writing inferred relationships file for: " + outputFile);
         AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<>());

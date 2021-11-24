@@ -28,7 +28,7 @@ public class RF2ExtractionService {
 		ReleaseImporter releaseImporter = new ReleaseImporter();
 		String dateString = dateFormat.format(new Date());
 		try (RF2ExtractionWriter extractionWriter = new RF2ExtractionWriter(conceptIds, dateString, outputDirectory)) {
-			releaseImporter.loadEffectiveSnapshotReleaseFileStreams(Collections.singleton(rf2SnapshotArchive), LoadingProfile.complete, extractionWriter);
+			releaseImporter.loadEffectiveSnapshotReleaseFileStreams(Collections.singleton(rf2SnapshotArchive), LoadingProfile.complete, extractionWriter, false);
 		}
 		logger.info("Extraction complete.");
 	}

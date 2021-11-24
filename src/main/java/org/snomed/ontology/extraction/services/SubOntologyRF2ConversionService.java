@@ -1,5 +1,6 @@
 package org.snomed.ontology.extraction.services;
 
+import org.apache.commons.io.FileUtils;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
@@ -26,7 +27,7 @@ Procedure is somewhat different, since subontology extraction utilises informati
 public class SubOntologyRF2ConversionService {
 
 	public static final String IRI_PREFIX = "http://snomed.info/id/";
-	private static String OWLRefsetRF2Directory = "authoring_OWLRefset_RF2";
+	private static final String OWLRefsetRF2Filename = "debug_OWLRefset";
     /*
     public SubOntologyRF2Converter(String outputPath, String backgroundFilePath) {
         this.outputPath = outputPath;
@@ -57,10 +58,10 @@ public class SubOntologyRF2ConversionService {
         entitiesInSubontologyAndNNFs.remove(df.getOWLThing());
         entitiesInSubontologyAndNNFs.remove(df.getOWLNothing());
 
-        extractConceptAndDescriptionRF2(entitiesInSubontologyAndNNFs, outputDirectory, sourceFile);
-
         //Extract relationship rf2 file from nnfs
         printRelationshipRF2(nnfOntology, outputDirectory);
+
+        extractConceptAndDescriptionRF2(entitiesInSubontologyAndNNFs, outputDirectory, sourceFile);
 
         //Extract OWLRefset rf2 file (and TextDefinitions file) from authoring definitions
         computeOWLRefsetAndTextDefinitions(outputDirectory);
@@ -69,7 +70,7 @@ public class SubOntologyRF2ConversionService {
     private static void extractConceptAndDescriptionRF2(Set<OWLEntity> entitiesToExtract, File outputDirectory, File backgroundFile) throws IOException, ReleaseImportException {
 		Set<Long> entityIDs = new HashSet<>();
         System.out.println("Extracting background RF2 information for entities in subontology.");
-        System.out.println("Storing in " + new File(outputDirectory, "subontologyRF2"));
+        System.out.println("Storing in " + new File(outputDirectory, "RF2"));
         for(OWLEntity ent:entitiesToExtract) {
             Long id = Long.parseLong(ent.toString().replaceFirst(IRI_PREFIX, "").replaceAll("[<>]", ""));
             entityIDs.add(id);
@@ -78,7 +79,8 @@ public class SubOntologyRF2ConversionService {
         //TODO: add metadata concepts manually for now, improve later. -- needed?
         entityIDs.addAll(Arrays.asList(Long.parseLong("116680003"), Long.parseLong("410662002"), Long.parseLong("900000000000441003"), Long.parseLong("138875005")));
 
-        new RF2ExtractionService().extractConcepts(new FileInputStream(backgroundFile), entityIDs, new File(outputDirectory, "subontologyRF2"));
+        File subontologyRF2 = new File(outputDirectory, "RF2");
+        new RF2ExtractionService().extractConcepts(new FileInputStream(backgroundFile), entityIDs, subontologyRF2);
     }
 
     private static void printRelationshipRF2(OWLOntology nnfOntology, File outputDirectory) throws IOException, ConversionException {
@@ -89,7 +91,7 @@ public class SubOntologyRF2ConversionService {
     private static void computeOWLRefsetAndTextDefinitions(File outputDirectory) throws IOException, OWLException {
         OWLtoRF2Service owlToRF2Converter = new OWLtoRF2Service();
         try (InputStream owlFileStreamAuthoring = new BufferedInputStream(new FileInputStream(new File(outputDirectory, "subOntology.owl")))) {
-			File rf2ZipAuthoring = new File(outputDirectory, OWLRefsetRF2Directory + ".zip");
+			File rf2ZipAuthoring = new File(outputDirectory, OWLRefsetRF2Filename + ".zip");
 			owlToRF2Converter.writeToRF2(owlFileStreamAuthoring, new FileOutputStream(rf2ZipAuthoring), new Date());
 		}
     }

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -16,7 +17,6 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 
 	public static final String TAB = "\t";
 
-	private final File outputDirectory;
 	private final Set<Long> conceptIds;
 	private final Set<Long> descriptionIds;
 
@@ -30,8 +30,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 
 	public RF2ExtractionWriter(Set<Long> conceptIds, String dateString, File outputDirectory) throws IOException {
 		this.conceptIds = new LongOpenHashSet(conceptIds);
-		this.descriptionIds = new LongOpenHashSet();
-		this.outputDirectory = outputDirectory;
+		this.descriptionIds = Collections.synchronizedSet(new LongOpenHashSet());
 
 		File snapshotDir = new File(outputDirectory, "Snapshot");
 		createDirectoryOrThrow(snapshotDir);
@@ -50,7 +49,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		conceptWriter = newRF2Writer(
 				terminologyDir,
 				String.format("sct2_Concept_Snapshot_INT_%s.txt", dateString),
-				String.join(TAB, "conceptId", "effectiveTime", "active", "moduleId", "definitionStatusId"));
+				String.join(TAB, "id", "effectiveTime", "active", "moduleId", "definitionStatusId"));
 
 		descriptionWriter = newRF2Writer(
 				terminologyDir,
