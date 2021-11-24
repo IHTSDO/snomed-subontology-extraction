@@ -150,6 +150,14 @@ public class SubOntologyExtractionHandler {
         focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/733073007")));
         focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/900000000000455006")));
         focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/900000000000506000")));
+
+        // Attribute hierarchy concepts:
+        // 410662002 | Concept model attribute (attribute) |
+        focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/410662002")));
+        // 762705008 | Concept model object attribute (attribute) |
+        focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/762705008")));
+        // 762706009 | Concept model data attribute (attribute) |
+        focusConcepts.add(df.getOWLClass(IRI.create("http://snomed.info/id/762706009")));
     }
 
     private void computeFocusConceptDefinitions() {
@@ -432,8 +440,8 @@ public class SubOntologyExtractionHandler {
 
     //temp: compute STAR module for RBox population
     private void populateRBox() throws OWLOntologyCreationException {
-        Set<OWLEntity> signature = new HashSet<OWLEntity>();
-        signature.addAll(subOntology.getObjectPropertiesInSignature());
+        Set<OWLObjectProperty> objectPropertiesInSignature = subOntology.getObjectPropertiesInSignature();
+        Set<OWLEntity> signature = new HashSet<>(objectPropertiesInSignature);
 
         OWLOntology module = ModuleExtractionHandler.extractSingleModule(sourceOntology, signature, ModuleType.STAR);
 
@@ -442,6 +450,19 @@ public class SubOntologyExtractionHandler {
         System.out.println("Module roles: " + module.getObjectPropertiesInSignature());
 
         man.addAxioms(subOntology, module.getLogicalAxioms());
+
+        // Include "762705008 |Concept model object attribute (attribute)|" in property hierarchy
+        if (!objectPropertiesInSignature.isEmpty()) {
+            OWLObjectProperty property = objectPropertiesInSignature.iterator().next();
+            while (!property.getIRI().toString().equals("http://snomed.info/id/762705008")) {
+                Set<OWLSubObjectPropertyOfAxiom> objectSubPropertyAxiomsForSubProperty = sourceOntology.getObjectSubPropertyAxiomsForSubProperty(property);
+                if (objectSubPropertyAxiomsForSubProperty.isEmpty()) {
+                    break;
+                }
+                man.addAxioms(subOntology, objectSubPropertyAxiomsForSubProperty);
+                property = objectSubPropertyAxiomsForSubProperty.iterator().next().getSuperProperty().asOWLObjectProperty();
+            }
+        }
     }
 
     private void addGrouperConcepts() {
