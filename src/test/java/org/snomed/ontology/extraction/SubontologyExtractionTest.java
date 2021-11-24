@@ -38,7 +38,7 @@ public class SubontologyExtractionTest {
 
 		// Run extraction
 		subontologyExtraction.run(("-source-ontology src/test/resources/dummy-sct-ontology.owl " +
-				"-input-subset 816080008.txt " +
+				"-input-subset src/test/resources/subset.txt " +
 				"-output-rf2 " +
 				"-output-path " + tempOutputDirectory.getAbsolutePath() + " " +
 				"-rf2-snapshot-archive " + inputRF2Zip.getAbsolutePath()).split(" "));
