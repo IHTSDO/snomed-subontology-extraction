@@ -3,6 +3,7 @@ package org.snomed.ontology.extraction.naming;
 import org.snomed.ontology.extraction.writers.MapPrinter;
 import org.semanticweb.owlapi.model.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -149,7 +150,7 @@ public class IntroducedNameHandler {
     }
 
     public void printNameAndPvPairs(String outputPath) throws IOException {
-        MapPrinter printer = new MapPrinter(outputPath);
+        MapPrinter printer = new MapPrinter(new File(outputPath));
         System.out.println("Printing naming map.");
         printer.printNamingsForPVs(pvNamingMap);
     }

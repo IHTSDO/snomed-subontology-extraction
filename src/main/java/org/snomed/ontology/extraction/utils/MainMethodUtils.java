@@ -12,6 +12,11 @@ public class MainMethodUtils {
 		return args.contains(paramName);
 	}
 
+	public static String getParameterValue(String paramName, List<String> args, String defaultValue) {
+		String value = getParameterValue(paramName, args);
+		return value != null ? value : defaultValue;
+	}
+
 	public static String getParameterValue(String paramName, List<String> args) {
 		if (args.contains(paramName)) {
 			int valueIndex = args.indexOf(paramName) + 1;

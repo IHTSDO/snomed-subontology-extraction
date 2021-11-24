@@ -11,6 +11,4 @@ public abstract class Printer {
         //writer.newLine();
     }
 
-    public abstract String getDirectoryPath();
-
 }

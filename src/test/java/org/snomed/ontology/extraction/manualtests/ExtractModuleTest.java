@@ -29,7 +29,7 @@ public class ExtractModuleTest {
 
         String refsetName = signatureFile.getName().substring(0, signatureFile.getName().lastIndexOf("."));
         for(Map.Entry<ModuleType, OWLOntology> entry: moduleMap.entrySet()) {
-            OntologySaver.saveOntology(entry.getValue(), outputPath+entry.getKey()+"_"+refsetName);
+            OntologySaver.saveOntology(entry.getValue(), new File(outputPath), entry.getKey()+"_"+refsetName);
         }
     }
 }

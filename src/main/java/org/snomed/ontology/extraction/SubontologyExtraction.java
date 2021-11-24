@@ -31,6 +31,7 @@ public class SubontologyExtraction {
 	private static final String ARG_SOURCE_ONTOLOGY_FILE = "-source-ontology";
 	private static final String ARG_INPUT_SUBSET = "-input-subset";
 	private static final String ARG_OUTPUT_RF2 = "-output-rf2";
+	private static final String ARG_OUTPUT_PATH = "-output-path";
 	private static final String ARG_RF2_SNAPSHOT_ARCHIVE = "-rf2-snapshot-archive";
 	private static final String ARG_VERIFY_SUBONTOLOGY = "-verify-subontology";
 
@@ -80,10 +81,9 @@ public class SubontologyExtraction {
         boolean verifySubontology = isFlag(ARG_VERIFY_SUBONTOLOGY, args);
 
         //output path
-        String outputPath = "output/";
-		final File outputPathFile = new File(outputPath);
-		if (!outputPathFile.isDirectory() && !outputPathFile.mkdirs()) {
-			System.err.println("Failed to create output directory: " + outputPath);
+		final File outputDirectory = new File(getParameterValue(ARG_OUTPUT_PATH, args, "output"));
+		if (!outputDirectory.isDirectory() && !outputDirectory.mkdirs()) {
+			System.err.println("Failed to create output directory: " + outputDirectory.getAbsolutePath());
 		}
 
 		OWLOntology sourceOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(sourceOntologyFile);
@@ -123,15 +123,15 @@ public class SubontologyExtraction {
 
         long endTime = System.currentTimeMillis();
         OWLOntology subOntology = generator.getCurrentSubOntology();
-        OntologySaver.saveOntology(subOntology, outputPath+"subOntology.owl");
+        OntologySaver.saveOntology(subOntology, outputDirectory, "subOntology.owl");
         System.out.println("Time taken: " + (endTime - startTime)/1000 + " seconds");
         //Extract RF2 for subontology
         if(outputRF2) {
             //generator.generateNNFs();
             OWLOntology nnfOntology = generator.getNnfOntology();
-            OntologySaver.saveOntology(nnfOntology, outputPath + "subOntologyNNFs.owl");
+            OntologySaver.saveOntology(nnfOntology, outputDirectory, "subOntologyNNFs.owl");
 
-            SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputPath, sourceRF2File);
+            SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputDirectory, sourceRF2File);
         }
         if(verifySubontology) {
             VerificationChecker checker = new VerificationChecker();
@@ -158,7 +158,7 @@ public class SubontologyExtraction {
                 if(!satisfiesTransitiveClosureReq) {
                     System.out.println("Transitive Closure test failed");
                     System.out.println("Failed classes: " + checker.getLatestSourceOntologyClosureDiffs().keySet());
-                    MapPrinter printer = new MapPrinter(outputPath);
+                    MapPrinter printer = new MapPrinter(outputDirectory);
                     printer.printGeneralMap(checker.getLatestSubOntologyClosureDiffs(), "subOntDiffMap.txt");
                     printer.printGeneralMap(checker.getLatestSourceOntologyClosureDiffs(), "sourceOntDiffMap.txt");
                 }
@@ -205,6 +205,10 @@ public class SubontologyExtraction {
 						pad(ARG_OUTPUT_RF2) +
 						"(Optional) This flag enables RF2 output.\n" +
 						pad("") + "If this flag is given then an RF2 snapshot to filter is required as input using " + ARG_RF2_SNAPSHOT_ARCHIVE + ".\n" +
+						"\n" +
+
+						pad(ARG_OUTPUT_PATH) +
+						"(Optional) Output directory path. Defaults to 'output'.\n" +
 						"\n" +
 
 						pad(ARG_RF2_SNAPSHOT_ARCHIVE) +

@@ -23,21 +23,21 @@ import java.util.zip.ZipInputStream;
 
 public class RF2Printer extends Printer {
 
-    private static String outputDirectory;
     private static final String TAB = "\t";
-    private static final Charset UTF_8_CHARSET = Charset.forName("UTF-8");
+    private static final Charset UTF_8_CHARSET = StandardCharsets.UTF_8;
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
+    private final File outputDirectory;
 
-    public RF2Printer(String outputPath){
-        outputDirectory = outputPath;
+    public RF2Printer(File outputDirectory){
+        this.outputDirectory = outputDirectory;
     }
 
     public void printNNFsAsRF2Tuples(OWLOntology nnfOntology) throws ConversionException, IOException {
         //get attributes (roles) from ontology to be provided to toolkit OntologyService. TODO: we don't actually need the ontology service to go from OWL --> RF2, so doesn't matter.
-        String outputFilePath = outputDirectory + "_FSN_tuples" + ".txt";
+        File outputFile = new File(outputDirectory, "_FSN_tuples" + ".txt");
 
-        System.out.println("Printing FSN tuples for definitions to: " + outputFilePath);
-        AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<Long>());
+        System.out.println("Printing FSN tuples for definitions to: " + outputFile.getPath());
+        AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<>());
 
         Map<Long, List<OWLAxiom>> axiomsMap = new HashMap<>();
 
@@ -46,7 +46,7 @@ public class RF2Printer extends Printer {
 
         Set<AxiomRepresentation> representations = representationsMap.get((long)1);
 
-        BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
+        BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFile), UTF_8_CHARSET));
         StringBuilder sb = new StringBuilder();
 
         Map<Long, List<Relationship>> definedConceptRelationshipsMap = new HashMap<Long, List<Relationship>>();
@@ -74,7 +74,7 @@ public class RF2Printer extends Printer {
 
     //TODO: code duplication from above, reduce.
     public void printNNFsAsFSNTuples(OWLOntology nnfOntology) throws IOException, ConversionException {
-        String outputFilePath = outputDirectory + "_FSN_tuples" + ".txt";
+        File outputFile = new File(outputDirectory, "_FSN_tuples.txt");
 
         AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<>());
 
@@ -85,11 +85,11 @@ public class RF2Printer extends Printer {
         Set<AxiomRepresentation> representations = representationsMap.get((long)1);
 
         //BufferedWriter writer =  new BufferedWriter(fw);
-        BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
+        BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFile), UTF_8_CHARSET));
 
         Map<Long, String> conceptDescriptionMap = getConceptDescriptionMapFromDescriptionRF2();
 
-        MapPrinter mapPrint = new MapPrinter("E:/Users/warren/Documents/aPostdoc");
+        MapPrinter mapPrint = new MapPrinter(new File("output"));
         mapPrint.printGeneralMap(conceptDescriptionMap, "conceptDescriptionMap");
 
         int i=0;
@@ -194,9 +194,9 @@ public class RF2Printer extends Printer {
 
     public void printRelationshipRF2File(OWLOntology nnfOntology) throws ConversionException, IOException {
         String date = SIMPLE_DATE_FORMAT.format(new Date().getTime());
-        String outputFilePath = outputDirectory + "sct2_Relationship_Snapshot_INT" + date + ".txt";
+        File outputFile = new File(outputDirectory, "sct2_Relationship_Snapshot_INT" + date + ".txt");
 
-        System.out.println("Writing inferred relationships file for: " + outputFilePath);
+        System.out.println("Writing inferred relationships file for: " + outputFile);
         AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<>());
 
         Map<Long, List<OWLAxiom>> axiomsMap = new HashMap<>();
@@ -210,7 +210,7 @@ public class RF2Printer extends Printer {
         }
 
 
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), UTF_8_CHARSET));
         StringBuilder sb = new StringBuilder();
 
         //Map<Long, List<Relationship>> definedConceptRelationshipsMap = new HashMap<Long, List<Relationship>>();
@@ -323,8 +323,5 @@ public class RF2Printer extends Printer {
 
     }
      */
-    public String getDirectoryPath() {
-        return outputDirectory;
-    }
 
 }

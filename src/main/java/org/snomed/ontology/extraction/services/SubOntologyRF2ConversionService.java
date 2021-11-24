@@ -35,7 +35,7 @@ public class SubOntologyRF2ConversionService {
      */
 
     //TODO: reduce redundancy in file extraction, automatically construct RF2 zip file
-    public static void convertSubOntologytoRF2(OWLOntology subOntology, OWLOntology nnfOntology, String outputPath, File sourceFile) throws ReleaseImportException, IOException,
+    public static void convertSubOntologytoRF2(OWLOntology subOntology, OWLOntology nnfOntology, File outputDirectory, File sourceFile) throws ReleaseImportException, IOException,
 			OWLException, ConversionException {
         //Extract the concept and description RF2 files, based on the source ontology (includes all entities in subontology)
         Set<OWLEntity> entitiesInSubontologyAndNNFs = new HashSet<OWLEntity>();
@@ -57,19 +57,19 @@ public class SubOntologyRF2ConversionService {
         entitiesInSubontologyAndNNFs.remove(df.getOWLThing());
         entitiesInSubontologyAndNNFs.remove(df.getOWLNothing());
 
-        extractConceptAndDescriptionRF2(entitiesInSubontologyAndNNFs, outputPath, sourceFile);
+        extractConceptAndDescriptionRF2(entitiesInSubontologyAndNNFs, outputDirectory, sourceFile);
 
         //Extract relationship rf2 file from nnfs
-        printRelationshipRF2(nnfOntology, outputPath);
+        printRelationshipRF2(nnfOntology, outputDirectory);
 
         //Extract OWLRefset rf2 file (and TextDefinitions file) from authoring definitions
-        computeOWLRefsetAndTextDefinitions(outputPath);
+        computeOWLRefsetAndTextDefinitions(outputDirectory);
     }
 
-    private static void extractConceptAndDescriptionRF2(Set<OWLEntity> entitiesToExtract, String outputPath, File backgroundFile) throws IOException, ReleaseImportException {
+    private static void extractConceptAndDescriptionRF2(Set<OWLEntity> entitiesToExtract, File outputDirectory, File backgroundFile) throws IOException, ReleaseImportException {
 		Set<Long> entityIDs = new HashSet<>();
         System.out.println("Extracting background RF2 information for entities in subontology.");
-        System.out.println("Storing in " + outputPath + "subontologyRF2");
+        System.out.println("Storing in " + new File(outputDirectory, "subontologyRF2"));
         for(OWLEntity ent:entitiesToExtract) {
             Long id = Long.parseLong(ent.toString().replaceFirst(IRI_PREFIX, "").replaceAll("[<>]", ""));
             entityIDs.add(id);
@@ -78,18 +78,18 @@ public class SubOntologyRF2ConversionService {
         //TODO: add metadata concepts manually for now, improve later. -- needed?
         entityIDs.addAll(Arrays.asList(Long.parseLong("116680003"), Long.parseLong("410662002"), Long.parseLong("900000000000441003"), Long.parseLong("138875005")));
 
-        new RF2ExtractionService().extractConcepts(new FileInputStream(backgroundFile), entityIDs, new File(outputPath + "subontologyRF2"));
+        new RF2ExtractionService().extractConcepts(new FileInputStream(backgroundFile), entityIDs, new File(outputDirectory, "subontologyRF2"));
     }
 
-    private static void printRelationshipRF2(OWLOntology nnfOntology, String outputPath) throws IOException, ConversionException {
-        RF2Printer printer = new RF2Printer(outputPath);
+    private static void printRelationshipRF2(OWLOntology nnfOntology, File outputDirectory) throws IOException, ConversionException {
+        RF2Printer printer = new RF2Printer(outputDirectory);
         printer.printRelationshipRF2File(nnfOntology);
     }
 
-    private static void computeOWLRefsetAndTextDefinitions(String outputPath) throws IOException, OWLException {
+    private static void computeOWLRefsetAndTextDefinitions(File outputDirectory) throws IOException, OWLException {
         OWLtoRF2Service owlToRF2Converter = new OWLtoRF2Service();
-        try (InputStream owlFileStreamAuthoring = new BufferedInputStream(new FileInputStream(outputPath + "subOntology.owl"))) {
-			File rf2ZipAuthoring = new File(outputPath + OWLRefsetRF2Directory + ".zip");
+        try (InputStream owlFileStreamAuthoring = new BufferedInputStream(new FileInputStream(new File(outputDirectory, "subOntology.owl")))) {
+			File rf2ZipAuthoring = new File(outputDirectory, OWLRefsetRF2Directory + ".zip");
 			owlToRF2Converter.writeToRF2(owlFileStreamAuthoring, new FileOutputStream(rf2ZipAuthoring), new Date());
 		}
     }

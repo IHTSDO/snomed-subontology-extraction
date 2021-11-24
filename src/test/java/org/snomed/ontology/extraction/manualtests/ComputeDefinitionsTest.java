@@ -103,7 +103,7 @@ public class ComputeDefinitionsTest {
         ////////////////////////////
         //print in RF2 tuple format
         ////////////////////////////
-        RF2Printer rf2Printer = new RF2Printer(inputOntologyPath + defType);
+        RF2Printer rf2Printer = new RF2Printer(new File(inputOntologyPath + defType));
         System.out.println(inputOntologyPath);
 
         rf2Printer.printNNFsAsFSNTuples(definitionsOnt);

@@ -11,19 +11,16 @@ import java.util.*;
 
 public class MapPrinter extends Printer {
 
-    private static String outputDirectory;
-    public MapPrinter(String outputPath) {
-        if(!outputPath.substring(outputPath.length() - 1).equals("/")) {
-            this.outputDirectory = outputPath + "/";
-            return;
-        }
-        this.outputDirectory = outputPath;
+    private final File outputDirectory;
+
+    public MapPrinter(File outputDirectory) {
+        this.outputDirectory = outputDirectory;
     }
 
     public void printGeneralMap(Map map, String mapName) throws IOException {
-        String outputFilePath = outputDirectory + mapName + ".txt";
-        System.out.println("Printing map to: " + outputFilePath);
-        FileWriter fw = new FileWriter(new File(outputFilePath));
+        File outputFile = new File(outputDirectory, mapName + ".txt");
+        System.out.println("Printing map to: " + outputFile.getAbsolutePath());
+        FileWriter fw = new FileWriter(outputFile);
         BufferedWriter writer =  new BufferedWriter(fw);
 
         Iterator<Map.Entry> iter = map.entrySet().iterator();
@@ -58,9 +55,9 @@ public class MapPrinter extends Printer {
     }
 
     public void printNamingsForPVs(Map<OWLObjectSomeValuesFrom, OWLClass> pvNamingsMap) throws IOException {
-        String outputFilePath = outputDirectory + "pvNamingMap.txt";
-        System.out.println("Printing map to: " + outputFilePath);
-        FileWriter fw = new FileWriter(new File(outputFilePath));
+        File outputFile = new File(outputDirectory, "pvNamingMap.txt");
+        System.out.println("Printing map to: " + outputFile.getAbsolutePath());
+        FileWriter fw = new FileWriter(outputFile);
         BufferedWriter writer =  new BufferedWriter(fw);
 
         Iterator<Map.Entry<OWLObjectSomeValuesFrom, OWLClass>> iter = pvNamingsMap.entrySet().iterator();
@@ -85,9 +82,5 @@ public class MapPrinter extends Printer {
     //public void printEquivalentClassesMap(Map map) throws IOException {
     //    this.printMap(map, "Equivalent classes");
     //}
-
-    public String getDirectoryPath() {
-        return outputDirectory;
-    }
 
 }
