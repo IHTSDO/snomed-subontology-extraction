@@ -45,9 +45,6 @@ public class SubontologyExtractionTest {
 
 		// OWL Ontology Assertions
 		List<String> subontologyOwlLines = FileUtils.readLines(new File(tempOutputDirectory, "subOntology.owl"), StandardCharsets.UTF_8);
-		for (String subontologyOwlLine : subontologyOwlLines) {
-			System.out.println("'" + subontologyOwlLine + "'");
-		}
 		assertTrue(subontologyOwlLines.contains("SubClassOf(<http://snomed.info/id/404684003> <http://snomed.info/id/138875005>)"),
 				"Assert that Clinical finding is a subclass of the root concept.");
 		assertTrue(subontologyOwlLines.contains("SubObjectPropertyOf(<http://snomed.info/id/363698007> <http://snomed.info/id/762705008>)"),
