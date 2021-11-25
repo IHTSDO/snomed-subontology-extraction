@@ -59,12 +59,5 @@ java -Xms4g -jar snomed-subontology-extraction-1.0.0-executable.jar \
  -rf2-snapshot-archive ../release/SnomedCT_InternationalRF2_PRODUCTION_20200731T120000Z.zip 
 ```
 
-## Compiling RF2 notes
-Currently RF2 files are printed as follows:
-- **subontologyRF2 folder** contains all required RF2 files aside from the following...
-- **Relationship RF2 file** placed inside same directory as above folder, to compile RF2 move this to 
-  Snapshot/Terminology subdirectory in subontologyRF2
-- **authoring_OWLRefset_RF2** two files should be copied from this folder to the Snapshot/Terminology subdirectory of 
-  the subontologyRF2 folder:
-  - _**sct2_sRefset_OWLExpressionSnapshot.txt**_ : contains the OWL definitions associated with the subontology
-  - _**sct2_TextDefinition_Snapshot.txt**_: contains the associated descriptions etc required for the browser
+### RF2 Output
+All RF2 files are written to "output/RF2" ready to be zipped into an RF2 snapshot archive. 
