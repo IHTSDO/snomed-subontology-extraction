@@ -52,7 +52,7 @@ Optional parameters for OWL conversion:
 
 ### Example command line options
 ```
-java -Xms4g -jar snomed-subontology-extraction-1.0.0-executable.jar \
+java -Xms4g -jar snomed-subontology-extraction-1.0.1-executable.jar \
  -source-ontology ../release/snomed-int-20200731-ontology.owl \
  -input-subset concept-ids-from-dentistry-refset.txt \
  -output-rf2 \
