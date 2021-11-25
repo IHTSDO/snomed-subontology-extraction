@@ -23,6 +23,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	private final List<Writer> writers;
 	private final BufferedWriter conceptWriter;
 	private final BufferedWriter descriptionWriter;
+	private final BufferedWriter textDefWriter;
 	private final BufferedWriter languageReferenceSetWriter;
 	private final BufferedWriter owlAxiomWriter;
 
@@ -53,7 +54,12 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 
 		descriptionWriter = newRF2Writer(
 				terminologyDir,
-				String.format("sct2_Description_Snapshot_INT_%s.txt", dateString),
+				String.format("sct2_Description_Snapshot-en_INT_%s.txt", dateString),
+				String.join(TAB, "id", "effectiveTime", "active", "moduleId", "conceptId", "languageCode", "typeId", "term", "caseSignificanceId"));
+
+		textDefWriter = newRF2Writer(
+				terminologyDir,
+				String.format("sct2_TextDefinition_Snapshot-en_INT_%s.txt", dateString),
 				String.join(TAB, "id", "effectiveTime", "active", "moduleId", "conceptId", "languageCode", "typeId", "term", "caseSignificanceId"));
 
 		languageReferenceSetWriter = newRF2Writer(
@@ -100,8 +106,12 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		if (conceptIds.contains(parseLong(conceptId))) {
 			descriptionIds.add(parseLong(id));
 			try {
-				descriptionWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, conceptId, languageCode, typeId, term, caseSignificanceId));
-				descriptionWriter.newLine();
+				BufferedWriter writer = this.descriptionWriter;
+				if (typeId.equals("900000000000550004")) {// 900000000000550004 | Definition (core metadata concept) |
+					writer = textDefWriter;
+				}
+				writer.write(String.join(TAB, id, effectiveTime, active, moduleId, conceptId, languageCode, typeId, term, caseSignificanceId));
+				writer.newLine();
 			} catch (IOException e) {
 				throw new RuntimeException("Failed to write to description file.", e);
 			}
