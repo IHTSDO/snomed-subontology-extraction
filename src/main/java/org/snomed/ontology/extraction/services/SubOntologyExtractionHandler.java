@@ -451,16 +451,21 @@ public class SubOntologyExtractionHandler {
 
         man.addAxioms(subOntology, module.getLogicalAxioms());
 
-        // Include "762705008 |Concept model object attribute (attribute)|" in property hierarchy
-        if (!objectPropertiesInSignature.isEmpty()) {
-            OWLObjectProperty property = objectPropertiesInSignature.iterator().next();
-            while (!property.getIRI().toString().equals("http://snomed.info/id/762705008")) {
+        // Include link to "762705008 |Concept model object attribute (attribute)|" in property hierarchy
+        for (OWLObjectProperty property : objectPropertiesInSignature) {
+            while (property != null && !property.getIRI().toString().equals("http://snomed.info/id/762705008")) {
                 Set<OWLSubObjectPropertyOfAxiom> objectSubPropertyAxiomsForSubProperty = sourceOntology.getObjectSubPropertyAxiomsForSubProperty(property);
                 if (objectSubPropertyAxiomsForSubProperty.isEmpty()) {
-                    break;
+                    property = null;
+                    continue;
                 }
                 man.addAxioms(subOntology, objectSubPropertyAxiomsForSubProperty);
-                property = objectSubPropertyAxiomsForSubProperty.iterator().next().getSuperProperty().asOWLObjectProperty();
+                // We expect properties to have just one parent, taking the first one from the iterator is fine.
+                OWLObjectProperty parentProperty = objectSubPropertyAxiomsForSubProperty.iterator().next().getSuperProperty().asOWLObjectProperty();
+                if (parentProperty.equals(property)) {
+                    System.out.println("EQUAL");
+                }
+                property = parentProperty;
             }
         }
     }
