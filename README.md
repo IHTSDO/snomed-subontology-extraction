@@ -60,4 +60,5 @@ java -Xms4g -jar snomed-subontology-extraction-1.0.1-executable.jar \
 ```
 
 ### RF2 Output
-All RF2 files are written to "output/RF2" ready to be zipped into an RF2 snapshot archive. 
+All RF2 files are written to "output/RF2" ready to be zipped into an RF2 snapshot archive.   
+**Please note**: Inferred relationship records have throw-away generated identifiers in a demo namespace that must not be relied upon.

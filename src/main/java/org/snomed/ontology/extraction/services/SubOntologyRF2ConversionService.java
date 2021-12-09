@@ -28,6 +28,7 @@ public class SubOntologyRF2ConversionService {
 
 	public static final String IRI_PREFIX = "http://snomed.info/id/";
 	private static final String OWLRefsetRF2Filename = "debug_OWLRefset";
+    public static final Integer SCTID_GENERATION_NAMESPACE = 1000003;
     /*
     public SubOntologyRF2Converter(String outputPath, String backgroundFilePath) {
         this.outputPath = outputPath;

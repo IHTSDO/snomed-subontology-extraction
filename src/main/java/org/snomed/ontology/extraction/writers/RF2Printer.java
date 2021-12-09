@@ -2,6 +2,7 @@ package org.snomed.ontology.extraction.writers;
 
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
+import org.snomed.ontology.extraction.services.SubOntologyRF2ConversionService;
 import org.snomed.otf.owltoolkit.constants.Concepts;
 import org.snomed.otf.owltoolkit.conversion.AxiomRelationshipConversionService;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
@@ -216,9 +217,7 @@ public class RF2Printer extends Printer {
         StringBuilder sb = new StringBuilder();
 
         //Map<Long, List<Relationship>> definedConceptRelationshipsMap = new HashMap<Long, List<Relationship>>();
-        int i = 100;
-        int check = 0;
-        Random random = new Random();
+        SCTIDSource relationshipIdSource = new SCTIDSource(SubOntologyRF2ConversionService.SCTID_GENERATION_NAMESPACE, "02", 100);
 
         //print header
         sb.append("id\teffectiveTime\tactive\tmoduleId\tsourceId\tdestinationId\trelationshipGroup\ttypeId\tcharacteristicTypeId\tmodifierId");
@@ -236,21 +235,15 @@ public class RF2Printer extends Printer {
 
             Map<Integer, List<Relationship>> rightHandSideRelationshipsMap = rep.getRightHandSideRelationships();
 
-            Iterator<Map.Entry<Integer, List<Relationship>>> iter = rightHandSideRelationshipsMap.entrySet().iterator();
-            while(iter.hasNext()) {
-                List<Relationship> currentConceptRelationships = iter.next().getValue();
+            for (Map.Entry<Integer, List<Relationship>> integerListEntry : rightHandSideRelationshipsMap.entrySet()) {
+                List<Relationship> currentConceptRelationships = integerListEntry.getValue();
 
                 for (Relationship rel : currentConceptRelationships) {
                     //id - generate number XXX02X
-                    i=i+1;
-                    check = random.nextInt(10);//TODO: last digit should be checksum, implement
-                    String id = i+"02"+check;
-                    sb.append(id);
+                    sb.append(relationshipIdSource.getNewId());
                     sb.append("\t");
 
-                    //effectiveTime
-                    String effectiveTime = "20201113";
-                    sb.append(effectiveTime);
+                    //effectiveTime - blank
                     sb.append("\t");
 
                     //active
