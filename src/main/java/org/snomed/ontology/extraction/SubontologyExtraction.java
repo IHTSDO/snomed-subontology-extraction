@@ -64,122 +64,122 @@ public class SubontologyExtraction {
 			sourceRF2File =  getFile(getRequiredParameterValue(ARG_RF2_SNAPSHOT_ARCHIVE, args));
 		}
 
-        /*
-        * Input for subontology extraction: source ontology (path), inputRefsetFile for focus concepts (list, refset as .txt)
-         */
+		/*
+		* Input for subontology extraction: source ontology (path), inputRefsetFile for focus concepts (list, refset as .txt)
+		 */
 		File inputRefsetFile = getFile(getRequiredParameterValue(ARG_INPUT_SUBSET, args));
-        // if focus concepts specified as refset
-        Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+		// if focus concepts specified as refset
+		Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
 
-        // alternatively, can specify concepts directly as a set e.g.
-        /*
-        Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
-        OWLDataFactory df = man.getOWLDataFactory();
-        conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + 22688005)));
-         */
+		// alternatively, can specify concepts directly as a set e.g.
+		/*
+		Set<OWLClass> conceptsToDefine = new HashSet<OWLClass>();
+		OWLDataFactory df = man.getOWLDataFactory();
+		conceptsToDefine.add(df.getOWLClass(IRI.create("http://snomed.info/id/" + 22688005)));
+		 */
 
-        boolean verifySubontology = isFlag(ARG_VERIFY_SUBONTOLOGY, args);
+		boolean verifySubontology = isFlag(ARG_VERIFY_SUBONTOLOGY, args);
 
-        //output path
+		//output path
 		final File outputDirectory = new File(getParameterValue(ARG_OUTPUT_PATH, args, "output"));
 		if (!outputDirectory.isDirectory() && !outputDirectory.mkdirs()) {
 			System.err.println("Failed to create output directory: " + outputDirectory.getAbsolutePath());
 		}
 
 		OWLOntology sourceOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(sourceOntologyFile);
-        //generating subontology
-        SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(sourceOntology, conceptsToDefine);
+		//generating subontology
+		SubOntologyExtractionHandler generator = new SubOntologyExtractionHandler(sourceOntology, conceptsToDefine);
 
-        ////////
-        //REDUNDANCY ELIMINATION OPTIONS
-        ////////
-        //redundancy elimination options -- optional, if not specified, default will be used
-        Set<RedundancyOptions> customRedundancyOptions = new HashSet<>();
+		////////
+		//REDUNDANCY ELIMINATION OPTIONS
+		////////
+		//redundancy elimination options -- optional, if not specified, default will be used
+		Set<RedundancyOptions> customRedundancyOptions = new HashSet<>();
 
-        //AUTHORING FORM -- recommended: leave as default (false). These axioms will appear as stated axioms in the subontology. Subontology behaviour not tested with custom "authoring forms".
-        //               -- "false": applies redundancy options only to nnf definitions (inferred relationship file)
-        //               -- "true": applies to both the authoring forms (stated axioms in subontology) and nnfs
-        boolean defaultAuthoringForm = true;
+		//AUTHORING FORM -- recommended: leave as default (false). These axioms will appear as stated axioms in the subontology. Subontology behaviour not tested with custom "authoring forms".
+		//			   -- "false": applies redundancy options only to nnf definitions (inferred relationship file)
+		//			   -- "true": applies to both the authoring forms (stated axioms in subontology) and nnfs
+		boolean defaultAuthoringForm = true;
 
-        //Example of specifying non-default redundancy elimination options.
-        /*
-        Set<RedundancyOptions> customRedundancyOptions = new HashSet<RedundancyOptions>();
-        customRedundancyOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
-        customRedundancyOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
-        customRedundancyOptions.add(RedundancyOptions.eliminateSufficientProximalGCIs);
-         */
+		//Example of specifying non-default redundancy elimination options.
+		/*
+		Set<RedundancyOptions> customRedundancyOptions = new HashSet<RedundancyOptions>();
+		customRedundancyOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
+		customRedundancyOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
+		customRedundancyOptions.add(RedundancyOptions.eliminateSufficientProximalGCIs);
+		 */
 
-        long startTime = System.currentTimeMillis();
-        if(customRedundancyOptions.isEmpty()) { //with default redundancy elimination on both authoring and NNF definitions (RECOMMENDED)
-            generator.computeSubontology(outputRF2);
-        }
-        else if(defaultAuthoringForm) { //default authoring form, custom nnf
-            generator.computeSubontology(outputRF2, customRedundancyOptions);
-        }
-        else { //custom authoring and nnf (NOT RECOMMENDED)
-            //with non-default redundancy elimination options specified by user
-            generator.computeSubontology(outputRF2, customRedundancyOptions, defaultAuthoringForm);
-        }
+		long startTime = System.currentTimeMillis();
+		if(customRedundancyOptions.isEmpty()) { //with default redundancy elimination on both authoring and NNF definitions (RECOMMENDED)
+			generator.computeSubontology(outputRF2);
+		}
+		else if(defaultAuthoringForm) { //default authoring form, custom nnf
+			generator.computeSubontology(outputRF2, customRedundancyOptions);
+		}
+		else { //custom authoring and nnf (NOT RECOMMENDED)
+			//with non-default redundancy elimination options specified by user
+			generator.computeSubontology(outputRF2, customRedundancyOptions, defaultAuthoringForm);
+		}
 
-        long endTime = System.currentTimeMillis();
-        OWLOntology subOntology = generator.getCurrentSubOntology();
-        OntologySaver.saveOntology(subOntology, outputDirectory, "subOntology.owl");
-        System.out.println("Time taken: " + (endTime - startTime)/1000 + " seconds");
-        //Extract RF2 for subontology
-        if(outputRF2) {
-            //generator.generateNNFs();
-            OWLOntology nnfOntology = generator.getNnfOntology();
-            OntologySaver.saveOntology(nnfOntology, outputDirectory, "subOntologyNNFs.owl");
+		long endTime = System.currentTimeMillis();
+		OWLOntology subOntology = generator.getCurrentSubOntology();
+		OntologySaver.saveOntology(subOntology, outputDirectory, "subOntology.owl");
+		System.out.println("Time taken: " + (endTime - startTime)/1000 + " seconds");
+		//Extract RF2 for subontology
+		if(outputRF2) {
+			//generator.generateNNFs();
+			OWLOntology nnfOntology = generator.getNnfOntology();
+			OntologySaver.saveOntology(nnfOntology, outputDirectory, "subOntologyNNFs.owl");
 
-            SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputDirectory, sourceRF2File);
-        }
-        if(verifySubontology) {
-            VerificationChecker checker = new VerificationChecker();
-            System.out.println("==========================");
-            System.out.println("VERIFICATION: Step (1) (defined) focus concept equivalence");
-            System.out.println("==========================");
-            boolean satisfiesEquivalentFocusConceptsRequirement = checker.namedFocusConceptsSatisfyEquivalence(generator.getFocusConcepts(), subOntology, sourceOntology);
-            System.out.println("Satisfies equivalence of (defined) focus classes requirement?" + satisfiesEquivalentFocusConceptsRequirement);
+			SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputDirectory, sourceRF2File);
+		}
+		if(verifySubontology) {
+			VerificationChecker checker = new VerificationChecker();
+			System.out.println("==========================");
+			System.out.println("VERIFICATION: Step (1) (defined) focus concept equivalence");
+			System.out.println("==========================");
+			boolean satisfiesEquivalentFocusConceptsRequirement = checker.namedFocusConceptsSatisfyEquivalence(generator.getFocusConcepts(), subOntology, sourceOntology);
+			System.out.println("Satisfies equivalence of (defined) focus classes requirement?" + satisfiesEquivalentFocusConceptsRequirement);
 
-            System.out.println("==========================");
-            System.out.println("VERIFICATION: Step (2) transitive closure equal within sig(subOntology)");
-            System.out.println("==========================");
-            boolean satisfiesTransitiveClosureReq = checker.satisfiesTransitiveClosureRequirement(subOntology, sourceOntology);
-            System.out.println("Satisfies transitive closure requirement?" + satisfiesTransitiveClosureReq);
+			System.out.println("==========================");
+			System.out.println("VERIFICATION: Step (2) transitive closure equal within sig(subOntology)");
+			System.out.println("==========================");
+			boolean satisfiesTransitiveClosureReq = checker.satisfiesTransitiveClosureRequirement(subOntology, sourceOntology);
+			System.out.println("Satisfies transitive closure requirement?" + satisfiesTransitiveClosureReq);
 
-            if (!satisfiesEquivalentFocusConceptsRequirement || !satisfiesTransitiveClosureReq) {
-                if(!satisfiesEquivalentFocusConceptsRequirement) {
-                    System.out.println("Equivalence test failed.");
-                    Set<OWLClass> failedCases = checker.getFailedFocusClassEquivalenceCases();
-                    System.out.println("Failed cases for equivalence: ");
-                    System.out.println(failedCases);
-                    System.out.println("Num failed cases: " + failedCases.size() + " out of: " + conceptsToDefine.size());
-                }
-                if(!satisfiesTransitiveClosureReq) {
-                    System.out.println("Transitive Closure test failed");
-                    System.out.println("Failed classes: " + checker.getLatestSourceOntologyClosureDiffs().keySet());
-                    MapPrinter printer = new MapPrinter(outputDirectory);
-                    printer.printGeneralMap(checker.getLatestSubOntologyClosureDiffs(), "subOntDiffMap.txt");
-                    printer.printGeneralMap(checker.getLatestSourceOntologyClosureDiffs(), "sourceOntDiffMap.txt");
-                }
-            }
-            else {
-                System.out.println("org.snomed.ontology.extraction.Verification passed.");
-                System.out.println("Input ontology num axioms: " + sourceOntology.getLogicalAxiomCount());
-                System.out.println("Input ontology num classes: " + sourceOntology.getClassesInSignature().size() + " and properties: " + sourceOntology.getObjectPropertiesInSignature().size());
-                System.out.println("Subontology Stats");
-                System.out.println("Num axioms: " + subOntology.getLogicalAxiomCount());
-                System.out.println("Num classes: " + subOntology.getClassesInSignature().size() + " and properties: " + subOntology.getObjectPropertiesInSignature().size());
-                System.out.println("Focus classes: " + conceptsToDefine.size());
-                System.out.println("Supporting classes: " + (subOntology.getClassesInSignature().size() - conceptsToDefine.size()));
-                System.out.println("---------------------");
-                System.out.println("Other stats: ");
-                System.out.println("Number of definitions added for supporting classes: " + generator.getNumberOfAdditionalSupportingClassDefinitionsAdded());
-                System.out.println("Num supporting classes added by incremental signature expansion: " + generator.getNumberOfClassesAddedDuringSignatureExpansion());
-                System.out.println("Supporting classes with incrementally added definitions: " + generator.getSupportingClassesWithAddedDefinitions().toString());
-            }
-        }
-    }
+			if (!satisfiesEquivalentFocusConceptsRequirement || !satisfiesTransitiveClosureReq) {
+				if(!satisfiesEquivalentFocusConceptsRequirement) {
+					System.out.println("Equivalence test failed.");
+					Set<OWLClass> failedCases = checker.getFailedFocusClassEquivalenceCases();
+					System.out.println("Failed cases for equivalence: ");
+					System.out.println(failedCases);
+					System.out.println("Num failed cases: " + failedCases.size() + " out of: " + conceptsToDefine.size());
+				}
+				if(!satisfiesTransitiveClosureReq) {
+					System.out.println("Transitive Closure test failed");
+					System.out.println("Failed classes: " + checker.getLatestSourceOntologyClosureDiffs().keySet());
+					MapPrinter printer = new MapPrinter(outputDirectory);
+					printer.printGeneralMap(checker.getLatestSubOntologyClosureDiffs(), "subOntDiffMap.txt");
+					printer.printGeneralMap(checker.getLatestSourceOntologyClosureDiffs(), "sourceOntDiffMap.txt");
+				}
+			}
+			else {
+				System.out.println("org.snomed.ontology.extraction.Verification passed.");
+				System.out.println("Input ontology num axioms: " + sourceOntology.getLogicalAxiomCount());
+				System.out.println("Input ontology num classes: " + sourceOntology.getClassesInSignature().size() + " and properties: " + sourceOntology.getObjectPropertiesInSignature().size());
+				System.out.println("Subontology Stats");
+				System.out.println("Num axioms: " + subOntology.getLogicalAxiomCount());
+				System.out.println("Num classes: " + subOntology.getClassesInSignature().size() + " and properties: " + subOntology.getObjectPropertiesInSignature().size());
+				System.out.println("Focus classes: " + conceptsToDefine.size());
+				System.out.println("Supporting classes: " + (subOntology.getClassesInSignature().size() - conceptsToDefine.size()));
+				System.out.println("---------------------");
+				System.out.println("Other stats: ");
+				System.out.println("Number of definitions added for supporting classes: " + generator.getNumberOfAdditionalSupportingClassDefinitionsAdded());
+				System.out.println("Num supporting classes added by incremental signature expansion: " + generator.getNumberOfClassesAddedDuringSignatureExpansion());
+				System.out.println("Supporting classes with incrementally added definitions: " + generator.getSupportingClassesWithAddedDefinitions().toString());
+			}
+		}
+	}
 
 	private void printHelp() {
 		System.out.println(

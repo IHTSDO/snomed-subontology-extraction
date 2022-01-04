@@ -9,13 +9,13 @@ import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import java.io.File;
 
 public class OntologySaver {
-    public static void saveOntology(OWLOntology ont, File outputDirectory, String outputFilename) throws OWLOntologyStorageException {
-        if(!outputFilename.endsWith(".owl")) {
-            outputFilename += ".owl";
-        }
-        OWLOntologyManager man = ont.getOWLOntologyManager();
-        FunctionalSyntaxDocumentFormat owlDocumentFormat = new FunctionalSyntaxDocumentFormat();
-        ont.getOWLOntologyManager().setOntologyFormat(ont, owlDocumentFormat);
-        man.saveOntology(ont, new FunctionalSyntaxDocumentFormat(), IRI.create(new File(outputDirectory, outputFilename)));
-    }
+	public static void saveOntology(OWLOntology ont, File outputDirectory, String outputFilename) throws OWLOntologyStorageException {
+		if(!outputFilename.endsWith(".owl")) {
+			outputFilename += ".owl";
+		}
+		OWLOntologyManager man = ont.getOWLOntologyManager();
+		FunctionalSyntaxDocumentFormat owlDocumentFormat = new FunctionalSyntaxDocumentFormat();
+		ont.getOWLOntologyManager().setOntologyFormat(ont, owlDocumentFormat);
+		man.saveOntology(ont, new FunctionalSyntaxDocumentFormat(), IRI.create(new File(outputDirectory, outputFilename)));
+	}
 }

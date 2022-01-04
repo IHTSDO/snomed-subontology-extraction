@@ -15,24 +15,24 @@ import java.util.Set;
 public class ModuleExtractionHandler {
 
 
-    public static OWLOntology extractSingleModule(OWLOntology inputOntology, Set<OWLEntity> inputSignature, ModuleType moduleType) throws OWLOntologyCreationException {
-        OWLOntologyManager inputOntologyManager = inputOntology.getOWLOntologyManager();
-        SyntacticLocalityModuleExtractor extractor = new SyntacticLocalityModuleExtractor(inputOntologyManager, inputOntology, moduleType);
+	public static OWLOntology extractSingleModule(OWLOntology inputOntology, Set<OWLEntity> inputSignature, ModuleType moduleType) throws OWLOntologyCreationException {
+		OWLOntologyManager inputOntologyManager = inputOntology.getOWLOntologyManager();
+		SyntacticLocalityModuleExtractor extractor = new SyntacticLocalityModuleExtractor(inputOntologyManager, inputOntology, moduleType);
 
-        System.out.println("Extracting " + moduleType.toString() + " module for ontology using " + inputSignature.size() + " signature size.");
+		System.out.println("Extracting " + moduleType.toString() + " module for ontology using " + inputSignature.size() + " signature size.");
 
-        return inputOntologyManager.createOntology(extractor.extract(inputSignature));
-    }
+		return inputOntologyManager.createOntology(extractor.extract(inputSignature));
+	}
 
-    //public static OWLOntology extractSegmentedModule(){}
+	//public static OWLOntology extractSegmentedModule(){}
 
-    public static Map<ModuleType, OWLOntology> extractMultipleModuleTypes(OWLOntology inputOntology, Set<OWLEntity> inputSignature, Set<ModuleType> moduleTypes) throws OWLOntologyCreationException {
-        Map<ModuleType, OWLOntology> modulesComputed = new HashMap<>();
+	public static Map<ModuleType, OWLOntology> extractMultipleModuleTypes(OWLOntology inputOntology, Set<OWLEntity> inputSignature, Set<ModuleType> moduleTypes) throws OWLOntologyCreationException {
+		Map<ModuleType, OWLOntology> modulesComputed = new HashMap<>();
 
-        for(ModuleType type:moduleTypes) {
-            modulesComputed.put(type, extractSingleModule(inputOntology, inputSignature, type));
-        }
+		for(ModuleType type:moduleTypes) {
+			modulesComputed.put(type, extractSingleModule(inputOntology, inputSignature, type));
+		}
 
-        return modulesComputed;
-    }
+		return modulesComputed;
+	}
 }

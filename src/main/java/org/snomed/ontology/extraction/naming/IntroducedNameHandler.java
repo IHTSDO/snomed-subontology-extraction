@@ -22,175 +22,175 @@ Data structures: (to be updated / improved)
 
 public class IntroducedNameHandler {
 
-    private Map<OWLObjectSomeValuesFrom, OWLClass> pvNamingMap;
-    private Map<OWLClass, OWLObjectSomeValuesFrom> namingPvMap;
-    private Map<OWLClass, OWLClassExpression> gciNameAndExpressionMap;
-    private Map<OWLClass, OWLClass> nameAndSuperGCIConceptMap; //TODO: improve.
-    private Map<OWLClass, Set<OWLClass>> superGCIConceptAndNameMap;
-    private OWLOntology originalOntology;
-    private OWLDataFactory df;
-    private OWLOntologyManager man;
-    private String IRIName = "http://snomed.info/id/";
+	private Map<OWLObjectSomeValuesFrom, OWLClass> pvNamingMap;
+	private Map<OWLClass, OWLObjectSomeValuesFrom> namingPvMap;
+	private Map<OWLClass, OWLClassExpression> gciNameAndExpressionMap;
+	private Map<OWLClass, OWLClass> nameAndSuperGCIConceptMap; //TODO: improve.
+	private Map<OWLClass, Set<OWLClass>> superGCIConceptAndNameMap;
+	private OWLOntology originalOntology;
+	private OWLDataFactory df;
+	private OWLOntologyManager man;
+	private String IRIName = "http://snomed.info/id/";
 
-    public IntroducedNameHandler(OWLOntology inputOntology) {
-        pvNamingMap = new HashMap<>();
-        namingPvMap = new HashMap<>();
-        gciNameAndExpressionMap = new HashMap<>();
-        nameAndSuperGCIConceptMap = new HashMap<>();
-        superGCIConceptAndNameMap = new HashMap<>();
-        originalOntology = inputOntology;
-        man = originalOntology.getOWLOntologyManager();
-        df = man.getOWLDataFactory();
-    }
+	public IntroducedNameHandler(OWLOntology inputOntology) {
+		pvNamingMap = new HashMap<>();
+		namingPvMap = new HashMap<>();
+		gciNameAndExpressionMap = new HashMap<>();
+		nameAndSuperGCIConceptMap = new HashMap<>();
+		superGCIConceptAndNameMap = new HashMap<>();
+		originalOntology = inputOntology;
+		man = originalOntology.getOWLOntologyManager();
+		df = man.getOWLDataFactory();
+	}
 
-    public OWLOntology returnOntologyWithNamings() throws OWLOntologyCreationException {
-        OWLOntology inputOntologyWithNamings = man.createOntology();
+	public OWLOntology returnOntologyWithNamings() throws OWLOntologyCreationException {
+		OWLOntology inputOntologyWithNamings = man.createOntology();
 
-        //name property values, add equiv axioms for names
-        namePropertyValuesInOntology();
+		//name property values, add equiv axioms for names
+		namePropertyValuesInOntology();
 
-        Set<OWLAxiom> pvNamingAxioms = new HashSet<>();
-        for(Map.Entry<OWLObjectSomeValuesFrom, OWLClass> entry:pvNamingMap.entrySet()) {
-            OWLObjectSomeValuesFrom pv = entry.getKey();
-            OWLClass pvName = entry.getValue();
-            pvNamingAxioms.add(df.getOWLEquivalentClassesAxiom(pv, pvName));
-        }
+		Set<OWLAxiom> pvNamingAxioms = new HashSet<>();
+		for(Map.Entry<OWLObjectSomeValuesFrom, OWLClass> entry:pvNamingMap.entrySet()) {
+			OWLObjectSomeValuesFrom pv = entry.getKey();
+			OWLClass pvName = entry.getValue();
+			pvNamingAxioms.add(df.getOWLEquivalentClassesAxiom(pv, pvName));
+		}
 
-        //name LHS of GCI axioms, add equiv axioms for names
-        nameGCIs();
+		//name LHS of GCI axioms, add equiv axioms for names
+		nameGCIs();
 
-        Set<OWLAxiom> gciNamingAxioms = new HashSet<>();
-        for(Map.Entry<OWLClass, OWLClassExpression> entry: gciNameAndExpressionMap.entrySet()) {
-            gciNamingAxioms.add(df.getOWLEquivalentClassesAxiom(entry.getValue(), entry.getKey()));
-        }
+		Set<OWLAxiom> gciNamingAxioms = new HashSet<>();
+		for(Map.Entry<OWLClass, OWLClassExpression> entry: gciNameAndExpressionMap.entrySet()) {
+			gciNamingAxioms.add(df.getOWLEquivalentClassesAxiom(entry.getValue(), entry.getKey()));
+		}
 
-        man.addAxioms(inputOntologyWithNamings, originalOntology.getAxioms());
-        man.addAxioms(inputOntologyWithNamings, pvNamingAxioms);
-        man.addAxioms(inputOntologyWithNamings, gciNamingAxioms);
+		man.addAxioms(inputOntologyWithNamings, originalOntology.getAxioms());
+		man.addAxioms(inputOntologyWithNamings, pvNamingAxioms);
+		man.addAxioms(inputOntologyWithNamings, gciNamingAxioms);
 
-        return inputOntologyWithNamings;
-    }
+		return inputOntologyWithNamings;
+	}
 
-    private void namePropertyValuesInOntology() {
-        //note: this does *not* separate GCIs from non-GCI PVs.
-        for (OWLClassExpression exp : originalOntology.getNestedClassExpressions()) {
-            if (exp instanceof OWLObjectSomeValuesFrom) {
-                OWLObjectSomeValuesFrom pv = (OWLObjectSomeValuesFrom) exp;
-                String pvName = producePVName();
+	private void namePropertyValuesInOntology() {
+		//note: this does *not* separate GCIs from non-GCI PVs.
+		for (OWLClassExpression exp : originalOntology.getNestedClassExpressions()) {
+			if (exp instanceof OWLObjectSomeValuesFrom) {
+				OWLObjectSomeValuesFrom pv = (OWLObjectSomeValuesFrom) exp;
+				String pvName = producePVName();
 
-                pvNamingMap.putIfAbsent(pv, df.getOWLClass(IRI.create(IRIName, pvName)));
-                namingPvMap.putIfAbsent(df.getOWLClass(IRI.create(IRIName, pvName)), pv);
-            }
-        }
-    }
+				pvNamingMap.putIfAbsent(pv, df.getOWLClass(IRI.create(IRIName, pvName)));
+				namingPvMap.putIfAbsent(df.getOWLClass(IRI.create(IRIName, pvName)), pv);
+			}
+		}
+	}
 
-    private void nameGCIs() {
-       // Set<OWLSubClassOfAxiom> gciAxioms = new HashSet<OWLSubClassOfAxiom>();
-        Set<OWLClass> gciSuperClasses = new HashSet<>();
+	private void nameGCIs() {
+	   // Set<OWLSubClassOfAxiom> gciAxioms = new HashSet<OWLSubClassOfAxiom>();
+		Set<OWLClass> gciSuperClasses = new HashSet<>();
 
-        for(OWLClass cls:originalOntology.getClassesInSignature()) {
-            //in SCT, GCI axioms are of form B and R some C <= A, i.e., no GCIs with anonymous superclass.
-            //assumes equivalence axioms are not flattened.
-            for(OWLSubClassOfAxiom ax:originalOntology.getSubClassAxiomsForSuperClass(cls)) {
-                if(ax.isGCI()) {
-                    gciSuperClasses.add(cls);
-                    break;
-                }
-            }
-        }
+		for(OWLClass cls:originalOntology.getClassesInSignature()) {
+			//in SCT, GCI axioms are of form B and R some C <= A, i.e., no GCIs with anonymous superclass.
+			//assumes equivalence axioms are not flattened.
+			for(OWLSubClassOfAxiom ax:originalOntology.getSubClassAxiomsForSuperClass(cls)) {
+				if(ax.isGCI()) {
+					gciSuperClasses.add(cls);
+					break;
+				}
+			}
+		}
 
-        for(OWLClass gciSuperCls:gciSuperClasses) {
-            Set<OWLClass> gciNames = new HashSet<>();
-            for(OWLSubClassOfAxiom ax:originalOntology.getSubClassAxiomsForSuperClass(gciSuperCls)) {
-                if(ax.isGCI()) {
-                    OWLClassExpression gciExpression = ax.getSubClass();
-                    String gciNameString = produceGCIName();
-                    OWLClass gciClass = (OWLClass) ax.getSuperClass();
-                    OWLClass gciNameClass = df.getOWLClass(IRI.create(IRIName, gciNameString));
+		for(OWLClass gciSuperCls:gciSuperClasses) {
+			Set<OWLClass> gciNames = new HashSet<>();
+			for(OWLSubClassOfAxiom ax:originalOntology.getSubClassAxiomsForSuperClass(gciSuperCls)) {
+				if(ax.isGCI()) {
+					OWLClassExpression gciExpression = ax.getSubClass();
+					String gciNameString = produceGCIName();
+					OWLClass gciClass = (OWLClass) ax.getSuperClass();
+					OWLClass gciNameClass = df.getOWLClass(IRI.create(IRIName, gciNameString));
 
-                    gciNameAndExpressionMap.putIfAbsent(gciNameClass, gciExpression);
-                    nameAndSuperGCIConceptMap.putIfAbsent(gciNameClass, gciClass);
-                    gciNames.add(gciNameClass);
-                }
-            }
-            superGCIConceptAndNameMap.putIfAbsent(gciSuperCls, gciNames);
-        }
-    }
+					gciNameAndExpressionMap.putIfAbsent(gciNameClass, gciExpression);
+					nameAndSuperGCIConceptMap.putIfAbsent(gciNameClass, gciClass);
+					gciNames.add(gciNameClass);
+				}
+			}
+			superGCIConceptAndNameMap.putIfAbsent(gciSuperCls, gciNames);
+		}
+	}
 
-    //PV naming methods
-    private String producePVName() {
-        return "PV_" + pvNamingMap.size();
-    }
-    public boolean isNamedPV(OWLClass cls) {
-        return namingPvMap.containsKey(cls);
-    }
+	//PV naming methods
+	private String producePVName() {
+		return "PV_" + pvNamingMap.size();
+	}
+	public boolean isNamedPV(OWLClass cls) {
+		return namingPvMap.containsKey(cls);
+	}
 
-    public OWLClass retrieveNameForPV(OWLObjectSomeValuesFrom pv) {
-        return pvNamingMap.get(pv);
-    }
+	public OWLClass retrieveNameForPV(OWLObjectSomeValuesFrom pv) {
+		return pvNamingMap.get(pv);
+	}
 
-    public OWLObjectSomeValuesFrom retrievePVForName(OWLClass cls) {
-        return namingPvMap.get(cls);
-    }
+	public OWLObjectSomeValuesFrom retrievePVForName(OWLClass cls) {
+		return namingPvMap.get(cls);
+	}
 
-    public Set<OWLObjectSomeValuesFrom> retrievePVsFromNames(Set<OWLClass> renamedPVs) {
-        Set<OWLObjectSomeValuesFrom> pvs = new HashSet<OWLObjectSomeValuesFrom>();
-        for(OWLClass cls : renamedPVs) {
-            pvs.add(namingPvMap.get(cls));
-        }
-        return pvs;
-    }
+	public Set<OWLObjectSomeValuesFrom> retrievePVsFromNames(Set<OWLClass> renamedPVs) {
+		Set<OWLObjectSomeValuesFrom> pvs = new HashSet<OWLObjectSomeValuesFrom>();
+		for(OWLClass cls : renamedPVs) {
+			pvs.add(namingPvMap.get(cls));
+		}
+		return pvs;
+	}
 
-    public Set<OWLClass> retrieveNamesFromPVs(Set<OWLObjectSomeValuesFrom> pvs) {
-        Set<OWLClass> names = new HashSet<>();
-        for(OWLObjectSomeValuesFrom pv : pvs) {
-            names.add(pvNamingMap.get(pv));
-        }
-        return names;
-    }
+	public Set<OWLClass> retrieveNamesFromPVs(Set<OWLObjectSomeValuesFrom> pvs) {
+		Set<OWLClass> names = new HashSet<>();
+		for(OWLObjectSomeValuesFrom pv : pvs) {
+			names.add(pvNamingMap.get(pv));
+		}
+		return names;
+	}
 
-    public void printNameAndPvPairs(String outputPath) throws IOException {
-        MapPrinter printer = new MapPrinter(new File(outputPath));
-        System.out.println("Printing naming map.");
-        printer.printNamingsForPVs(pvNamingMap);
-    }
+	public void printNameAndPvPairs(String outputPath) throws IOException {
+		MapPrinter printer = new MapPrinter(new File(outputPath));
+		System.out.println("Printing naming map.");
+		printer.printNamingsForPVs(pvNamingMap);
+	}
 
-    //GCI naming methods
-    private String produceGCIName() {
-        return "GCI_" + gciNameAndExpressionMap.size();
-    }
+	//GCI naming methods
+	private String produceGCIName() {
+		return "GCI_" + gciNameAndExpressionMap.size();
+	}
 
-    public boolean isNamedGCI(OWLClass cls) {
-        return gciNameAndExpressionMap.containsKey(cls);
-    }
+	public boolean isNamedGCI(OWLClass cls) {
+		return gciNameAndExpressionMap.containsKey(cls);
+	}
 
-    public boolean hasAssociatedGCIs(OWLClass cls) {
-        return superGCIConceptAndNameMap.containsKey(cls);
-    }
+	public boolean hasAssociatedGCIs(OWLClass cls) {
+		return superGCIConceptAndNameMap.containsKey(cls);
+	}
 
-    public Set<OWLClass> returnNamesOfGCIsForSuperConcept(OWLClass cls) {
-        if(!superGCIConceptAndNameMap.containsKey(cls)) {
-            return new HashSet<OWLClass>();
-        }
-        return superGCIConceptAndNameMap.get(cls);
-    }
+	public Set<OWLClass> returnNamesOfGCIsForSuperConcept(OWLClass cls) {
+		if(!superGCIConceptAndNameMap.containsKey(cls)) {
+			return new HashSet<OWLClass>();
+		}
+		return superGCIConceptAndNameMap.get(cls);
+	}
 
-    public Set<OWLClass> retrieveAllNamesForGCIs() {
-        return gciNameAndExpressionMap.keySet();
-    }
+	public Set<OWLClass> retrieveAllNamesForGCIs() {
+		return gciNameAndExpressionMap.keySet();
+	}
 
-    public OWLClassExpression retrieveExpressionFromGCIName(OWLClass gciName) {
-        return gciNameAndExpressionMap.get(gciName);
-    }
+	public OWLClassExpression retrieveExpressionFromGCIName(OWLClass gciName) {
+		return gciNameAndExpressionMap.get(gciName);
+	}
 
-    public OWLClass retrieveSuperClassFromNamedGCI(OWLClass gciName) {
-        return nameAndSuperGCIConceptMap.get(gciName);
-    }
+	public OWLClass retrieveSuperClassFromNamedGCI(OWLClass gciName) {
+		return nameAndSuperGCIConceptMap.get(gciName);
+	}
 
-    public void resetNames() {
-        pvNamingMap.clear();
-        namingPvMap.clear();
-        gciNameAndExpressionMap.clear();
-    }
+	public void resetNames() {
+		pvNamingMap.clear();
+		namingPvMap.clear();
+		gciNameAndExpressionMap.clear();
+	}
 
 }
