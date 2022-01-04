@@ -10,12 +10,11 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
 
     public DefinitionGeneratorNNF(OWLOntology inputOntology, OntologyReasoningService reasonerService, IntroducedNameHandler namer) {
         super(inputOntology, reasonerService, namer);
-        //this.computeReflexiveProperties();
     }
 
     public void generateDefinition(OWLClass inputClass) {
         //default: all redundancy elimination
-        Set<RedundancyOptions> defaultOptions = new HashSet<RedundancyOptions>();
+        Set<RedundancyOptions> defaultOptions = new HashSet<>();
         defaultOptions.add(RedundancyOptions.eliminateLessSpecificRedundancy);
         defaultOptions.add(RedundancyOptions.eliminateReflexivePVRedundancy);
         defaultOptions.add(RedundancyOptions.eliminateRoleGroupRedundancy);
@@ -29,14 +28,13 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
 
         System.out.println("Computing NNF for INPUT CLASS: " + inputClass);
 
-        Set<OWLClass> parentNamedClasses = new HashSet<OWLClass>();
-        parentNamedClasses.addAll(reasonerService.getDirectAncestors(inputClass));
+        Set<OWLClass> parentNamedClasses = new HashSet<>(reasonerService.getDirectAncestors(inputClass));
 
         //remove all introduced classes to name PVs and name GCIs
         parentNamedClasses.removeAll(ancestorRenamedPVs);
 
         //ensure renamed GCIs (e.g. "GCI_0") are being ignored here.
-        List<OWLClass> parentsToCheckForGCIs = new ArrayList<OWLClass>(extractNamedGCIs(parentNamedClasses));
+        List<OWLClass> parentsToCheckForGCIs = new ArrayList<>(extractNamedGCIs(parentNamedClasses));
         ListIterator<OWLClass> iterator = parentsToCheckForGCIs.listIterator();
         while(iterator.hasNext()) {
             OWLClass parentToCheck = iterator.next();
@@ -52,14 +50,9 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
             }
         }
 
-        Set<OWLClass> reducedParentNamedClasses = new HashSet<OWLClass>();
-        Set<OWLObjectSomeValuesFrom> reducedAncestorPVs = new HashSet<OWLObjectSomeValuesFrom>();
+        Set<OWLClass> reducedParentNamedClasses;
+        Set<OWLObjectSomeValuesFrom> reducedAncestorPVs;
 
-        //OLD reflexivity handling: before
-        //if(redundancyOptions.contains(RedundancyOptions.eliminateReflexivePVRedundancy)) {
-        //    Set<OWLObjectSomeValuesFrom> ancestorPVs = eliminateReflexivePVRedundancies(replaceNamesWithPVs(ancestorRenamedPVs), inputClass);
-        //    ancestorRenamedPVs = replacePVsWithNames(ancestorPVs); //t
-        //}
         if(redundancyOptions.contains(RedundancyOptions.eliminateLessSpecificRedundancy)) {
             reducedParentNamedClasses = reduceClassSet(parentNamedClasses);
             reducedAncestorPVs = replaceNamesWithPVs(reduceClassSet(ancestorRenamedPVs));
@@ -75,13 +68,11 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
             reducedAncestorPVs = eliminateReflexivePVRedundancies(inputClass, reducedAncestorPVs);
         }
 
-        Set<OWLClassExpression> nonRedundantAncestors = new HashSet<OWLClassExpression>();
+        Set<OWLClassExpression> nonRedundantAncestors = new HashSet<>();
         nonRedundantAncestors.addAll(reducedParentNamedClasses);
         nonRedundantAncestors.addAll(reducedAncestorPVs);
 
-        //Set<Set<OWLClassExpression>> nonRedundantAncestorsSet = new HashSet<Set<OWLClassExpression>>();
-        Map<Set<OWLClassExpression>, Boolean> nonRedundantAncestorsMap = new HashMap<Set<OWLClassExpression>, Boolean>();
-        //nonRedundantAncestorsSet.add(nonRedundantAncestors);
+        Map<Set<OWLClassExpression>, Boolean> nonRedundantAncestorsMap = new HashMap<>();
         nonRedundantAncestorsMap.put(nonRedundantAncestors, false);
         constructDefinition(inputClass, nonRedundantAncestorsMap);
     }

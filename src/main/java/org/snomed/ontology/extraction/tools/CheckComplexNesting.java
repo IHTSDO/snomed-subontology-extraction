@@ -38,7 +38,7 @@ public class CheckComplexNesting {
     //      B contains a concept of the form R some C where C contains at least one complex concept (such as S some C) and R is not
     //      the role group symbol.
     public static Set<OWLAxiom> returnAxiomsWithComplexNestingInSuperClass(Set<OWLAxiom> inputSet) {
-        Set<OWLAxiom>  axiomsWithNestedPVs = new HashSet<OWLAxiom>();
+        Set<OWLAxiom>  axiomsWithNestedPVs = new HashSet<>();
 
         for(OWLAxiom ax:inputSet) {
             System.out.println("Checking for complex nesting in axiom: " + ax);

@@ -26,9 +26,9 @@ public abstract class DefinitionGenerator {
         this.namer = namer;
         man = OWLManager.createOWLOntologyManager();
         df = man.getOWLDataFactory();
-        generatedDefinitions = new ArrayList<Set<OWLAxiom>>();
-        gciDefinitions = new ArrayList<OWLAxiom>();
-        undefinedClasses = new HashSet<OWLAxiom>();
+        generatedDefinitions = new ArrayList<>();
+        gciDefinitions = new ArrayList<>();
+        undefinedClasses = new HashSet<>();
     }
 
     public abstract void generateDefinition(OWLClass cls, Set<RedundancyOptions> redundancyOptions);
@@ -40,11 +40,11 @@ public abstract class DefinitionGenerator {
 
     //Eliminates redundant PVs nested under role groups. Assumes max nesting is RG(R some C ...).
     public Set<OWLObjectSomeValuesFrom> eliminateRoleGroupRedundancies(Set<OWLObjectSomeValuesFrom> inputPVs) {
-        Set<OWLObjectSomeValuesFrom> reducedInputPVs = new HashSet<OWLObjectSomeValuesFrom>();
+        Set<OWLObjectSomeValuesFrom> reducedInputPVs = new HashSet<>();
 
         for(OWLObjectSomeValuesFrom pv:inputPVs) {
             if(pv.getFiller() instanceof OWLObjectIntersectionOf) {
-                Set<OWLObjectSomeValuesFrom> pvFillers = new HashSet<OWLObjectSomeValuesFrom>();
+                Set<OWLObjectSomeValuesFrom> pvFillers = new HashSet<>();
                 for(OWLClassExpression filler:pv.getFiller().asConjunctSet()) {
                     if(filler instanceof OWLObjectSomeValuesFrom) {
                         pvFillers.add((OWLObjectSomeValuesFrom) filler);
@@ -99,7 +99,7 @@ public abstract class DefinitionGenerator {
      */
 
     public Set<OWLObjectSomeValuesFrom> eliminateReflexivePVRedundancies(OWLClass inputClass, Set<OWLObjectSomeValuesFrom> inputPVs) {
-        Set<OWLObjectSomeValuesFrom> reducedInputPVs = new HashSet<OWLObjectSomeValuesFrom>();
+        Set<OWLObjectSomeValuesFrom> reducedInputPVs = new HashSet<>();
 
         //retrieve reflexive PVs in definition
         for(OWLObjectSomeValuesFrom pv:inputPVs) {
@@ -115,15 +115,11 @@ public abstract class DefinitionGenerator {
     }
 
     public boolean checkIfReflexiveProperty(OWLObjectPropertyExpression r) {
-        EntitySearcher searcher = new EntitySearcher();
-        if(searcher.isReflexive(r, sourceOntology)) {
-            return true;
-        }
-        return false;
+        return EntitySearcher.isReflexive(r, sourceOntology);
     }
 
     protected Set<OWLClass> extractNamedPVs(Set<OWLClass> classes) {
-        Set<OWLClass> renamedPVs = new HashSet<OWLClass>();
+        Set<OWLClass> renamedPVs = new HashSet<>();
 
         for (OWLClass cls : classes) {
             if (namer.isNamedPV(cls)) {
@@ -145,8 +141,7 @@ public abstract class DefinitionGenerator {
     }
 
     public Set<OWLObjectSomeValuesFrom> replaceNamesWithPVs(Set<OWLClass> classes) {
-        Set<OWLObjectSomeValuesFrom> pvs = namer.retrievePVsFromNames(classes);
-        return pvs;
+        return namer.retrievePVsFromNames(classes);
     }
 
     protected Set<OWLClass> replacePVsWithNames(Set<OWLObjectSomeValuesFrom> pvs) {
@@ -155,7 +150,7 @@ public abstract class DefinitionGenerator {
 
     //protected void constructDefinition(OWLClass definedClass, Set<Set<OWLClassExpression>> definingConditionsByAxiom) {
     protected void constructDefinition(OWLClass definedClass, Map<Set<OWLClassExpression>, Boolean> definingConditionsByAxiom) {
-        Set<OWLAxiom> definitionAxioms = new HashSet<OWLAxiom>();
+        Set<OWLAxiom> definitionAxioms = new HashSet<>();
 
         //for(Set<OWLClassExpression> definingConditions:definingConditionsByAxiom) {
         for(Map.Entry<Set<OWLClassExpression>, Boolean> entry:definingConditionsByAxiom.entrySet()) {
@@ -166,9 +161,9 @@ public abstract class DefinitionGenerator {
             if (definingConditions.size() == 0) {
                 continue;
             }
-            OWLAxiom definingAxiom = null;
+            OWLAxiom definingAxiom;
             if (definingConditions.size() == 1) {
-                OWLClassExpression definingCondition = (new ArrayList<OWLClassExpression>(definingConditions)).get(0);
+                OWLClassExpression definingCondition = (new ArrayList<>(definingConditions)).get(0);
                 //if (!sourceOntology.getEquivalentClassesAxioms(definedClass).isEmpty()) {
                 if(isEquivalence) {
                     definingAxiom = df.getOWLEquivalentClassesAxiom(definedClass, definingCondition);
@@ -208,7 +203,7 @@ public abstract class DefinitionGenerator {
     }
 
     public Set<OWLAxiom> getAllGeneratedDefinitions() {
-        Set<OWLAxiom> allDefinitions = new HashSet<OWLAxiom>();
+        Set<OWLAxiom> allDefinitions = new HashSet<>();
         for(Set<OWLAxiom> definitionsForClass:generatedDefinitions) {
             allDefinitions.addAll(definitionsForClass);
         }
@@ -237,7 +232,7 @@ public abstract class DefinitionGenerator {
     public Set<OWLAxiom> generatePropertyDefinition(OWLObjectProperty propToDefine) {
         Set<OWLSubObjectPropertyOfAxiom> propAxioms = sourceOntology.getAxioms(AxiomType.SUB_OBJECT_PROPERTY);
         //collect stated super properties of property to define
-        Set<OWLObjectPropertyExpression> statedSuperProps = new HashSet<OWLObjectPropertyExpression>();
+        Set<OWLObjectPropertyExpression> statedSuperProps = new HashSet<>();
         for(OWLSubObjectPropertyOfAxiom ax:propAxioms) {
             if(ax.getSubProperty().equals(propToDefine)) {
                 statedSuperProps.add(ax.getSuperProperty());
@@ -245,8 +240,8 @@ public abstract class DefinitionGenerator {
         }
 
         //eliminate non-direct super properties
-        Set<OWLObjectPropertyExpression> otherSuperProps = new HashSet<OWLObjectPropertyExpression>();
-        Set<OWLObjectPropertyExpression> directSuperProps = new HashSet<OWLObjectPropertyExpression>();
+        Set<OWLObjectPropertyExpression> otherSuperProps = new HashSet<>();
+        Set<OWLObjectPropertyExpression> directSuperProps = new HashSet<>();
 
         for(OWLObjectPropertyExpression superProp:statedSuperProps) {
             otherSuperProps.remove(superProp);
@@ -257,7 +252,7 @@ public abstract class DefinitionGenerator {
         }
 
         //return set of inclusion axioms of form r <= s for each direct super property s
-        Set<OWLAxiom> definitionalAxioms = new HashSet<OWLAxiom>();
+        Set<OWLAxiom> definitionalAxioms = new HashSet<>();
         for(OWLObjectPropertyExpression directSuperProp:directSuperProps) {
             definitionalAxioms.add(df.getOWLSubObjectPropertyOfAxiom(propToDefine, directSuperProp));
         }

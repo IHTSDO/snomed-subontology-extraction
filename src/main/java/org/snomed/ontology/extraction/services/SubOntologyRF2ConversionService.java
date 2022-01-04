@@ -40,7 +40,7 @@ public class SubOntologyRF2ConversionService {
     public static void convertSubOntologytoRF2(OWLOntology subOntology, OWLOntology nnfOntology, File outputDirectory, File sourceFile) throws ReleaseImportException, IOException,
 			OWLException, ConversionException {
         //Extract the concept and description RF2 files, based on the source ontology (includes all entities in subontology)
-        Set<OWLEntity> entitiesInSubontologyAndNNFs = new HashSet<OWLEntity>();
+        Set<OWLEntity> entitiesInSubontologyAndNNFs = new HashSet<>();
         entitiesInSubontologyAndNNFs.addAll(subOntology.getClassesInSignature());
         entitiesInSubontologyAndNNFs.addAll(subOntology.getObjectPropertiesInSignature());
         entitiesInSubontologyAndNNFs.addAll(nnfOntology.getClassesInSignature());

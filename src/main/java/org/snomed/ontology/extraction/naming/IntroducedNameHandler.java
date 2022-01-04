@@ -33,11 +33,11 @@ public class IntroducedNameHandler {
     private String IRIName = "http://snomed.info/id/";
 
     public IntroducedNameHandler(OWLOntology inputOntology) {
-        pvNamingMap = new HashMap<OWLObjectSomeValuesFrom, OWLClass>();
-        namingPvMap = new HashMap<OWLClass, OWLObjectSomeValuesFrom>();
-        gciNameAndExpressionMap = new HashMap<OWLClass, OWLClassExpression>();
-        nameAndSuperGCIConceptMap = new HashMap<OWLClass, OWLClass>();
-        superGCIConceptAndNameMap = new HashMap<OWLClass, Set<OWLClass>>();
+        pvNamingMap = new HashMap<>();
+        namingPvMap = new HashMap<>();
+        gciNameAndExpressionMap = new HashMap<>();
+        nameAndSuperGCIConceptMap = new HashMap<>();
+        superGCIConceptAndNameMap = new HashMap<>();
         originalOntology = inputOntology;
         man = originalOntology.getOWLOntologyManager();
         df = man.getOWLDataFactory();
@@ -49,7 +49,7 @@ public class IntroducedNameHandler {
         //name property values, add equiv axioms for names
         namePropertyValuesInOntology();
 
-        Set<OWLAxiom> pvNamingAxioms = new HashSet<OWLAxiom>();
+        Set<OWLAxiom> pvNamingAxioms = new HashSet<>();
         for(Map.Entry<OWLObjectSomeValuesFrom, OWLClass> entry:pvNamingMap.entrySet()) {
             OWLObjectSomeValuesFrom pv = entry.getKey();
             OWLClass pvName = entry.getValue();
@@ -59,7 +59,7 @@ public class IntroducedNameHandler {
         //name LHS of GCI axioms, add equiv axioms for names
         nameGCIs();
 
-        Set<OWLAxiom> gciNamingAxioms = new HashSet<OWLAxiom>();
+        Set<OWLAxiom> gciNamingAxioms = new HashSet<>();
         for(Map.Entry<OWLClass, OWLClassExpression> entry: gciNameAndExpressionMap.entrySet()) {
             gciNamingAxioms.add(df.getOWLEquivalentClassesAxiom(entry.getValue(), entry.getKey()));
         }
@@ -86,7 +86,7 @@ public class IntroducedNameHandler {
 
     private void nameGCIs() {
        // Set<OWLSubClassOfAxiom> gciAxioms = new HashSet<OWLSubClassOfAxiom>();
-        Set<OWLClass> gciSuperClasses = new HashSet<OWLClass>();
+        Set<OWLClass> gciSuperClasses = new HashSet<>();
 
         for(OWLClass cls:originalOntology.getClassesInSignature()) {
             //in SCT, GCI axioms are of form B and R some C <= A, i.e., no GCIs with anonymous superclass.
@@ -100,7 +100,7 @@ public class IntroducedNameHandler {
         }
 
         for(OWLClass gciSuperCls:gciSuperClasses) {
-            Set<OWLClass> gciNames = new HashSet<OWLClass>();
+            Set<OWLClass> gciNames = new HashSet<>();
             for(OWLSubClassOfAxiom ax:originalOntology.getSubClassAxiomsForSuperClass(gciSuperCls)) {
                 if(ax.isGCI()) {
                     OWLClassExpression gciExpression = ax.getSubClass();
@@ -142,7 +142,7 @@ public class IntroducedNameHandler {
     }
 
     public Set<OWLClass> retrieveNamesFromPVs(Set<OWLObjectSomeValuesFrom> pvs) {
-        Set<OWLClass> names = new HashSet<OWLClass>();
+        Set<OWLClass> names = new HashSet<>();
         for(OWLObjectSomeValuesFrom pv : pvs) {
             names.add(pvNamingMap.get(pv));
         }
@@ -192,14 +192,5 @@ public class IntroducedNameHandler {
         namingPvMap.clear();
         gciNameAndExpressionMap.clear();
     }
-
-    /*
-    public Map<OWLClass, OWLObjectSomeValuesFrom> getNamingPvMap() {
-        return namingPvMap;
-    }
-    public Map<OWLObjectSomeValuesFrom, OWLClass> getPvNamingMap() {
-        return pvNamingMap;
-    }
-     */
 
 }

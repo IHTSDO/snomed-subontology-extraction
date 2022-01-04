@@ -23,18 +23,9 @@ public class OntologyStringExtractor {
     }
 
     public static String extractAbsentIRI(OWLOntology ontology) {
-        List<OWLClass> conc = new ArrayList<OWLClass>(ontology.getClassesInSignature());
+        List<OWLClass> conc = new ArrayList<>(ontology.getClassesInSignature());
         String IRIName;
-        /*
-		if(conc.size() == 0) {
-			System.out.println("No classes in ontology. Checking IRI of object property instead.");
-			List<OWLObjectProperty> concProps = new ArrayList<OWLObjectProperty>(ontology.getObjectPropertiesInSignature());
-			concString = concProps.get(0).toString();
-		}
-		else {
-			concString = conc.get(0).toString();
-		}
-         */
+
         if(conc.size() != 0) {
             String concString = conc.get(0).toString();
             System.out.println("concString: " + concString);
@@ -58,7 +49,7 @@ public class OntologyStringExtractor {
             //System.out.println("HERE IS THE IRI USED: " + IRIName);
         }
         else if(ontology.getObjectPropertiesInSignature().size() != 0){
-            List<OWLObjectProperty> obj = new ArrayList<OWLObjectProperty>(ontology.getObjectPropertiesInSignature());
+            List<OWLObjectProperty> obj = new ArrayList<>(ontology.getObjectPropertiesInSignature());
             String objString = obj.get(0).toString();
             int j=0;
             while(!objString.contains("#") && j < obj.size()) {
@@ -85,7 +76,7 @@ public class OntologyStringExtractor {
     }
 
     public static Set<String> extractConceptNames(OWLOntology ontology) {
-        Set<String> conceptNames = new HashSet<String>();
+        Set<String> conceptNames = new HashSet<>();
 
         for(OWLEntity ent:ontology.getClassesInSignature()) {
             conceptNames.add(ent.toString().replaceAll(".*#", "").replaceAll(">", ""));

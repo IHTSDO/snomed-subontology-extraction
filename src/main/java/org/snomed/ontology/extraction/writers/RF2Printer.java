@@ -173,7 +173,7 @@ public class RF2Printer extends Printer {
     }
 
     public Map<Long, String> getConceptDescriptionMapFromDescriptionRF2() throws IOException {
-        Map<Long, String> idToFSNMap = new HashMap<Long, String>();
+        Map<Long, String> idToFSNMap = new HashMap<>();
 
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
         //InputStream is = classloader.getResourceAsStream("resources/sct2_Description_Snapshot-en_INT_20210131.zip");

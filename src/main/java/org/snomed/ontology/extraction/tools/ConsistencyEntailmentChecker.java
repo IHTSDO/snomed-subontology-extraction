@@ -45,7 +45,7 @@ public class ConsistencyEntailmentChecker {
     }
 
     private static OWLReasonerFactory getReasonerFactory(String reasonerFactoryName) throws ReasonerException {
-        Class<?> reasonerFactoryClass = null;
+        Class<?> reasonerFactoryClass;
         try {
             reasonerFactoryClass = Class.forName(reasonerFactoryName);
             return (OWLReasonerFactory) reasonerFactoryClass.newInstance();

@@ -12,16 +12,11 @@ public class VerificationChecker {
     private Map<OWLClass, Set<OWLClass>> latestSubOntologyClosureDiffs;
     private Map<OWLClass, Set<OWLClass>> latestSourceOntologyClosureDiffs;
     private Set<OWLClass> nonEquivalentFocusClasses;
-    private static String snomedIRI = "http://snomed.info/id/";
-    //private OWLOntologyManager man;
-    //private OWLDataFactory df;
 
     public VerificationChecker() {
-        latestSubOntologyClosureDiffs = new HashMap<OWLClass, Set<OWLClass>>();
-        latestSourceOntologyClosureDiffs = new HashMap<OWLClass, Set<OWLClass>>();
-        nonEquivalentFocusClasses = new HashSet<OWLClass>();
-        //man = OWLManager.createOWLOntologyManager();
-        //df = man.getOWLDataFactory();
+        latestSubOntologyClosureDiffs = new HashMap<>();
+        latestSourceOntologyClosureDiffs = new HashMap<>();
+        nonEquivalentFocusClasses = new HashSet<>();
     }
 
     //NOTE: this is not extensive, will need improvement to fully check final requirements.
@@ -43,23 +38,23 @@ public class VerificationChecker {
         boolean satisfiesRequirement = true;
 
         //rename all focus concepts in subontology -- create instance to contain all renamings to draw from
-        Map<OWLClass, OWLClass> focusClassRenamingMap = new HashMap<OWLClass, OWLClass>();
+        Map<OWLClass, OWLClass> focusClassRenamingMap = new HashMap<>();
 
         //create instance of source ontology, ready for renaming additions
         OWLOntology sourceOntologyWithRenamedSubOntology = man.createOntology();
         man.addAxioms(sourceOntologyWithRenamedSubOntology, sourceOntology.getAxioms());
 
-        Set<OWLClass> primitiveFailures = new HashSet<OWLClass>();
-        Set<OWLClass> namedFailures = new HashSet<OWLClass>();
+        Set<OWLClass> primitiveFailures = new HashSet<>();
+        Set<OWLClass> namedFailures = new HashSet<>();
 
-        Set<OWLClass> nonEquivalentCases = new HashSet<OWLClass>();
+        Set<OWLClass> nonEquivalentCases = new HashSet<>();
         int i = 0;
 
         //group focus concepts into primitive and named
         OntologyReasoningService reasoningService = new OntologyReasoningService(sourceOntologyWithRenamedSubOntology);
         reasoningService.classifyOntology();
-        Set<OWLClass> primitiveFocusClasses = new HashSet<OWLClass>();
-        Set<OWLClass> namedFocusClasses = new HashSet<OWLClass>();
+        Set<OWLClass> primitiveFocusClasses = new HashSet<>();
+        Set<OWLClass> namedFocusClasses = new HashSet<>();
         for(OWLClass cls:focusClasses) {
             if(reasoningService.isPrimitive(cls)) {
                 primitiveFocusClasses.add(cls);
@@ -75,13 +70,13 @@ public class VerificationChecker {
 
             //create ontology instance to rename class in
             OWLOntology subOntologyRenamed = man.createOntology(subOntology.getAxioms());
-            OWLEntityRenamer renamer = new OWLEntityRenamer(man, new HashSet<OWLOntology>(Arrays.asList(subOntologyRenamed)));
+            OWLEntityRenamer renamer = new OWLEntityRenamer(man, new HashSet<>(Collections.singletonList(subOntologyRenamed)));
             System.out.println("Old cls IRI: " + focusCls.getIRI());
             subOntologyRenamed.getOWLOntologyManager().applyChanges(renamer.changeIRI(focusCls, IRI.create(focusCls.getIRI()+"_renamed")));
             focusClassRenamingMap.put(focusCls, df.getOWLClass(IRI.create(focusCls.getIRI()+"_renamed")));
 
             //add renaming axioms for the given focus class only
-            Set<OWLAxiom> addedRenamingAxioms = new HashSet<OWLAxiom>();
+            Set<OWLAxiom> addedRenamingAxioms = new HashSet<>();
             for(OWLAxiom ax:subOntologyRenamed.getAxioms()) {
                 //if axiom contains occurrence of the renaming, add it
                 if(ax.getClassesInSignature().contains(focusClassRenamingMap.get(focusCls))) {
@@ -210,7 +205,7 @@ public class VerificationChecker {
         System.out.println("Getting hierarchy for source ontology, within subontology signature.");
         for(OWLClass cls:subOntology.getClassesInSignature()) {
             System.out.println("Checking transitive closure, computing source children for class: " + cls);
-            List<OWLClass> nearestChildren = new ArrayList<OWLClass>(sourceReasoner.getDirectDescendants(cls));
+            List<OWLClass> nearestChildren = new ArrayList<>(sourceReasoner.getDirectDescendants(cls));
             ListIterator<OWLClass> childIterator = nearestChildren.listIterator();
 
             Set<OWLClass> nearestChildrenInSig = new HashSet<>();
@@ -234,8 +229,8 @@ public class VerificationChecker {
         }
 
         //perform check
-        Map<OWLClass, Set<OWLClass>> diffInSubOnt = new HashMap<OWLClass, Set<OWLClass>>();
-        Map<OWLClass, Set<OWLClass>> diffInSourceOnt = new HashMap<OWLClass, Set<OWLClass>>();
+        Map<OWLClass, Set<OWLClass>> diffInSubOnt = new HashMap<>();
+        Map<OWLClass, Set<OWLClass>> diffInSourceOnt = new HashMap<>();
 
         int numCasesNotSatisfied = 0;
         for(OWLClass cls:subOntology.getClassesInSignature()) {

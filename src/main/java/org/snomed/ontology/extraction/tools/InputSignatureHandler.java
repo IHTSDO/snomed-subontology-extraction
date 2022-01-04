@@ -7,16 +7,18 @@ import org.semanticweb.owlapi.model.*;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
 public abstract class InputSignatureHandler {
-    private static String snomedIRIString = "http://snomed.info/id/";
+
+    private static final String snomedIRIString = "http://snomed.info/id/";
 
     public static Set<OWLClass> extractRefsetClassesFromDescendents(OWLOntology inputOntology, OWLClass rootClass, boolean excludePrimitives) throws ReasonerException {
         OntologyReasoningService service = new OntologyReasoningService(inputOntology);
         service.classifyOntology();
-        Set<OWLClass> conceptsInRefset = new HashSet<OWLClass>();
+        Set<OWLClass> conceptsInRefset = new HashSet<>();
 
         conceptsInRefset.add(rootClass);
         for(OWLClass childCls:service.getDescendants(rootClass)) {
@@ -37,7 +39,7 @@ public abstract class InputSignatureHandler {
     }
 
     public static void printRefset(Set<OWLEntity> entitiesInRefset, String outputFilePath) throws IOException {
-        Charset UTF_8_CHARSET = Charset.forName("UTF-8");
+        Charset UTF_8_CHARSET = StandardCharsets.UTF_8;
         BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
         for(OWLEntity ent:entitiesInRefset) {
             System.out.println("cls: " + ent.toString());
@@ -66,8 +68,6 @@ public abstract class InputSignatureHandler {
                 System.out.println("Adding class: " + inLine + " to input");
                 classes.add(df.getOWLClass(IRI.create(snomedIRIString + inLine)));
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -89,18 +89,16 @@ public abstract class InputSignatureHandler {
                     classes.add(df.getOWLClass(IRI.create(snomedIRIString + inLine)));
                 }
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-		System.out.println(classes.size() + " identifiers read from input subset.");
+        System.out.println(classes.size() + " identifiers read from input subset.");
         return classes;
     }
 
     public static Set<OWLClass> readClassesNonSCTFile(File signatureFile, String inputIRI) {
         OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
-        Set<OWLClass> classes = new HashSet<OWLClass>();
+        Set<OWLClass> classes = new HashSet<>();
         try (BufferedReader br = new BufferedReader(new FileReader(signatureFile))) {
             String inLine = "";
             br.readLine();
@@ -110,8 +108,6 @@ public abstract class InputSignatureHandler {
                 //if()
                 classes.add(df.getOWLClass(IRI.create(inputIRI + inLine)));
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -126,15 +122,15 @@ public abstract class InputSignatureHandler {
         OWLDataFactory df = man.getOWLDataFactory();
         OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
         String snomedIRIString = "http://snomed.info/id/";
-        Set<OWLClass> conceptsToInclude = new HashSet<OWLClass>();
+        Set<OWLClass> conceptsToInclude = new HashSet<>();
         conceptsToInclude.add(df.getOWLClass(IRI.create(snomedIRIString + "417163006")));
 
-        Set<OWLClass> classes = new HashSet<OWLClass>();
+        Set<OWLClass> classes = new HashSet<>();
         for(OWLClass cls:conceptsToInclude) {
             classes.addAll(InputSignatureHandler.extractRefsetClassesFromDescendents(inputOntology, cls, false));
         }
 
         String outputFilePath = "E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/injury/injury_refset.txt";
-        InputSignatureHandler.printRefset(new HashSet<OWLEntity>(classes), outputFilePath);
+        InputSignatureHandler.printRefset(new HashSet<>(classes), outputFilePath);
     }
 }
