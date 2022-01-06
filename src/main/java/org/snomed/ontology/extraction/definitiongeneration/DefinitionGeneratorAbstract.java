@@ -25,7 +25,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 	//				 -- this way, the ancestors associated with each individual *axiom* are kept together.
 	public void generateDefinition(OWLClass classToDefine, Set<RedundancyOptions> redundancyOptions) {
 		//separate authoring form for GCIs: do not want to inherit PVs and ancestors from "above", i.e., from necessary conditions.
-		if(namer.isNamedGCI(classToDefine)) {
+		if (namer.isNamedGCI(classToDefine)) {
 			computeAuthoringFormForGCI(classToDefine);
 			return;
 		}
@@ -36,7 +36,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 		sourceDefinitionsForClass.addAll(sourceOntology.getSubClassAxiomsForSubClass(classToDefine));
 
 		Map<Set<OWLClassExpression>, Boolean> definingConditionsForEachAxiom = new HashMap<>(); //better type than map?
-		for(OWLAxiom sourceAx:sourceDefinitionsForClass) {
+		for (OWLAxiom sourceAx : sourceDefinitionsForClass) {
 			boolean isEquivalence = sourceAx.getAxiomType().equals(AxiomType.EQUIVALENT_CLASSES);
 			Set<OWLClass> statedDirectParents = new HashSet<>();
 			//Set<OWLClass> closestParentPVs = new HashSet<OWLClass>();
@@ -50,19 +50,22 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 						statedDirectParents.add((OWLClass) exp);
 					} else if (exp instanceof OWLObjectSomeValuesFrom) {
 						statedDirectParents.add(namer.retrieveNameForPV((OWLObjectSomeValuesFrom) exp));
+					} else if (exp instanceof OWLDataHasValue) {
+						statedDirectParents.add(namer.retrieveNameForPV((OWLDataHasValue) exp));
 					}
 				}
 			} else if (sourceAx instanceof OWLEquivalentClassesAxiom) {
-				Set<OWLSubClassOfAxiom> axs = ((OWLEquivalentClassesAxiom)sourceAx).asOWLSubClassOfAxioms();
-				for(OWLSubClassOfAxiom ax:axs) {
-					if(ax.getSubClass().equals(classToDefine)) {
+				Set<OWLSubClassOfAxiom> axs = ((OWLEquivalentClassesAxiom) sourceAx).asOWLSubClassOfAxioms();
+				for (OWLSubClassOfAxiom ax : axs) {
+					if (ax.getSubClass().equals(classToDefine)) {
 						Set<OWLClassExpression> closestParentsExpressions = ax.getSuperClass().asConjunctSet();
-						for(OWLClassExpression exp:closestParentsExpressions) {
-							if(exp instanceof OWLClass) {
+						for (OWLClassExpression exp : closestParentsExpressions) {
+							if (exp instanceof OWLClass) {
 								statedDirectParents.add((OWLClass) exp);
-							}
-							else if(exp instanceof OWLObjectSomeValuesFrom) {
+							} else if (exp instanceof OWLObjectSomeValuesFrom) {
 								statedDirectParents.add(namer.retrieveNameForPV((OWLObjectSomeValuesFrom) exp));
+							} else if (exp instanceof OWLDataHasValue) {
+								statedDirectParents.add(namer.retrieveNameForPV((OWLDataHasValue) exp));
 							}
 						}
 					}
@@ -87,7 +90,7 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 			closestPrimitives.removeAll(extractNamedGCIs(closestPrimitives));
 
 			Set<OWLClass> reducedParentNamedClasses;
-			Set<OWLObjectSomeValuesFrom> reducedAncestorPVs;
+			Set<OWLRestriction> reducedAncestorPVs;
 
 			//TODO: check, if this form of redundancy was non-optional, could skip the reduction step entirely? Would be more efficient.
 			if (redundancyOptions.contains(RedundancyOptions.eliminateLessSpecificRedundancy)) {
@@ -159,14 +162,14 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 		currentClassesToExpand.add(classToDefine);
 
 		ListIterator<OWLClass> iterator = currentClassesToExpand.listIterator();
-		while(iterator.hasNext()) {
+		while (iterator.hasNext()) {
 			OWLClass cls = iterator.next();
 			Set<OWLClass> parentClasses = reasonerService.getDirectAncestors(cls);
 			Set<OWLClass> namedPVs = extractNamedPVs(parentClasses);
 			parentClasses.removeAll(namedPVs);
-			for(OWLClass parent:parentClasses) {
+			for (OWLClass parent : parentClasses) {
 				//If is primitive, add to returned set
-				if(reasonerService.isPrimitive(parent)) {
+				if (reasonerService.isPrimitive(parent)) {
 					closestPrimitives.add(parent);
 					continue;
 				}
@@ -187,21 +190,21 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 		ListIterator<OWLClass> parentIterator = new ArrayList<>(parentClasses).listIterator();
 
 		//for(OWLClass parent:parentClasses) {
-		while(parentIterator.hasNext()) {
+		while (parentIterator.hasNext()) {
 			OWLClass parent = parentIterator.next();
 			//for each parent A, check if occurs in axiom of form C <= A, where C is a complex concept
-			if(namer.hasAssociatedGCIs(parent)) {
+			if (namer.hasAssociatedGCIs(parent)) {
 				System.out.println("Found GCI parent: " + parent + "Checking type of subconcept relationship for class: " + classToDefine);
-			   //for each associated GCI, check type 1 or type 2 relationship for classToDefine
+				//for each associated GCI, check type 1 or type 2 relationship for classToDefine
 				boolean isTypeOne = false;
-				for(OWLClass gciName:namer.returnNamesOfGCIsForSuperConcept(parent)) {
-					if(reasonerService.getAncestors(classToDefine).contains(gciName)) {
+				for (OWLClass gciName : namer.returnNamesOfGCIsForSuperConcept(parent)) {
+					if (reasonerService.getAncestors(classToDefine).contains(gciName)) {
 						//type 1 -- add proximal primitives of GCI concept to parents for classToDefine, replacing GCI concept.
 						System.out.println("Type 1 concept detected: " + classToDefine + " with parent: " + parent);
 						isTypeOne = true;
 						Set<OWLClass> gciProximalPrimitives = computeClosestPrimitiveAncestors(parent);
 						System.out.println("Prox primitive parents for GCI concept: " + parent + " are: " + gciProximalPrimitives);
-						for(OWLClass proximalPrimitive:gciProximalPrimitives) {
+						for (OWLClass proximalPrimitive : gciProximalPrimitives) {
 							//newProximalPrimitiveParents.add(proximalPrimitive);
 							parentIterator.add(proximalPrimitive);
 							parentIterator.previous();
@@ -210,13 +213,12 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 					}
 				}
 				//type 2 -- retain GCI concept in proximal primitive parent set
-				if(!isTypeOne) {
+				if (!isTypeOne) {
 					System.out.println("Type 2 concept detected: " + classToDefine + " with parent: " + parent);
 					newProximalPrimitiveParents.add(parent);
 					continue;
 				}
-			}
-			else {
+			} else {
 				//if not GCI concept, retain proximal primitive parent
 				newProximalPrimitiveParents.add(parent);
 			}
@@ -237,8 +239,8 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
 		Set<OWLClass> conceptsInOriginalGCI = new HashSet<>();
 		Set<OWLClassExpression> pvsInOriginalGCI = new HashSet<>();
-		for(OWLClassExpression exp:originalGCI.asConjunctSet()) {
-			if(exp instanceof OWLClass) {
+		for (OWLClassExpression exp : originalGCI.asConjunctSet()) {
+			if (exp instanceof OWLClass) {
 				conceptsInOriginalGCI.add((OWLClass) exp);
 				continue;
 			}
@@ -248,8 +250,8 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 		Set<OWLClassExpression> authoringFormCandidates = new HashSet<>();
 
 		//replace any occurrences of defined (named) concepts via equivalent replacement
-		for(OWLClass cls:conceptsInOriginalGCI) {
-			if(!reasonerService.isPrimitive(cls)) {
+		for (OWLClass cls : conceptsInOriginalGCI) {
+			if (!reasonerService.isPrimitive(cls)) {
 				generateDefinition(cls);
 				System.out.println("Definition generated for cls: " + cls);
 				System.out.println("getting latest necessary conditions: " + getLatestNecessaryConditions());
@@ -266,12 +268,12 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 		//reduce the sets
 		Set<OWLClass> conceptsInAuthoringForm = new HashSet<>();
 		Set<OWLClass> pvNamesInAuthoringForm = new HashSet<>();
-		for(OWLClassExpression exp:authoringFormCandidates) {
-			if(exp instanceof OWLClass) {
+		for (OWLClassExpression exp : authoringFormCandidates) {
+			if (exp instanceof OWLClass) {
 				conceptsInAuthoringForm.add((OWLClass) exp);
 				continue;
 			}
-			pvNamesInAuthoringForm.add(namer.retrieveNameForPV((OWLObjectSomeValuesFrom) exp));
+			pvNamesInAuthoringForm.add(namer.retrieveNameForPV((OWLRestriction) exp));
 		}
 
 		System.out.println("Concepts in auth form: " + conceptsInAuthoringForm);
@@ -282,13 +284,12 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 
 		Set<OWLClassExpression> authoringForm = new HashSet<>(conceptsInAuthoringForm);
 
-		for(OWLClass pvName:pvNamesInAuthoringForm) {
+		for (OWLClass pvName : pvNamesInAuthoringForm) {
 			authoringForm.add(namer.retrievePVForName(pvName));
 		}
 
 		System.out.println("Authoring form parents for class: " + gciName + " are: " + authoringForm);
 
-		//Set<Set<OWLClassExpression>> authoringFormSet = new HashSet<Set<OWLClassExpression>>();
 		Map<Set<OWLClassExpression>, Boolean> authoringFormSet = new HashMap<>();
 
 		authoringFormSet.put(authoringForm, false);
@@ -296,4 +297,3 @@ public class DefinitionGeneratorAbstract extends DefinitionGenerator {
 	}
 
 }
-

@@ -1,6 +1,5 @@
 package org.snomed.ontology.extraction.services;
 
-import org.apache.commons.io.FileUtils;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
@@ -43,8 +42,10 @@ public class SubOntologyRF2ConversionService {
 		Set<OWLEntity> entitiesInSubontologyAndNNFs = new HashSet<>();
 		entitiesInSubontologyAndNNFs.addAll(subOntology.getClassesInSignature());
 		entitiesInSubontologyAndNNFs.addAll(subOntology.getObjectPropertiesInSignature());
+		entitiesInSubontologyAndNNFs.addAll(subOntology.getDataPropertiesInSignature());
 		entitiesInSubontologyAndNNFs.addAll(nnfOntology.getClassesInSignature());
 		entitiesInSubontologyAndNNFs.addAll(nnfOntology.getObjectPropertiesInSignature());
+		entitiesInSubontologyAndNNFs.addAll(nnfOntology.getDataPropertiesInSignature());
 
 		/*
 		Set<OWLClass> inSubOntNotNNF = subOntology.getClassesInSignature();
@@ -86,7 +87,7 @@ public class SubOntologyRF2ConversionService {
 
 	private static void printRelationshipRF2(OWLOntology nnfOntology, File outputDirectory) throws IOException, ConversionException {
 		RF2Printer printer = new RF2Printer(outputDirectory);
-		printer.printRelationshipRF2File(nnfOntology);
+		printer.printRelationshipRF2Files(nnfOntology);
 	}
 
 	private static void computeOWLRefsetAndTextDefinitions(File outputDirectory) throws IOException, OWLException {

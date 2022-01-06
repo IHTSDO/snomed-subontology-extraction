@@ -18,8 +18,8 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipInputStream;
 
 /*
-* Prints OWLOntology statements as RF2 files. Based upon the RF2 services in the SNOMED OWL Toolkit.
-* Key:
+ * Prints OWLOntology statements as RF2 files. Based upon the RF2 services in the SNOMED OWL Toolkit.
+ * Key:
  */
 
 public class RF2Printer extends Printer {
@@ -29,7 +29,7 @@ public class RF2Printer extends Printer {
 	public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
 	private final File outputDirectory;
 
-	public RF2Printer(File outputDirectory){
+	public RF2Printer(File outputDirectory) {
 		this.outputDirectory = outputDirectory;
 	}
 
@@ -45,13 +45,13 @@ public class RF2Printer extends Printer {
 		axiomsMap.put((long) 1, new ArrayList<>(nnfOntology.getAxioms()));
 		Map<Long, Set<AxiomRepresentation>> representationsMap = converter.convertAxiomsToRelationships(axiomsMap, false);
 
-		Set<AxiomRepresentation> representations = representationsMap.get((long)1);
+		Set<AxiomRepresentation> representations = representationsMap.get((long) 1);
 
-		BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFile), UTF_8_CHARSET));
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), UTF_8_CHARSET));
 		StringBuilder sb = new StringBuilder();
 
 		Map<Long, List<Relationship>> definedConceptRelationshipsMap = new HashMap<Long, List<Relationship>>();
-		for(AxiomRepresentation rep:representations) {
+		for (AxiomRepresentation rep : representations) {
 			Long conceptID = rep.getLeftHandSideNamedConcept();
 			Map<Integer, List<Relationship>> rightHandSideRelationshipsMap = rep.getRightHandSideRelationships();
 
@@ -83,18 +83,18 @@ public class RF2Printer extends Printer {
 		axiomsMap.put((long) 1, new ArrayList<>(nnfOntology.getTBoxAxioms(Imports.fromBoolean(false))));
 
 		Map<Long, Set<AxiomRepresentation>> representationsMap = converter.convertAxiomsToRelationships(axiomsMap, false);
-		Set<AxiomRepresentation> representations = representationsMap.get((long)1);
+		Set<AxiomRepresentation> representations = representationsMap.get((long) 1);
 
 		//BufferedWriter writer =  new BufferedWriter(fw);
-		BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFile), UTF_8_CHARSET));
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), UTF_8_CHARSET));
 
 		Map<Long, String> conceptDescriptionMap = getConceptDescriptionMapFromDescriptionRF2();
 
 		MapPrinter mapPrint = new MapPrinter(new File("output"));
 		mapPrint.printGeneralMap(conceptDescriptionMap, "conceptDescriptionMap");
 
-		int i=0;
-		for(AxiomRepresentation rep:representations) {
+		int i = 0;
+		for (AxiomRepresentation rep : representations) {
 			i++;
 			System.out.println("Number printed: " + i);
 			Long conceptID = rep.getLeftHandSideNamedConcept();
@@ -108,7 +108,7 @@ public class RF2Printer extends Printer {
 			}
 		}
 		System.out.println("NNF Ontology num axioms: " + nnfOntology.getAxiomCount());
-		System.out.println("Axioms map size: "  + axiomsMap.size());
+		System.out.println("Axioms map size: " + axiomsMap.size());
 		System.out.println("Relationships map size: " + representationsMap.size());
 		System.out.println("Representations size: " + representations.size());
 	}
@@ -166,8 +166,7 @@ public class RF2Printer extends Printer {
 			writer.write(TAB);
 
 			writer.newLine();
-		}
-		catch(NullPointerException e) {
+		} catch (NullPointerException e) {
 			System.out.println("Null exception.");
 		}
 	}
@@ -183,9 +182,9 @@ public class RF2Printer extends Printer {
 
 		BufferedReader descriptionFileReader = new BufferedReader(new InputStreamReader(zipStream, StandardCharsets.UTF_8));//.lines().collect(Collectors.toList());
 
-		for(String line:descriptionFileReader.lines().collect(Collectors.toList())) {
+		for (String line : descriptionFileReader.lines().collect(Collectors.toList())) {
 			String[] cols = line.split(TAB);
-			if(cols[2].contains("1") && line.contains("900000000000003001")) {
+			if (cols[2].contains("1") && line.contains("900000000000003001")) {
 				idToFSNMap.putIfAbsent(Long.parseLong(cols[4]), cols[7]);
 			}
 		}
@@ -193,95 +192,89 @@ public class RF2Printer extends Printer {
 		return idToFSNMap;
 	}
 
-	public void printRelationshipRF2File(OWLOntology nnfOntology) throws ConversionException, IOException {
-		String date = SIMPLE_DATE_FORMAT.format(new Date().getTime());
-		File terminologyDirectory = new File(outputDirectory, "RF2/Snapshot/Terminology");
-		terminologyDirectory.mkdirs();
-		File outputFile = new File(terminologyDirectory, "sct2_Relationship_Snapshot_INT_" + date + ".txt");
-
-		System.out.println("Writing inferred relationships file for: " + outputFile);
+	public void printRelationshipRF2Files(OWLOntology nnfOntology) throws ConversionException, IOException {
 		AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<>());
 
-		Map<Long, List<OWLAxiom>> axiomsMap = new HashMap<>();
-
-		axiomsMap.put((long) 1, new ArrayList<>(nnfOntology.getAxioms()));
-		Map<Long, Set<AxiomRepresentation>> representationsMap = converter.convertAxiomsToRelationships(axiomsMap, false);
-
 		Set<AxiomRepresentation> representations = new HashSet<>();
-		for(OWLAxiom axiom:nnfOntology.getAxioms()) {
+		for (OWLAxiom axiom : nnfOntology.getAxioms()) {
 			representations.add(converter.convertAxiomToRelationships(axiom));
 		}
 
-
-		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), UTF_8_CHARSET));
-		StringBuilder sb = new StringBuilder();
-
-		//Map<Long, List<Relationship>> definedConceptRelationshipsMap = new HashMap<Long, List<Relationship>>();
+		File terminologyDirectory = new File(outputDirectory, "RF2/Snapshot/Terminology");
+		terminologyDirectory.mkdirs();
 		SCTIDSource relationshipIdSource = new SCTIDSource(SubOntologyRF2ConversionService.SCTID_GENERATION_NAMESPACE, "02", 100);
 
-		//print header
-		sb.append("id\teffectiveTime\tactive\tmoduleId\tsourceId\tdestinationId\trelationshipGroup\ttypeId\tcharacteristicTypeId\tmodifierId");
-		writer.write(sb.toString());
-		newline(writer);
-		sb.setLength(0);
-		writer.flush();
+		File outputFile = new File(terminologyDirectory, "sct2_Relationship_Snapshot_INT_" + SIMPLE_DATE_FORMAT.format(new Date().getTime()) + ".txt");
+		File concreteOutputFile = new File(terminologyDirectory, "sct2_RelationshipConcreteValues_Snapshot_INT_" + SIMPLE_DATE_FORMAT.format(new Date().getTime()) + ".txt");
+		System.out.println("Writing inferred relationships files for: " + outputFile + " and " + concreteOutputFile);
 
-		for(AxiomRepresentation rep:representations) {
-			if(rep.getLeftHandSideNamedConcept().toString().contains("owl:Nothing")) { //TODO: 10-06-21 temp, nothing should not be included
-				continue;
-			}
+		try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), UTF_8_CHARSET));
+			 BufferedWriter concreteWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(concreteOutputFile), UTF_8_CHARSET))) {
+			//print header
+			writer.write("id\teffectiveTime\tactive\tmoduleId\tsourceId\tdestinationId\trelationshipGroup\ttypeId\tcharacteristicTypeId\tmodifierId");
+			writer.newLine();
 
-			Long conceptID = rep.getLeftHandSideNamedConcept();
+			concreteWriter.write("id\teffectiveTime\tactive\tmoduleId\tsourceId\tvalue\trelationshipGroup\ttypeId\tcharacteristicTypeId\tmodifierId");
+			concreteWriter.newLine();
 
-			Map<Integer, List<Relationship>> rightHandSideRelationshipsMap = rep.getRightHandSideRelationships();
+			BufferedWriter relationshipWriter;
 
-			for (Map.Entry<Integer, List<Relationship>> integerListEntry : rightHandSideRelationshipsMap.entrySet()) {
-				List<Relationship> currentConceptRelationships = integerListEntry.getValue();
+			for (AxiomRepresentation rep : representations) {
+				if (rep.getLeftHandSideNamedConcept().toString().contains("owl:Nothing")) { //TODO: 10-06-21 temp, nothing should not be included
+					continue;
+				}
 
-				for (Relationship rel : currentConceptRelationships) {
-					//id - generate number XXX02X
-					sb.append(relationshipIdSource.getNewId());
-					sb.append("\t");
+				Long conceptID = rep.getLeftHandSideNamedConcept();
+				for (List<Relationship> relationshipGroup : rep.getRightHandSideRelationships().values()) {
+					for (Relationship rel : relationshipGroup) {
 
-					//effectiveTime - blank
-					sb.append("\t");
+						relationshipWriter = rel.isConcrete() ? concreteWriter : writer;
 
-					//active
-					sb.append("1");
-					sb.append("\t");
+						//id - generate number XXX02X
+						relationshipWriter.write(relationshipIdSource.getNewId());
+						relationshipWriter.write("\t");
 
-					//moduleId
-					sb.append("900000000000207008");
-					sb.append("\t");
+						//effectiveTime - blank
+						relationshipWriter.write("\t");
 
-					//sourceId
-					sb.append(conceptID);
-					sb.append("\t");
+						//active
+						relationshipWriter.write("1");
+						relationshipWriter.write("\t");
 
-					//destinationId
-					sb.append(rel.getDestinationId());
-					sb.append("\t");
+						//moduleId
+						relationshipWriter.write("900000000000207008");
+						relationshipWriter.write("\t");
 
-					//relationshipGroup TODO: extract from nesting. Does getGroup do this sufficiently?
-					sb.append(rel.getGroup());
-					sb.append("\t");
+						//sourceId
+						relationshipWriter.write(conceptID.toString());
+						relationshipWriter.write("\t");
 
-					//typeId
-					sb.append(rel.getTypeId());
-					sb.append("\t");
+						//destinationId
+						if (rel.isConcrete()) {
+							relationshipWriter.write(rel.getValue().getRF2Value());
+						} else {
+							relationshipWriter.write(Long.toString(rel.getDestinationId()));
+						}
+						relationshipWriter.write("\t");
 
-					//charTypeId -- currently hardcoded + arbitrary
-					sb.append("900000000000011006");
-					sb.append("\t");
+						//relationshipGroup TODO: extract from nesting. Does getGroup do this sufficiently?
+						relationshipWriter.write(Integer.toString(rel.getGroup()));
+						relationshipWriter.write("\t");
 
-					//modifierId -- currently hardcoded + arbitrary
-					sb.append("900000000000451002");
-					sb.append("\t");
+						//typeId
+						relationshipWriter.write(Long.toString(rel.getTypeId()));
+						relationshipWriter.write("\t");
 
-					writer.write(sb.toString());
-					newline(writer);
-					sb.setLength(0);
-					writer.flush();
+						//charTypeId -- currently hardcoded + arbitrary
+						relationshipWriter.write("900000000000011006");
+						relationshipWriter.write("\t");
+
+						//modifierId -- currently hardcoded + arbitrary
+						relationshipWriter.write("900000000000451002");
+						relationshipWriter.write("\t");
+
+						relationshipWriter.newLine();
+					}
 				}
 			}
 		}

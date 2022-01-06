@@ -112,11 +112,9 @@ public class SubontologyExtraction {
 		long startTime = System.currentTimeMillis();
 		if(customRedundancyOptions.isEmpty()) { //with default redundancy elimination on both authoring and NNF definitions (RECOMMENDED)
 			generator.computeSubontology(outputRF2);
-		}
-		else if(defaultAuthoringForm) { //default authoring form, custom nnf
+		} else if(defaultAuthoringForm) { //default authoring form, custom nnf
 			generator.computeSubontology(outputRF2, customRedundancyOptions);
-		}
-		else { //custom authoring and nnf (NOT RECOMMENDED)
+		} else { //custom authoring and nnf (NOT RECOMMENDED)
 			//with non-default redundancy elimination options specified by user
 			generator.computeSubontology(outputRF2, customRedundancyOptions, defaultAuthoringForm);
 		}
@@ -166,10 +164,12 @@ public class SubontologyExtraction {
 			else {
 				System.out.println("org.snomed.ontology.extraction.Verification passed.");
 				System.out.println("Input ontology num axioms: " + sourceOntology.getLogicalAxiomCount());
-				System.out.println("Input ontology num classes: " + sourceOntology.getClassesInSignature().size() + " and properties: " + sourceOntology.getObjectPropertiesInSignature().size());
+				System.out.println("Input ontology num classes: " + sourceOntology.getClassesInSignature().size() + ", " +
+						"object properties: " + sourceOntology.getObjectPropertiesInSignature().size() + " and data properties: " + sourceOntology.getDataPropertiesInSignature().size());
 				System.out.println("Subontology Stats");
 				System.out.println("Num axioms: " + subOntology.getLogicalAxiomCount());
-				System.out.println("Num classes: " + subOntology.getClassesInSignature().size() + " and properties: " + subOntology.getObjectPropertiesInSignature().size());
+				System.out.println("Num classes: " + subOntology.getClassesInSignature().size() + ", " +
+						"object properties: " + subOntology.getObjectPropertiesInSignature().size() + " and data properties: " + subOntology.getDataPropertiesInSignature().size());
 				System.out.println("Focus classes: " + conceptsToDefine.size());
 				System.out.println("Supporting classes: " + (subOntology.getClassesInSignature().size() - conceptsToDefine.size()));
 				System.out.println("---------------------");

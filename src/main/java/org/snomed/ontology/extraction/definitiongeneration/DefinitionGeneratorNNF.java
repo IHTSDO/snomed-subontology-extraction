@@ -51,7 +51,7 @@ public class DefinitionGeneratorNNF extends DefinitionGenerator {
 		}
 
 		Set<OWLClass> reducedParentNamedClasses;
-		Set<OWLObjectSomeValuesFrom> reducedAncestorPVs;
+		Set<OWLRestriction> reducedAncestorPVs;
 
 		if(redundancyOptions.contains(RedundancyOptions.eliminateLessSpecificRedundancy)) {
 			reducedParentNamedClasses = reduceClassSet(parentNamedClasses);
