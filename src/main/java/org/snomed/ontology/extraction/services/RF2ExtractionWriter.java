@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -80,7 +81,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	}
 
 	private BufferedWriter newRF2Writer(File terminologyDir, String filename, String header) throws IOException {
-		final BufferedWriter fileWriter = new BufferedWriter(new FileWriter(new File(terminologyDir, filename)));
+		final BufferedWriter fileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(terminologyDir, filename)), StandardCharsets.UTF_8));
 		writers.add(fileWriter);
 		// Write header
 		fileWriter.write(header);
