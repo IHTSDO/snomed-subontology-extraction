@@ -22,13 +22,19 @@ public class RF2ExtractionService {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	public final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
 
+	private static final LoadingProfile LOADING_PROFILE = LoadingProfile.complete
+			.withoutInactiveConcepts()
+			.withoutInactiveDescriptions()
+			.withoutInactiveRelationships()
+			.withoutInactiveRefsetMembers();
+
 	public void extractConcepts(InputStream rf2SnapshotArchive, Set<Long> conceptIds, File outputDirectory)
 			throws ReleaseImportException, IOException {
 		logger.info("Extracting {} concepts from RF2.", conceptIds.size());
 		ReleaseImporter releaseImporter = new ReleaseImporter();
 		String dateString = dateFormat.format(new Date());
 		try (RF2ExtractionWriter extractionWriter = new RF2ExtractionWriter(conceptIds, dateString, outputDirectory)) {
-			releaseImporter.loadEffectiveSnapshotReleaseFileStreams(Collections.singleton(rf2SnapshotArchive), LoadingProfile.complete, extractionWriter, false);
+			releaseImporter.loadEffectiveSnapshotReleaseFileStreams(Collections.singleton(rf2SnapshotArchive), LOADING_PROFILE, extractionWriter, false);
 		}
 		logger.info("Extraction complete.");
 	}
