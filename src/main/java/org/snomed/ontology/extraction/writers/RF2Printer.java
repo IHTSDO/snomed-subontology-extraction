@@ -21,7 +21,6 @@ import java.util.zip.ZipInputStream;
  * Prints OWLOntology statements as RF2 files. Based upon the RF2 services in the SNOMED OWL Toolkit.
  * Key:
  */
-
 public class RF2Printer extends Printer {
 
 	private static final String TAB = "\t";
@@ -165,7 +164,7 @@ public class RF2Printer extends Printer {
 			writer.write(destinationTerm);
 			writer.write(TAB);
 
-			writer.newLine();
+			newline(writer);
 		} catch (NullPointerException e) {
 			System.out.println("Null exception.");
 		}
@@ -212,10 +211,10 @@ public class RF2Printer extends Printer {
 			 BufferedWriter concreteWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(concreteOutputFile), UTF_8_CHARSET))) {
 			//print header
 			writer.write("id\teffectiveTime\tactive\tmoduleId\tsourceId\tdestinationId\trelationshipGroup\ttypeId\tcharacteristicTypeId\tmodifierId");
-			writer.newLine();
+			newline(writer);
 
 			concreteWriter.write("id\teffectiveTime\tactive\tmoduleId\tsourceId\tvalue\trelationshipGroup\ttypeId\tcharacteristicTypeId\tmodifierId");
-			concreteWriter.newLine();
+			newline(concreteWriter);
 
 			BufferedWriter relationshipWriter;
 
@@ -271,45 +270,12 @@ public class RF2Printer extends Printer {
 
 						//modifierId -- currently hardcoded + arbitrary
 						relationshipWriter.write("900000000000451002");
-						relationshipWriter.write("\t");
 
-						relationshipWriter.newLine();
+						newline(relationshipWriter);
 					}
 				}
 			}
 		}
 	}
-
-	/*
-	public void printOWLRefsetRF2File(OWLOntology authoringFormOntology) throws ConversionException, IOException {
-		// Write OWL expression refset file
-		String outputFilePath = outputDirectory + "OWLAxiom_Refset_RF2" + ".txt";
-		BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), UTF_8_CHARSET));
-		StringBuilder sb = new StringBuilder();
-
-		writer.write(RF2Headers.OWL_EXPRESSION_REFERENCE_SET_HEADER);
-		newline(writer);
-		for (Long conceptId : conceptAxioms.keySet()) {
-			for (OWLAxiom owlAxiom : conceptAxioms.get(conceptId)) {
-				// id	effectiveTime	active	moduleId	refsetId	referencedComponentId	owlExpression
-				String axiomString = owlAxiom.toString();
-				axiomString = axiomString.replace("<http://snomed.info/id/", ":");
-				axiomString = axiomString.replace(">", "");
-				writer.write(String.join("\t", UUID.randomUUID().toString(), "0", "1", Concepts.SNOMED_CT_CORE_MODULE,
-						Concepts.OWL_AXIOM_REFERENCE_SET, conceptId.toString(), axiomString));
-				newline(writer);
-			}
-		}
-		//needed metadata - TODO: clean
-		writer.write(String.join("\t", UUID.randomUUID().toString(), "0", "1", Concepts.SNOMED_CT_CORE_MODULE, Concepts.OWL_AXIOM_REFERENCE_SET, "762705008", "SubClassOf(:762705008 :410662002)"));
-		newline(writer);
-		writer.write(String.join("\t", UUID.randomUUID().toString(), "0", "1", Concepts.SNOMED_CT_CORE_MODULE, Concepts.OWL_AXIOM_REFERENCE_SET, "410662002", "SubClassOf(:410662002 :900000000000441003)"));
-		newline(writer);
-		writer.write(String.join("\t", UUID.randomUUID().toString(), "0", "1", Concepts.SNOMED_CT_CORE_MODULE, Concepts.OWL_AXIOM_REFERENCE_SET, "900000000000441003", "SubClassOf(:900000000000441003 :138875005)"));
-		newline(writer);
-		writer.flush();
-
-	}
-	 */
 
 }
