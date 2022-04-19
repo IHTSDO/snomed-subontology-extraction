@@ -85,6 +85,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		writers.add(fileWriter);
 		// Write header
 		fileWriter.write(header);
+		fileWriter.write("\r");
 		fileWriter.newLine();
 		return fileWriter;
 	}
@@ -94,6 +95,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		if (conceptIds.contains(parseLong(conceptId))) {
 			try {
 				conceptWriter.write(String.join(TAB, conceptId, effectiveTime, active, moduleId, definitionStatusId));
+				conceptWriter.write("\r");
 				conceptWriter.newLine();
 			} catch (IOException e) {
 				// Ugly but the interface does not allow throwing a checked exception
@@ -112,6 +114,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 					writer = textDefWriter;
 				}
 				writer.write(String.join(TAB, id, effectiveTime, active, moduleId, conceptId, languageCode, typeId, term, caseSignificanceId));
+				writer.write("\r");
 				writer.newLine();
 			} catch (IOException e) {
 				throw new RuntimeException("Failed to write to description file.", e);
@@ -125,6 +128,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 			if (descriptionIds.contains(parseLong(referencedComponentId))) {
 				try {
 					languageReferenceSetWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0]));
+					languageReferenceSetWriter.write("\r");
 					languageReferenceSetWriter.newLine();
 				} catch (IOException e) {
 					throw new RuntimeException("Failed to write to language refset file.", e);
@@ -135,6 +139,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 			if (conceptIds.contains(parseLong(referencedComponentId))) {
 				try {
 					owlAxiomWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0]));
+					owlAxiomWriter.write("\r");
 					owlAxiomWriter.newLine();
 				} catch (IOException e) {
 					throw new RuntimeException("Failed to write to OWL axiom refset file.", e);
