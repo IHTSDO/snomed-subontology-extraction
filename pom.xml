@@ -11,7 +11,7 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<slf4j.version>1.7.25</slf4j.version>
-		<snomed.boot.version>4.0.1</snomed.boot.version>
+		<snomed.boot.version>4.0.4</snomed.boot.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -30,26 +30,19 @@
 		<dependency>
 			<groupId>org.snomed.otf</groupId>
 			<artifactId>snomed-owl-toolkit</artifactId>
-			<version>3.0.3</version>
+			<version>3.0.11</version>
 		</dependency>
 
 		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>1.7.32</version>
+			<version>1.7.36</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.32</version>
-		</dependency>
-
-		<!-- Utilities -->
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-core</artifactId>
-			<version>4.3.20.RELEASE</version>
+			<version>1.7.36</version>
 		</dependency>
 
 		<!-- Testing -->
