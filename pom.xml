@@ -9,9 +9,9 @@
 	<version>2.0.0-SNAPSHOT</version>
 
 	<properties>
-		<java.version>1.8</java.version>
 		<slf4j.version>1.7.25</slf4j.version>
 		<snomed.boot.version>4.0.4</snomed.boot.version>
+		<java.version>17</java.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
