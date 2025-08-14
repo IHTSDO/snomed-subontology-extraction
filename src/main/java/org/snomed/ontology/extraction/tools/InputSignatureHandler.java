@@ -2,20 +2,26 @@ package org.snomed.ontology.extraction.tools;
 
 import org.snomed.ontology.extraction.classification.OntologyReasoningService;
 import org.snomed.ontology.extraction.exception.ReasonerException;
+import org.snomed.ontology.extraction.services.RF2ExtractionService;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import it.unimi.dsi.fastutil.Pair;
 
 public abstract class InputSignatureHandler {
 
 	private static final String snomedIRIString = "http://snomed.info/id/";
+	private static final String DESCENDANT_FLAG = "<<";
 
-	public static Set<OWLClass> extractRefsetClassesFromDescendents(OWLOntology inputOntology, OWLClass rootClass, boolean excludePrimitives) throws ReasonerException {
+	public static Set<OWLClass> extractRefsetClassesFromDescendents(OWLOntology inputOntology, OWLClass rootClass, boolean excludePrimitives) {
 		OntologyReasoningService service = new OntologyReasoningService(inputOntology);
 		service.classifyOntology();
 		Set<OWLClass> conceptsInRefset = new HashSet<>();
@@ -57,6 +63,21 @@ public abstract class InputSignatureHandler {
 		return readRefsetTxt(refsetFile);
 	}
 
+	/**
+	 * Reads a subset file that may contain concept IDs with a "<<" flag to include descendants.
+	 * When RF2 snapshot archive is provided, uses the hierarchy to find descendants of flagged concepts.
+	 * 
+	 * @param refsetFile The subset file to read
+	 * @param rf2SnapshotArchive Optional RF2 snapshot archive for hierarchy lookup
+	 * @return Set of OWL classes representing the concepts to include
+	 */
+	public static Set<OWLClass> readRefsetWithDescendants(File refsetFile, File rf2SnapshotArchive) {
+		if(refsetFile.getName().endsWith(".json")) {
+			return readRefsetJson(refsetFile);
+		}
+		return readRefsetTxtWithDescendants(refsetFile, rf2SnapshotArchive);
+	}
+
 	private static Set<OWLClass> readRefsetJson(File refsetFile) {
 		OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
 		Set<OWLClass> classes = new HashSet<OWLClass>();
@@ -94,6 +115,154 @@ public abstract class InputSignatureHandler {
 		}
 		System.out.println(classes.size() + " identifiers read from input subset.");
 		return classes;
+	}
+
+	private static Set<OWLClass> readRefsetTxtWithDescendants(File refsetFile, File rf2SnapshotArchive) {
+		OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
+		Set<OWLClass> classes = new HashSet<>();
+		Set<Long> conceptsWithDescendants = new HashSet<>();
+		Set<Long> directConcepts = new HashSet<>();
+		
+		try (BufferedReader br = new BufferedReader(new FileReader(refsetFile))) {
+			String inLine = "";
+			while ((inLine = br.readLine()) != null) {
+				// process the line, remove whitespace
+				if(inLine.matches(".*\\d+.*")) {
+					inLine = inLine.trim();
+					
+					// Check if line contains the descendant flag
+					if (inLine.contains(DESCENDANT_FLAG)) {
+						// Extract concept ID from line with flag, handling optional terms
+						String conceptId = extractConceptIdFromLine(inLine, DESCENDANT_FLAG);
+						if (conceptId != null && conceptId.matches("\\d+")) {
+							conceptsWithDescendants.add(Long.parseLong(conceptId));
+							System.out.println("Adding concept with descendants: " + conceptId);
+						}
+					} else {
+						// Regular concept ID, handling optional terms
+						String conceptId = extractConceptIdFromLine(inLine, null);
+						if (conceptId != null && conceptId.matches("\\d+")) {
+							directConcepts.add(Long.parseLong(conceptId));
+							System.out.println("Adding direct concept: " + conceptId);
+						}
+					}
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		// Add direct concepts
+		for (Long conceptId : directConcepts) {
+			classes.add(df.getOWLClass(IRI.create(snomedIRIString + conceptId)));
+		}
+		
+		// If RF2 archive is provided and we have concepts with descendants, load hierarchy
+		if (rf2SnapshotArchive != null && !conceptsWithDescendants.isEmpty()) {
+			Set<Long> allDescendants = loadDescendantsFromRF2(rf2SnapshotArchive, conceptsWithDescendants);
+			for (Long conceptId : allDescendants) {
+				classes.add(df.getOWLClass(IRI.create(snomedIRIString + conceptId)));
+			}
+		} else if (!conceptsWithDescendants.isEmpty()) {
+			// If no RF2 archive but we have descendant flags, just add the root concepts
+			System.out.println("Warning: RF2 snapshot archive not provided, adding only root concepts for descendant flags");
+			for (Long conceptId : conceptsWithDescendants) {
+				classes.add(df.getOWLClass(IRI.create(snomedIRIString + conceptId)));
+			}
+		}
+		
+		System.out.println(classes.size() + " identifiers read from input subset.");
+		return classes;
+	}
+
+	private static Set<Long> loadDescendantsFromRF2(File rf2SnapshotArchive, Set<Long> rootConcepts) {
+		Set<Long> allDescendants = new HashSet<>();
+		Map<Long, Set<Long>> parentChildMap = new HashMap<>();
+		
+		try {
+			RF2ExtractionService extractionService = new RF2ExtractionService();
+			
+			// Load parent-child relationships from RF2
+			Consumer<Pair<Long, Long>> parentChildPairConsumer = pair -> {
+				Long parent = pair.left();
+				Long child = pair.right();
+				parentChildMap.computeIfAbsent(parent, k -> new HashSet<>()).add(child);
+			};
+			
+			extractionService.extractParentChildRelationships(
+				new FileInputStream(rf2SnapshotArchive), 
+				parentChildPairConsumer
+			);
+			
+			// Find all descendants for each root concept
+			for (Long rootConcept : rootConcepts) {
+				Set<Long> descendants = findDescendants(rootConcept, parentChildMap);
+				allDescendants.addAll(descendants);
+				System.out.println("Found " + descendants.size() + " descendants for concept " + rootConcept);
+			}
+			
+		} catch (Exception e) {
+			System.err.println("Error loading descendants from RF2: " + e.getMessage());
+			e.printStackTrace();
+			// Fallback: just add the root concepts
+			allDescendants.addAll(rootConcepts);
+		}
+		
+		return allDescendants;
+	}
+
+	/**
+	 * Extracts concept ID from a line that may contain optional terms in the format "conceptId |term|"
+	 * 
+	 * @param line The input line to parse
+	 * @param flag Optional flag to remove from the line (e.g., "<<")
+	 * @return The concept ID as a string, or null if not found
+	 */
+	private static String extractConceptIdFromLine(String line, String flag) {
+		// Remove the flag if present
+		if (flag != null && line.contains(flag)) {
+			line = line.replaceAll(".*" + flag + "\\s*", "").trim();
+		}
+		
+		// Handle lines with optional terms in format "conceptId |term|"
+		if (line.contains("|")) {
+			// Extract the part before the first pipe
+			String beforePipe = line.split("\\|")[0].trim();
+			if (beforePipe.matches("\\d+")) {
+				return beforePipe;
+			}
+		}
+		
+		// Handle lines without terms - extract just the concept ID
+		String conceptId = line.replaceAll("[\\s\\p{Z}]+", "").trim();
+		if (conceptId.matches("\\d+")) {
+			return conceptId;
+		}
+		
+		return null;
+	}
+
+	private static Set<Long> findDescendants(Long rootConcept, Map<Long, Set<Long>> parentChildMap) {
+		Set<Long> descendants = new HashSet<>();
+		Set<Long> toProcess = new HashSet<>();
+		toProcess.add(rootConcept);
+		
+		while (!toProcess.isEmpty()) {
+			Long current = toProcess.iterator().next();
+			toProcess.remove(current);
+			
+			Set<Long> children = parentChildMap.get(current);
+			if (children != null) {
+				for (Long child : children) {
+					if (!descendants.contains(child)) {
+						descendants.add(child);
+						toProcess.add(child);
+					}
+				}
+			}
+		}
+		
+		return descendants;
 	}
 
 	public static Set<OWLClass> readClassesNonSCTFile(File signatureFile, String inputIRI) {

@@ -1,6 +1,7 @@
 package org.snomed.ontology.extraction.services;
 
 import com.google.common.collect.Sets;
+import it.unimi.dsi.fastutil.Pair;
 import org.apache.commons.io.FileUtils;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.ihtsdo.otf.snomedboot.ReleaseImporter;
@@ -16,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class RF2ExtractionService {
 
@@ -37,6 +39,19 @@ public class RF2ExtractionService {
 			releaseImporter.loadEffectiveSnapshotReleaseFileStreams(Collections.singleton(rf2SnapshotArchive), LOADING_PROFILE, extractionWriter, false);
 		}
 		logger.info("Extraction complete.");
+	}
+
+	public void extractParentChildRelationships(InputStream rf2SnapshotArchive, Consumer<Pair<Long, Long>> parentChildPairConsumer) throws ReleaseImportException {
+		logger.info("Extracting inferred hierarchy from RF2 to supplement subset input.");
+		ReleaseImporter releaseImporter = new ReleaseImporter();
+		LoadingProfile relationshipOnlyLoadingProfile = LoadingProfile.light
+				.withoutConcepts()
+				.withoutDescriptions()
+				.withoutTextDefinitions()
+				.withoutAnyRefsets();
+		releaseImporter.loadEffectiveSnapshotReleaseFileStreams(Collections.singleton(rf2SnapshotArchive), relationshipOnlyLoadingProfile,
+				new RelationshipComponentFactory(parentChildPairConsumer), false);
+		logger.info("Inferred hierarchy extraction complete.");
 	}
 
 	public static void main(String[] args) throws IOException, ReleaseImportException {

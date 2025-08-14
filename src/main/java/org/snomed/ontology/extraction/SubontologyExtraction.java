@@ -69,7 +69,14 @@ public class SubontologyExtraction {
 		 */
 		File inputRefsetFile = getFile(getRequiredParameterValue(ARG_INPUT_SUBSET, args));
 		// if focus concepts specified as refset
-		Set<OWLClass> conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+		Set<OWLClass> conceptsToDefine;
+		if (outputRF2 && sourceRF2File != null) {
+			// Use enhanced parsing that supports "<<" flag for descendants when RF2 archive is available
+			conceptsToDefine = InputSignatureHandler.readRefsetWithDescendants(inputRefsetFile, sourceRF2File);
+		} else {
+			// Use standard parsing when no RF2 archive is provided
+			conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+		}
 
 		// alternatively, can specify concepts directly as a set e.g.
 		/*
@@ -196,6 +203,11 @@ public class SubontologyExtraction {
 						pad(ARG_INPUT_SUBSET) +
 						"Input subset file.\n" +
 						pad("") + "Text file containing a newline separated list of identifiers of the SNOMED-CT concepts to extract into the subontology.\n" +
+						pad("") + "When using " + ARG_OUTPUT_RF2 + ", the file can also contain concept IDs with a \"<<\" flag to include all descendants.\n" +
+						pad("") + "Example:\n" +
+						pad("") + "  131148009 |Bleeding (finding)|\n" +
+						pad("") + "  <<239161005 |Wound hemorrhage (finding)|\n" +
+						pad("") + "  16541001 |Yellow fever (disorder)|\n" +
 						"\n" +
 
 						"\n" +

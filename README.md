@@ -35,6 +35,11 @@ Usage:
 
  -input-subset                          Input subset file.
                                         Text file containing a newline separated list of identifiers of the SNOMED-CT concepts to extract into the subontology.
+                                        When using -output-rf2, the file can also contain concept IDs with a "<<" flag to include all descendants.
+                                        Example:
+                                          131148009
+                                          <<239161005
+                                          16541001
 
 
 
@@ -62,3 +67,26 @@ java -Xms4g -jar snomed-subontology-extraction-*-executable.jar \
 ### RF2 Output
 All RF2 files are written to "output/RF2" ready to be zipped into an RF2 snapshot archive.   
 **Please note**: Inferred relationship records have throw-away generated identifiers in a demo namespace that must not be relied upon.
+
+### Subset Parsing with Descendants
+When using the `-output-rf2` flag, the subset file can include concept IDs with a `<<` flag to automatically include all descendants of those concepts. This is useful for including entire hierarchies in your subontology.
+
+**Format:**
+- Regular concept IDs: `131148009` or `131148009 |Bleeding (finding)|`
+- Concepts with descendants: `<<239161005` or `<<239161005 |Wound hemorrhage (finding)|`
+
+**Example subset file:**
+```
+131148009 |Bleeding (finding)|
+<<239161005 |Wound hemorrhage (finding)|
+16541001 |Yellow fever (disorder)|
+```
+
+This will include:
+- Concept 131148009 directly
+- Concept 239161005 and all its descendants (found using the RF2 inferred hierarchy)
+- Concept 16541001 directly
+
+The tool will use the inferred hierarchy from the RF2 snapshot archive to identify all descendants of any flagged concepts.
+
+**Note:** Concept terms (e.g., `|Bleeding (finding)|`) are optional and are ignored during parsing. They are useful for documentation purposes to make subset files more readable.
