@@ -91,6 +91,10 @@ The tool will use the inferred hierarchy from the RF2 snapshot archive to identi
 
 **Note:** Concept terms (e.g., `|Bleeding (finding)|`) are optional and are ignored during parsing. They are useful for documentation purposes to make subset files more readable.
 
+### Module Concept Inclusion
+
+When using the `-output-rf2` flag, the tool automatically collects and includes module concepts in the RF2 output. This ensures that all necessary module metadata is available for the extracted subontology.
+
 ### Inactive Concept Handling
 
 When using the `-output-rf2` flag, the tool automatically detects inactive concepts in the subset file and logs warnings. Inactive concepts are those that exist in the RF2 archive but have `active=0`.
@@ -101,6 +105,7 @@ When using the `-output-rf2` flag, the tool automatically detects inactive conce
 - **Summary Report**: A summary of inactive and missing concepts is displayed at the end
 - **Optional Inclusion**: Use the `-include-inactive` flag to include inactive concepts in RF2 output
 - **Unified RF2 Files**: Inactive concepts are appended to the same RF2 files as active concepts (not separate files)
+- **Automatic Module Inclusion**: Modules of inactive concepts are automatically collected and included in RF2 output
 
 **Example Output:**
 ```

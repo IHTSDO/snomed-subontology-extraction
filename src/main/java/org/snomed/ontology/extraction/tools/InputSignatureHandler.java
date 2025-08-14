@@ -351,12 +351,14 @@ public abstract class InputSignatureHandler {
 	 * Simple data class to hold concept information
 	 */
 	public static class ConceptInfo {
-		final Long conceptId;
-		final String active;
+		public final Long conceptId;
+		public final String active;
+		public final String moduleId;
 		
-		public ConceptInfo(Long conceptId, String active) {
+		public ConceptInfo(Long conceptId, String active, String moduleId) {
 			this.conceptId = conceptId;
 			this.active = active;
+			this.moduleId = moduleId;
 		}
 	}
 

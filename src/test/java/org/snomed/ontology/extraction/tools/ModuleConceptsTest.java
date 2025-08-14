@@ -11,12 +11,12 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class InactiveConceptsTest {
+public class ModuleConceptsTest {
 
     @Test
-    public void testInactiveConceptDetection() throws IOException {
-        // Create a test subset file with some concepts
-        File subsetFile = File.createTempFile("test_inactive_subset", ".txt");
+    public void testModuleConceptCollection() throws IOException {
+        // Create a test subset file with concepts that have different module IDs
+        File subsetFile = File.createTempFile("test_module_subset", ".txt");
         subsetFile.deleteOnExit();
         
         try (FileWriter writer = new FileWriter(subsetFile)) {
@@ -32,23 +32,28 @@ public class InactiveConceptsTest {
         Set<OWLClass> classes = InputSignatureHandler.readRefsetWithDescendantsAndTracking(
             subsetFile, null, inactiveConcepts, missingConcepts);
         
-        // Should have 3 concepts (no RF2 archive, so no inactive/missing detection)
+        // Should have 3 concepts (no RF2 archive, so no module detection)
         assertEquals(3, classes.size());
         assertEquals(0, inactiveConcepts.size());
         assertEquals(0, missingConcepts.size());
     }
     
     @Test
-    public void testConceptInfoClass() {
-        // Test the ConceptInfo class
-        InputSignatureHandler.ConceptInfo activeConcept = new InputSignatureHandler.ConceptInfo(12345L, "1", "900000000000207008");
-        InputSignatureHandler.ConceptInfo inactiveConcept = new InputSignatureHandler.ConceptInfo(67890L, "0", "900000000000207008");
+    public void testConceptInfoWithModuleId() {
+        // Test the ConceptInfo class with module ID
+        InputSignatureHandler.ConceptInfo concept = new InputSignatureHandler.ConceptInfo(
+            12345L, "1", "900000000000207008");
         
-        assertEquals(12345L, activeConcept.conceptId);
-        assertEquals("1", activeConcept.active);
-        assertEquals("900000000000207008", activeConcept.moduleId);
-        assertEquals(67890L, inactiveConcept.conceptId);
-        assertEquals("0", inactiveConcept.active);
-        assertEquals("900000000000207008", inactiveConcept.moduleId);
+        assertEquals(12345L, concept.conceptId);
+        assertEquals("1", concept.active);
+        assertEquals("900000000000207008", concept.moduleId);
+        
+        // Test with different module ID
+        InputSignatureHandler.ConceptInfo concept2 = new InputSignatureHandler.ConceptInfo(
+            67890L, "0", "900000000000441003");
+        
+        assertEquals(67890L, concept2.conceptId);
+        assertEquals("0", concept2.active);
+        assertEquals("900000000000441003", concept2.moduleId);
     }
 }

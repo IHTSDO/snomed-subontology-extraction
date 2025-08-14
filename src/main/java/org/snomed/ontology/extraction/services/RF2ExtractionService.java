@@ -97,6 +97,16 @@ public class RF2ExtractionService {
 		logger.info("Inactive concepts appending complete.");
 	}
 
+	public void appendModuleConcepts(InputStream rf2SnapshotArchive, Set<Long> moduleConceptIds, File rf2Directory)
+			throws ReleaseImportException, IOException {
+		logger.info("Appending {} module concepts to existing RF2 files.", moduleConceptIds.size());
+		ReleaseImporter releaseImporter = new ReleaseImporter();
+		try (RF2AppendingWriter appendingWriter = new RF2AppendingWriter(moduleConceptIds, rf2Directory)) {
+			releaseImporter.loadEffectiveSnapshotReleaseFileStreams(Collections.singleton(rf2SnapshotArchive), INACTIVE_CONCEPTS_LOADING_PROFILE, appendingWriter, false);
+		}
+		logger.info("Module concepts appending complete.");
+	}
+
 	public static void main(String[] args) throws IOException, ReleaseImportException {
 		File outputDirectory = new File("rf2-extract");
 		FileUtils.deleteDirectory(outputDirectory);

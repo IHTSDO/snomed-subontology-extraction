@@ -3,13 +3,18 @@ package org.snomed.ontology.extraction.services;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
+import org.snomed.ontology.extraction.tools.InputSignatureHandler;
 import org.snomed.ontology.extraction.writers.OWLtoRF2Service;
 import org.snomed.ontology.extraction.writers.RF2Printer;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
+import java.util.function.Consumer;
+
 import java.io.*;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /*
@@ -124,6 +129,9 @@ public class SubOntologyRF2ConversionService {
 
 		File subontologyRF2 = new File(outputDirectory, "RF2");
 		new RF2ExtractionService().extractConcepts(new FileInputStream(backgroundFile), entityIDs, subontologyRF2);
+		
+		// Collect and include module concepts
+		collectAndIncludeModuleConcepts(backgroundFile, entityIDs, subontologyRF2);
 	}
 
 	private static void addMetadataConcepts(Set<Long> entityIDs, String... conceptIdTerm) {
@@ -142,6 +150,69 @@ public class SubOntologyRF2ConversionService {
 		try (InputStream owlFileStreamAuthoring = new BufferedInputStream(new FileInputStream(new File(outputDirectory, "subOntology.owl")))) {
 			File rf2ZipAuthoring = new File(outputDirectory, OWLRefsetRF2Filename + ".zip");
 			owlToRF2Converter.writeToRF2(owlFileStreamAuthoring, new FileOutputStream(rf2ZipAuthoring), new Date());
+		}
+	}
+
+	private static void collectAndIncludeModuleConcepts(File backgroundFile, Set<Long> entityIDs, File rf2Directory) throws IOException, ReleaseImportException {
+		System.out.println("Collecting module IDs for all extracted concepts...");
+		
+		// Create a fast lookup map for all concept ID to module ID mappings
+		Map<Long, Long> conceptToModuleMap = new HashMap<>();
+		
+		// Load all concept information from RF2 once
+		Consumer<InputSignatureHandler.ConceptInfo> allConceptInfoConsumer = conceptInfo -> {
+			conceptToModuleMap.put(conceptInfo.conceptId, Long.parseLong(conceptInfo.moduleId));
+		};
+		
+		RF2ExtractionService extractionService = new RF2ExtractionService();
+		extractionService.extractConceptsOnly(
+			new FileInputStream(backgroundFile), 
+			allConceptInfoConsumer
+		);
+		
+		// Collect module IDs from all concepts being extracted
+		Set<Long> moduleConceptIds = new HashSet<>();
+		for (Long entityId : entityIDs) {
+			Long moduleId = conceptToModuleMap.get(entityId);
+			if (moduleId != null) {
+				moduleConceptIds.add(moduleId);
+				System.out.println("Found module concept: " + moduleId);
+			}
+		}
+		
+		// Collect module hierarchy (modules of modules) using the in-memory map
+		Set<Long> allModuleIds = new HashSet<>(moduleConceptIds);
+		boolean foundNewModules;
+		do {
+			foundNewModules = false;
+			Set<Long> newModuleIds = new HashSet<>();
+			
+			for (Long moduleId : allModuleIds) {
+				Long parentModuleId = conceptToModuleMap.get(moduleId);
+				if (parentModuleId != null && !allModuleIds.contains(parentModuleId)) {
+					newModuleIds.add(parentModuleId);
+					System.out.println("Found parent module concept: " + parentModuleId);
+				}
+			}
+			
+			if (!newModuleIds.isEmpty()) {
+				allModuleIds.addAll(newModuleIds);
+				foundNewModules = true;
+			}
+		} while (foundNewModules);
+		
+		// Remove module IDs that are already in the entity set
+		allModuleIds.removeAll(entityIDs);
+		
+		if (!allModuleIds.isEmpty()) {
+			System.out.println("Including " + allModuleIds.size() + " additional module concepts in RF2 output");
+			extractionService.appendModuleConcepts(
+				new FileInputStream(backgroundFile), 
+				allModuleIds, 
+				rf2Directory
+			);
+		} else {
+			System.out.println("No additional module concepts to include");
 		}
 	}
 

@@ -15,6 +15,6 @@ public class ConceptInfoComponentFactory extends ImpotentComponentFactory {
 
 	@Override
 	public void newConceptState(String conceptId, String effectiveTime, String active, String moduleId, String definitionStatusId) {
-		conceptInfoConsumer.accept(new ConceptInfo(Long.parseLong(conceptId), active));
+		conceptInfoConsumer.accept(new ConceptInfo(Long.parseLong(conceptId), active, moduleId));
 	}
 }
