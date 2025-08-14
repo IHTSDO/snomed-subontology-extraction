@@ -1,10 +1,11 @@
 package org.snomed.ontology.extraction.tools;
 
+import it.unimi.dsi.fastutil.Pair;
+import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.model.*;
 import org.snomed.ontology.extraction.classification.OntologyReasoningService;
 import org.snomed.ontology.extraction.exception.ReasonerException;
 import org.snomed.ontology.extraction.services.RF2ExtractionService;
-import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.model.*;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -14,7 +15,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import it.unimi.dsi.fastutil.Pair;
 
 public abstract class InputSignatureHandler {
 
@@ -78,6 +78,23 @@ public abstract class InputSignatureHandler {
 		return readRefsetTxtWithDescendants(refsetFile, rf2SnapshotArchive);
 	}
 
+	/**
+	 * Reads a subset file and tracks inactive/missing concepts for RF2 output.
+	 * 
+	 * @param refsetFile The subset file to read
+	 * @param rf2SnapshotArchive Optional RF2 snapshot archive for hierarchy lookup
+	 * @param inactiveConcepts Output set to collect inactive concept IDs
+	 * @param missingConcepts Output set to collect missing concept IDs
+	 * @return Set of OWL classes representing the concepts to include
+	 */
+	public static Set<OWLClass> readRefsetWithDescendantsAndTracking(File refsetFile, File rf2SnapshotArchive, 
+			Set<Long> inactiveConcepts, Set<Long> missingConcepts) {
+		if(refsetFile.getName().endsWith(".json")) {
+			return readRefsetJson(refsetFile);
+		}
+		return readRefsetTxtWithDescendantsAndTracking(refsetFile, rf2SnapshotArchive, inactiveConcepts, missingConcepts);
+	}
+
 	private static Set<OWLClass> readRefsetJson(File refsetFile) {
 		OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
 		Set<OWLClass> classes = new HashSet<OWLClass>();
@@ -118,10 +135,18 @@ public abstract class InputSignatureHandler {
 	}
 
 	private static Set<OWLClass> readRefsetTxtWithDescendants(File refsetFile, File rf2SnapshotArchive) {
+		Set<Long> inactiveConcepts = new HashSet<>();
+		Set<Long> missingConcepts = new HashSet<>();
+		return readRefsetTxtWithDescendantsAndTracking(refsetFile, rf2SnapshotArchive, inactiveConcepts, missingConcepts);
+	}
+
+	private static Set<OWLClass> readRefsetTxtWithDescendantsAndTracking(File refsetFile, File rf2SnapshotArchive, 
+			Set<Long> inactiveConcepts, Set<Long> missingConcepts) {
 		OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
 		Set<OWLClass> classes = new HashSet<>();
 		Set<Long> conceptsWithDescendants = new HashSet<>();
 		Set<Long> directConcepts = new HashSet<>();
+		Set<Long> allRequestedConcepts = new HashSet<>();
 		
 		try (BufferedReader br = new BufferedReader(new FileReader(refsetFile))) {
 			String inLine = "";
@@ -135,14 +160,18 @@ public abstract class InputSignatureHandler {
 						// Extract concept ID from line with flag, handling optional terms
 						String conceptId = extractConceptIdFromLine(inLine, DESCENDANT_FLAG);
 						if (conceptId != null && conceptId.matches("\\d+")) {
-							conceptsWithDescendants.add(Long.parseLong(conceptId));
+							Long conceptIdLong = Long.parseLong(conceptId);
+							conceptsWithDescendants.add(conceptIdLong);
+							allRequestedConcepts.add(conceptIdLong);
 							System.out.println("Adding concept with descendants: " + conceptId);
 						}
 					} else {
 						// Regular concept ID, handling optional terms
 						String conceptId = extractConceptIdFromLine(inLine, null);
 						if (conceptId != null && conceptId.matches("\\d+")) {
-							directConcepts.add(Long.parseLong(conceptId));
+							Long conceptIdLong = Long.parseLong(conceptId);
+							directConcepts.add(conceptIdLong);
+							allRequestedConcepts.add(conceptIdLong);
 							System.out.println("Adding direct concept: " + conceptId);
 						}
 					}
@@ -169,6 +198,11 @@ public abstract class InputSignatureHandler {
 			for (Long conceptId : conceptsWithDescendants) {
 				classes.add(df.getOWLClass(IRI.create(snomedIRIString + conceptId)));
 			}
+		}
+		
+		// Check for inactive/missing concepts if RF2 archive is provided
+		if (rf2SnapshotArchive != null) {
+			checkForInactiveAndMissingConcepts(rf2SnapshotArchive, allRequestedConcepts, inactiveConcepts, missingConcepts);
 		}
 		
 		System.out.println(classes.size() + " identifiers read from input subset.");
@@ -263,6 +297,67 @@ public abstract class InputSignatureHandler {
 		}
 		
 		return descendants;
+	}
+
+	/**
+	 * Checks for inactive and missing concepts in the RF2 archive
+	 * 
+	 * @param rf2SnapshotArchive The RF2 snapshot archive to check
+	 * @param requestedConcepts Set of concept IDs requested in the subset
+	 * @param inactiveConcepts Output set to collect inactive concept IDs
+	 * @param missingConcepts Output set to collect missing concept IDs
+	 */
+	private static void checkForInactiveAndMissingConcepts(File rf2SnapshotArchive, Set<Long> requestedConcepts, 
+			Set<Long> inactiveConcepts, Set<Long> missingConcepts) {
+		try {
+			Set<Long> foundConcepts = new HashSet<>();
+			Set<Long> inactiveFoundConcepts = new HashSet<>();
+			
+			// Create a component factory to collect concept information
+			Consumer<ConceptInfo> conceptInfoConsumer = conceptInfo -> {
+				if (requestedConcepts.contains(conceptInfo.conceptId)) {
+					foundConcepts.add(conceptInfo.conceptId);
+					if ("0".equals(conceptInfo.active)) {
+						inactiveFoundConcepts.add(conceptInfo.conceptId);
+					}
+				}
+			};
+			
+			// Load all concepts from RF2 (including inactive ones)
+			RF2ExtractionService extractionService = new RF2ExtractionService();
+			extractionService.extractConceptsOnly(
+				new FileInputStream(rf2SnapshotArchive), 
+				conceptInfoConsumer
+			);
+			
+			// Determine missing and inactive concepts
+			for (Long conceptId : requestedConcepts) {
+				if (!foundConcepts.contains(conceptId)) {
+					missingConcepts.add(conceptId);
+					System.out.println("Warning: Concept " + conceptId + " not found in RF2 archive");
+				} else if (inactiveFoundConcepts.contains(conceptId)) {
+					inactiveConcepts.add(conceptId);
+					System.out.println("Warning: Concept " + conceptId + " is inactive in RF2 archive");
+				}
+			}
+			
+		} catch (Exception e) {
+			System.err.println("Error checking for inactive/missing concepts: " + e.getMessage());
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Simple data class to hold concept information
+	 */
+	public static class ConceptInfo {
+		final Long conceptId;
+		final String active;
+		
+		public ConceptInfo(Long conceptId, String active) {
+			this.conceptId = conceptId;
+			this.active = active;
+		}
 	}
 
 	public static Set<OWLClass> readClassesNonSCTFile(File signatureFile, String inputIRI) {

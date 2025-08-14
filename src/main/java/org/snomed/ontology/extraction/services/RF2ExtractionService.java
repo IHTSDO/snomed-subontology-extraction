@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils;
 import org.ihtsdo.otf.snomedboot.ReleaseImportException;
 import org.ihtsdo.otf.snomedboot.ReleaseImporter;
 import org.ihtsdo.otf.snomedboot.factory.LoadingProfile;
+import org.snomed.ontology.extraction.tools.InputSignatureHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +31,19 @@ public class RF2ExtractionService {
 			.withoutInactiveRelationships()
 			.withoutInactiveRefsetMembers();
 
+	private static final LoadingProfile CONCEPTS_ONLY_LOADING_PROFILE = LoadingProfile.light
+			.withInactiveConcepts()
+			.withoutDescriptions()
+			.withoutTextDefinitions()
+			.withoutRelationships()
+			.withoutAnyRefsets();
+
+	private static final LoadingProfile INACTIVE_CONCEPTS_LOADING_PROFILE = LoadingProfile.complete
+			.withInactiveConcepts()
+			.withoutInactiveDescriptions()
+			.withInactiveRelationships()
+			.withoutInactiveRefsetMembers();
+
 	public void extractConcepts(InputStream rf2SnapshotArchive, Set<Long> conceptIds, File outputDirectory)
 			throws ReleaseImportException, IOException {
 		logger.info("Extracting {} concepts from RF2.", conceptIds.size());
@@ -52,6 +66,35 @@ public class RF2ExtractionService {
 		releaseImporter.loadEffectiveSnapshotReleaseFileStreams(Collections.singleton(rf2SnapshotArchive), relationshipOnlyLoadingProfile,
 				new RelationshipComponentFactory(parentChildPairConsumer), false);
 		logger.info("Inferred hierarchy extraction complete.");
+	}
+
+	public void extractConceptsOnly(InputStream rf2SnapshotArchive, Consumer<InputSignatureHandler.ConceptInfo> conceptInfoConsumer) throws ReleaseImportException {
+		logger.info("Extracting all concepts (including inactive) from RF2 for validation.");
+		ReleaseImporter releaseImporter = new ReleaseImporter();
+		releaseImporter.loadEffectiveSnapshotReleaseFileStreams(Collections.singleton(rf2SnapshotArchive), CONCEPTS_ONLY_LOADING_PROFILE,
+				new ConceptInfoComponentFactory(conceptInfoConsumer), false);
+		logger.info("All concepts extraction complete.");
+	}
+
+	public void extractInactiveConcepts(InputStream rf2SnapshotArchive, Set<Long> inactiveConceptIds, File outputDirectory)
+			throws ReleaseImportException, IOException {
+		logger.info("Extracting {} inactive concepts from RF2.", inactiveConceptIds.size());
+		ReleaseImporter releaseImporter = new ReleaseImporter();
+		String dateString = dateFormat.format(new Date());
+		try (RF2ExtractionWriter extractionWriter = new RF2ExtractionWriter(inactiveConceptIds, dateString, outputDirectory)) {
+			releaseImporter.loadEffectiveSnapshotReleaseFileStreams(Collections.singleton(rf2SnapshotArchive), INACTIVE_CONCEPTS_LOADING_PROFILE, extractionWriter, false);
+		}
+		logger.info("Inactive concepts extraction complete.");
+	}
+
+	public void appendInactiveConcepts(InputStream rf2SnapshotArchive, Set<Long> inactiveConceptIds, File rf2Directory)
+			throws ReleaseImportException, IOException {
+		logger.info("Appending {} inactive concepts to existing RF2 files.", inactiveConceptIds.size());
+		ReleaseImporter releaseImporter = new ReleaseImporter();
+		try (RF2AppendingWriter appendingWriter = new RF2AppendingWriter(inactiveConceptIds, rf2Directory)) {
+			releaseImporter.loadEffectiveSnapshotReleaseFileStreams(Collections.singleton(rf2SnapshotArchive), INACTIVE_CONCEPTS_LOADING_PROFILE, appendingWriter, false);
+		}
+		logger.info("Inactive concepts appending complete.");
 	}
 
 	public static void main(String[] args) throws IOException, ReleaseImportException {

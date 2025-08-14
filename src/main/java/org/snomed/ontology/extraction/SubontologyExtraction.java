@@ -8,6 +8,7 @@ import org.semanticweb.owlapi.model.OWLException;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.snomed.ontology.extraction.definitiongeneration.RedundancyOptions;
 import org.snomed.ontology.extraction.exception.ReasonerException;
+import org.snomed.ontology.extraction.services.RF2ExtractionService;
 import org.snomed.ontology.extraction.services.SubOntologyExtractionHandler;
 import org.snomed.ontology.extraction.services.SubOntologyRF2ConversionService;
 import org.snomed.ontology.extraction.tools.InputSignatureHandler;
@@ -18,6 +19,7 @@ import org.snomed.ontology.extraction.writers.OntologySaver;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -34,6 +36,7 @@ public class SubontologyExtraction {
 	private static final String ARG_OUTPUT_PATH = "-output-path";
 	private static final String ARG_RF2_SNAPSHOT_ARCHIVE = "-rf2-snapshot-archive";
 	private static final String ARG_VERIFY_SUBONTOLOGY = "-verify-subontology";
+	private static final String ARG_INCLUDE_INACTIVE = "-include-inactive";
 
 	public static void main(String[] argsArray) {
 		try {
@@ -58,6 +61,7 @@ public class SubontologyExtraction {
 		final File sourceOntologyFile = getFile(getRequiredParameterValue(ARG_SOURCE_ONTOLOGY_FILE, args));
 
 		boolean outputRF2 = isFlag(ARG_OUTPUT_RF2, args);
+		boolean includeInactive = isFlag(ARG_INCLUDE_INACTIVE, args);
 		//if computing RF2, provide RF2 files corresponding to the sourceOntologyFile OWL file for OWL to RF2 conversion -- ensure same ontology version as sourceOntologyFile
 		File sourceRF2File = null;
 		if(outputRF2) {
@@ -70,9 +74,12 @@ public class SubontologyExtraction {
 		File inputRefsetFile = getFile(getRequiredParameterValue(ARG_INPUT_SUBSET, args));
 		// if focus concepts specified as refset
 		Set<OWLClass> conceptsToDefine;
+		Set<Long> inactiveConcepts = new HashSet<>();
+		Set<Long> missingConcepts = new HashSet<>();
+		
 		if (outputRF2 && sourceRF2File != null) {
 			// Use enhanced parsing that supports "<<" flag for descendants when RF2 archive is available
-			conceptsToDefine = InputSignatureHandler.readRefsetWithDescendants(inputRefsetFile, sourceRF2File);
+			conceptsToDefine = InputSignatureHandler.readRefsetWithDescendantsAndTracking(inputRefsetFile, sourceRF2File, inactiveConcepts, missingConcepts);
 		} else {
 			// Use standard parsing when no RF2 archive is provided
 			conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
@@ -137,6 +144,19 @@ public class SubontologyExtraction {
 			OntologySaver.saveOntology(nnfOntology, outputDirectory, "subOntologyNNFs.owl");
 
 			SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputDirectory, sourceRF2File);
+			
+			// Handle inactive concepts if requested
+			if (includeInactive && !inactiveConcepts.isEmpty()) {
+				System.out.println("Including " + inactiveConcepts.size() + " inactive concepts in RF2 output");
+				RF2ExtractionService extractionService = new RF2ExtractionService();
+				// Append inactive concepts to the same RF2 files as active concepts
+				File rf2Directory = new File(outputDirectory, "RF2");
+				extractionService.appendInactiveConcepts(
+					new FileInputStream(sourceRF2File), 
+					inactiveConcepts, 
+					rf2Directory
+				);
+			}
 		}
 		if(verifySubontology) {
 			VerificationChecker checker = new VerificationChecker();
@@ -186,6 +206,28 @@ public class SubontologyExtraction {
 				System.out.println("Supporting classes with incrementally added definitions: " + generator.getSupportingClassesWithAddedDefinitions().toString());
 			}
 		}
+		
+		// Log summary of inactive and missing concepts
+		if (outputRF2 && sourceRF2File != null) {
+			if (!inactiveConcepts.isEmpty()) {
+				System.out.println("=== INACTIVE CONCEPTS SUMMARY ===");
+				System.out.println("Found " + inactiveConcepts.size() + " inactive concepts:");
+				for (Long conceptId : inactiveConcepts) {
+					System.out.println("  " + conceptId);
+				}
+				if (!includeInactive) {
+					System.out.println("Note: Use -include-inactive flag to include these concepts in RF2 output");
+				}
+			}
+			
+			if (!missingConcepts.isEmpty()) {
+				System.out.println("=== MISSING CONCEPTS SUMMARY ===");
+				System.out.println("Found " + missingConcepts.size() + " concepts not present in RF2 archive:");
+				for (Long conceptId : missingConcepts) {
+					System.out.println("  " + conceptId);
+				}
+			}
+		}
 	}
 
 	private void printHelp() {
@@ -231,6 +273,11 @@ public class SubontologyExtraction {
 						pad(ARG_VERIFY_SUBONTOLOGY) +
 						"(Optional) runs verification for the computed subontology to check steps 1 and 2 above.\n" +
 						pad("") + "Warning: this can be expensive for larger subontologies.\n" +
+						"\n" +
+
+						pad(ARG_INCLUDE_INACTIVE) +
+						"(Optional) includes inactive concepts in RF2 output when using " + ARG_OUTPUT_RF2 + ".\n" +
+						pad("") + "Inactive concepts will be included with active=0 in the RF2 files.\n" +
 						"\n" +
 
 						"");

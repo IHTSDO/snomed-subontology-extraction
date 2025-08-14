@@ -90,3 +90,41 @@ This will include:
 The tool will use the inferred hierarchy from the RF2 snapshot archive to identify all descendants of any flagged concepts.
 
 **Note:** Concept terms (e.g., `|Bleeding (finding)|`) are optional and are ignored during parsing. They are useful for documentation purposes to make subset files more readable.
+
+### Inactive Concept Handling
+
+When using the `-output-rf2` flag, the tool automatically detects inactive concepts in the subset file and logs warnings. Inactive concepts are those that exist in the RF2 archive but have `active=0`.
+
+**Features:**
+- **Automatic Detection**: The tool scans the RF2 archive to identify inactive concepts in your subset
+- **Warning Logs**: Inactive and missing concepts are logged with warnings during processing
+- **Summary Report**: A summary of inactive and missing concepts is displayed at the end
+- **Optional Inclusion**: Use the `-include-inactive` flag to include inactive concepts in RF2 output
+- **Unified RF2 Files**: Inactive concepts are appended to the same RF2 files as active concepts (not separate files)
+
+**Example Output:**
+```
+Warning: Concept 123456789 is inactive in RF2 archive
+Warning: Concept 987654321 not found in RF2 archive
+
+=== INACTIVE CONCEPTS SUMMARY ===
+Found 1 inactive concepts:
+  123456789
+Note: Use --include-inactive flag to include these concepts in RF2 output
+
+=== MISSING CONCEPTS SUMMARY ===
+Found 1 concepts not present in RF2 archive:
+  987654321
+```
+
+**Usage:**
+```bash
+# Include inactive concepts in RF2 output
+java -jar snomed-subontology-extraction-2.1.0-SNAPSHOT-executable.jar \
+  -source-ontology source.owl \
+  -input-subset subset.txt \
+  -rf2-snapshot-archive SnomedCT_InternationalRF2_PRODUCTION_20200731T120000Z.zip \
+  -output-rf2 \
+  -include-inactive \
+  -output-path output
+```
