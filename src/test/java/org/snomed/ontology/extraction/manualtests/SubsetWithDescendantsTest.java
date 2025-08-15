@@ -6,6 +6,7 @@ import org.semanticweb.owlapi.model.OWLClass;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -40,7 +41,7 @@ public class SubsetWithDescendantsTest {
             
             // Test parsing without RF2 archive (will just add root concepts)
             System.out.println("Testing parsing without RF2 archive:");
-            Set<OWLClass> classesWithoutRF2 = InputSignatureHandler.readRefsetWithDescendants(subsetFile, null);
+            Set<OWLClass> classesWithoutRF2 = InputSignatureHandler.readRefset(subsetFile);
             System.out.println("Found " + classesWithoutRF2.size() + " concepts");
             for (OWLClass cls : classesWithoutRF2) {
                 System.out.println("  " + cls.getIRI().toString());

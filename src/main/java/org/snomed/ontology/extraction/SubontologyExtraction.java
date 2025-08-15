@@ -8,7 +8,7 @@ import org.semanticweb.owlapi.model.OWLException;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.snomed.ontology.extraction.definitiongeneration.RedundancyOptions;
 import org.snomed.ontology.extraction.exception.ReasonerException;
-import org.snomed.ontology.extraction.services.RF2ExtractionService;
+import org.snomed.ontology.extraction.services.RF2InformationCache;
 import org.snomed.ontology.extraction.services.SubOntologyExtractionHandler;
 import org.snomed.ontology.extraction.services.SubOntologyRF2ConversionService;
 import org.snomed.ontology.extraction.tools.InputSignatureHandler;
@@ -19,8 +19,8 @@ import org.snomed.ontology.extraction.writers.OntologySaver;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -76,10 +76,14 @@ public class SubontologyExtraction {
 		Set<OWLClass> conceptsToDefine;
 		Set<Long> inactiveConcepts = new HashSet<>();
 		Set<Long> missingConcepts = new HashSet<>();
-		
+
+		RF2InformationCache rf2Cache = new RF2InformationCache();
 		if (outputRF2 && sourceRF2File != null) {
-			// Use enhanced parsing that supports "<<" flag for descendants when RF2 archive is available
-			conceptsToDefine = InputSignatureHandler.readRefsetWithDescendantsAndTracking(inputRefsetFile, sourceRF2File, inactiveConcepts, missingConcepts);
+			// Load RF2 information cache once for efficient processing
+			rf2Cache = new RF2InformationCache();
+			rf2Cache.loadRF2Information(sourceRF2File);
+			// Use enhanced parsing with cached RF2 information
+			conceptsToDefine = InputSignatureHandler.readRefsetWithDescendantsAndTracking(inputRefsetFile, rf2Cache, inactiveConcepts, missingConcepts);
 		} else {
 			// Use standard parsing when no RF2 archive is provided
 			conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
@@ -142,21 +146,8 @@ public class SubontologyExtraction {
 			//generator.generateNNFs();
 			OWLOntology nnfOntology = generator.getNnfOntology();
 			OntologySaver.saveOntology(nnfOntology, outputDirectory, "subOntologyNNFs.owl");
-
-			SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, outputDirectory, sourceRF2File);
-			
-			// Handle inactive concepts if requested
-			if (includeInactive && !inactiveConcepts.isEmpty()) {
-				System.out.println("Including " + inactiveConcepts.size() + " inactive concepts in RF2 output");
-				RF2ExtractionService extractionService = new RF2ExtractionService();
-				// Append inactive concepts to the same RF2 files as active concepts
-				File rf2Directory = new File(outputDirectory, "RF2");
-				extractionService.appendInactiveConcepts(
-					new FileInputStream(sourceRF2File), 
-					inactiveConcepts, 
-					rf2Directory
-				);
-			}
+			SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, includeInactive ? inactiveConcepts : Collections.emptySet(),
+					outputDirectory, sourceRF2File, rf2Cache);
 		}
 		if(verifySubontology) {
 			VerificationChecker checker = new VerificationChecker();

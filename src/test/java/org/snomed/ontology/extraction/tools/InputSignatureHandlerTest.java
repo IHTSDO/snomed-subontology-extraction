@@ -8,6 +8,7 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,9 +29,9 @@ public class InputSignatureHandlerTest {
         }
         
         // Test parsing without RF2 archive (should just add root concepts)
-        Set<OWLClass> classes = InputSignatureHandler.readRefsetWithDescendants(tempFile, null);
+        Set<OWLClass> classes = InputSignatureHandler.readRefset(tempFile);
         
-        // Should have 4 concepts (2 direct + 2 with descendant flags)
+        // Should have 4 concepts (readRefset doesn't handle << flag, so all are treated as direct concepts)
         assertEquals(4, classes.size());
         
         // Verify the concepts are present
@@ -66,9 +67,9 @@ public class InputSignatureHandlerTest {
         }
         
         // Test parsing without RF2 archive
-        Set<OWLClass> classes = InputSignatureHandler.readRefsetWithDescendants(tempFile, null);
+        Set<OWLClass> classes = InputSignatureHandler.readRefset(tempFile);
         
-        // Should have 3 concepts
+        // Should have 3 concepts (readRefset doesn't handle << flag, so all are treated as direct concepts)
         assertEquals(3, classes.size());
         
         // Verify the concepts are present
@@ -101,9 +102,9 @@ public class InputSignatureHandlerTest {
         }
         
         // Test parsing without RF2 archive
-        Set<OWLClass> classes = InputSignatureHandler.readRefsetWithDescendants(tempFile, null);
+        Set<OWLClass> classes = InputSignatureHandler.readRefset(tempFile);
         
-        // Should have 3 concepts
+        // Should have 3 concepts (readRefset doesn't handle << flag, so all are treated as direct concepts)
         assertEquals(3, classes.size());
         
         // Verify the concepts are present

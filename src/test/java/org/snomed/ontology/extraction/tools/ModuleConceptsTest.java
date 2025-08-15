@@ -2,6 +2,8 @@ package org.snomed.ontology.extraction.tools;
 
 import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.model.OWLClass;
+import org.snomed.ontology.extraction.services.RF2InformationCache;
+import org.snomed.otf.owltoolkit.constants.Concepts;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -28,9 +30,14 @@ public class ModuleConceptsTest {
         // Test parsing with tracking (without RF2 archive)
         Set<Long> inactiveConcepts = new HashSet<>();
         Set<Long> missingConcepts = new HashSet<>();
-        
-        Set<OWLClass> classes = InputSignatureHandler.readRefsetWithDescendantsAndTracking(
-            subsetFile, null, inactiveConcepts, missingConcepts);
+
+		RF2InformationCache rf2Cache = new RF2InformationCache();
+		rf2Cache.newConceptState("131148009", "20250801", "1", "900000000000207008", Concepts.PRIMITIVE);
+		rf2Cache.newConceptState("239161005", "20250801", "1", "900000000000207008", Concepts.PRIMITIVE);
+		rf2Cache.newConceptState("16541001", "20250801", "1", "900000000000207008", Concepts.PRIMITIVE);
+
+		Set<OWLClass> classes = InputSignatureHandler.readRefsetWithDescendantsAndTracking(
+            subsetFile, rf2Cache, inactiveConcepts, missingConcepts);
         
         // Should have 3 concepts (no RF2 archive, so no module detection)
         assertEquals(3, classes.size());
@@ -38,22 +45,4 @@ public class ModuleConceptsTest {
         assertEquals(0, missingConcepts.size());
     }
     
-    @Test
-    public void testConceptInfoWithModuleId() {
-        // Test the ConceptInfo class with module ID
-        InputSignatureHandler.ConceptInfo concept = new InputSignatureHandler.ConceptInfo(
-            12345L, "1", "900000000000207008");
-        
-        assertEquals(12345L, concept.conceptId);
-        assertEquals("1", concept.active);
-        assertEquals("900000000000207008", concept.moduleId);
-        
-        // Test with different module ID
-        InputSignatureHandler.ConceptInfo concept2 = new InputSignatureHandler.ConceptInfo(
-            67890L, "0", "900000000000441003");
-        
-        assertEquals(67890L, concept2.conceptId);
-        assertEquals("0", concept2.active);
-        assertEquals("900000000000441003", concept2.moduleId);
-    }
 }

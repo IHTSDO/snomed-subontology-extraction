@@ -38,17 +38,4 @@ public class InactiveConceptsTest {
         assertEquals(0, missingConcepts.size());
     }
     
-    @Test
-    public void testConceptInfoClass() {
-        // Test the ConceptInfo class
-        InputSignatureHandler.ConceptInfo activeConcept = new InputSignatureHandler.ConceptInfo(12345L, "1", "900000000000207008");
-        InputSignatureHandler.ConceptInfo inactiveConcept = new InputSignatureHandler.ConceptInfo(67890L, "0", "900000000000207008");
-        
-        assertEquals(12345L, activeConcept.conceptId);
-        assertEquals("1", activeConcept.active);
-        assertEquals("900000000000207008", activeConcept.moduleId);
-        assertEquals(67890L, inactiveConcept.conceptId);
-        assertEquals("0", inactiveConcept.active);
-        assertEquals("900000000000207008", inactiveConcept.moduleId);
-    }
 }
