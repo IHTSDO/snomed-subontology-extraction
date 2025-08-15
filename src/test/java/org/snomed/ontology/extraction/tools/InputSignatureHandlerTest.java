@@ -13,10 +13,10 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class InputSignatureHandlerTest {
+class InputSignatureHandlerTest {
 
     @Test
-    public void testReadRefsetWithDescendants() throws IOException {
+    void testReadRefsetWithDescendants() throws IOException {
         // Create a temporary test file
         File tempFile = File.createTempFile("test_subset", ".txt");
         tempFile.deleteOnExit();
@@ -55,7 +55,7 @@ public class InputSignatureHandlerTest {
     }
     
     @Test
-    public void testReadRefsetWithWhitespace() throws IOException {
+    void testReadRefsetWithWhitespace() throws IOException {
         // Create a temporary test file with whitespace around the flag
         File tempFile = File.createTempFile("test_subset_whitespace", ".txt");
         tempFile.deleteOnExit();
@@ -90,7 +90,7 @@ public class InputSignatureHandlerTest {
     }
     
     @Test
-    public void testReadRefsetWithTerms() throws IOException {
+    void testReadRefsetWithTerms() throws IOException {
         // Create a temporary test file with concept terms
         File tempFile = File.createTempFile("test_subset_terms", ".txt");
         tempFile.deleteOnExit();

@@ -36,7 +36,7 @@ public class SubontologyAxiomIntegrityChecker {
 		List<ConversionException> thrownExceptions = new ArrayList<>();
 		new ReleaseImporter().loadSnapshotReleaseFiles(terminologyDirectoryPath, LoadingProfile.complete, new ImpotentComponentFactory() {
 			@Override
-			public void newReferenceSetMemberState(String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId, String referencedComponentId, String... otherValues) {
+			public void newReferenceSetMemberState(String filename, String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId, String referencedComponentId, String... otherValues) {
 				if ("1".equals(active) && refsetId.equals("733073007")) {
 					String owlExpression = otherValues[0];
 					try {

@@ -7,10 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static java.lang.Long.parseLong;
 
@@ -20,6 +17,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 
 	private final Set<Long> conceptIds;
 	private final Set<Long> descriptionIds;
+	private final Map<Long, String> refsetsToInclude;
 
 	private final List<Writer> writers;
 	private final BufferedWriter conceptWriter;
@@ -27,12 +25,20 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	private final BufferedWriter textDefWriter;
 	private final BufferedWriter languageReferenceSetWriter;
 	private final BufferedWriter owlAxiomWriter;
+	private final Map<Long, String> refsetName;
+	private final Map<String, BufferedWriter> refsetWriters;
+	private final File refsetDir;
+	private final String dateString;
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
-	public RF2ExtractionWriter(Set<Long> conceptIds, String dateString, File outputDirectory) throws IOException {
+	public RF2ExtractionWriter(Set<Long> conceptIds, Map<Long, String> refsetsToInclude, String dateString, File outputDirectory) throws IOException {
 		this.conceptIds = new LongOpenHashSet(conceptIds);
 		this.descriptionIds = Collections.synchronizedSet(new LongOpenHashSet());
+		this.refsetsToInclude = refsetsToInclude;
+		refsetName = new HashMap<>();
+		refsetWriters = new HashMap<>();
+		this.dateString = dateString;
 
 		File snapshotDir = new File(outputDirectory, "Snapshot");
 		createDirectoryOrThrow(snapshotDir);
@@ -40,7 +46,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		File terminologyDir = new File(snapshotDir, "Terminology");
 		createDirectoryOrThrow(terminologyDir);
 
-		File refsetDir = new File(snapshotDir, "Refset");
+		refsetDir = new File(snapshotDir, "Refset");
 		createDirectoryOrThrow(refsetDir);
 
 		File langRefsetDir = new File(refsetDir, "Language");
@@ -80,13 +86,26 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		}
 	}
 
+	private BufferedWriter getCreateRefsetWriter(long refsetIdL, String originalFilename, String[] fieldNames) {
+		String filename = refsetName.computeIfAbsent(refsetIdL, i -> {
+			String filenamePart = originalFilename.substring(0, originalFilename.lastIndexOf("_"));
+			return "%s_%s.txt".formatted(filenamePart, dateString);
+		});
+		return refsetWriters.computeIfAbsent(filename, i -> {
+			try {
+				return newRF2Writer(refsetDir, filename, String.join(TAB, fieldNames));
+			} catch (IOException e) {
+				throw new RuntimeException("Failed to create refset writer.", e);
+			}
+		});
+	}
+
 	private BufferedWriter newRF2Writer(File terminologyDir, String filename, String header) throws IOException {
 		final BufferedWriter fileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(terminologyDir, filename)), StandardCharsets.UTF_8));
 		writers.add(fileWriter);
 		// Write header
 		fileWriter.write(header);
-		fileWriter.write("\r");
-		fileWriter.newLine();
+		newline(fileWriter);
 		return fileWriter;
 	}
 
@@ -95,8 +114,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		if (conceptIds.contains(parseLong(conceptId))) {
 			try {
 				conceptWriter.write(String.join(TAB, conceptId, effectiveTime, active, moduleId, definitionStatusId));
-				conceptWriter.write("\r");
-				conceptWriter.newLine();
+				newline(conceptWriter);
 			} catch (IOException e) {
 				// Ugly but the interface does not allow throwing a checked exception
 				throw new RuntimeException("Failed to write to concept file.", e);
@@ -114,8 +132,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 					writer = textDefWriter;
 				}
 				writer.write(String.join(TAB, id, effectiveTime, active, moduleId, conceptId, languageCode, typeId, term, caseSignificanceId));
-				writer.write("\r");
-				writer.newLine();
+				newline(writer);
 			} catch (IOException e) {
 				throw new RuntimeException("Failed to write to description file.", e);
 			}
@@ -123,29 +140,42 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	}
 
 	@Override
-	public void newReferenceSetMemberState(String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId, String referencedComponentId, String... otherValues) {
+	public void newReferenceSetMemberState(String filename, String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId, String referencedComponentId, String... otherValues) {
 		if (fieldNames.length == 7 && fieldNames[6].equals("acceptabilityId")) {
 			if (descriptionIds.contains(parseLong(referencedComponentId))) {
 				try {
 					languageReferenceSetWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0]));
-					languageReferenceSetWriter.write("\r");
-					languageReferenceSetWriter.newLine();
+					newline(languageReferenceSetWriter);
 				} catch (IOException e) {
 					throw new RuntimeException("Failed to write to language refset file.", e);
 				}
 			}
-		}
-		if (fieldNames.length == 7 && fieldNames[6].equals("owlExpression")) {
+		} else if (fieldNames.length == 7 && fieldNames[6].equals("owlExpression")) {
 			if (conceptIds.contains(parseLong(referencedComponentId))) {
 				try {
 					owlAxiomWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0]));
-					owlAxiomWriter.write("\r");
-					owlAxiomWriter.newLine();
+					newline(owlAxiomWriter);
 				} catch (IOException e) {
 					throw new RuntimeException("Failed to write to OWL axiom refset file.", e);
 				}
 			}
+		} else {
+			long refsetIdL = parseLong(refsetId);
+			if (refsetsToInclude.containsKey(refsetIdL)) {
+				try {
+					BufferedWriter refsetWriter = getCreateRefsetWriter(refsetIdL, refsetsToInclude.get(refsetIdL), fieldNames);
+					refsetWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0]));
+					newline(refsetWriter);
+				} catch (IOException e) {
+					throw new RuntimeException("Failed to write refset file.", e);
+				}
+			}
 		}
+	}
+
+	private void newline(BufferedWriter languageReferenceSetWriter) throws IOException {
+		languageReferenceSetWriter.write("\r");
+		languageReferenceSetWriter.newLine();
 	}
 
 	@Override

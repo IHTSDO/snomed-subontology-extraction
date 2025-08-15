@@ -20,7 +20,7 @@ public class RF2InformationCache extends ImpotentComponentFactory {
     private final Map<Long, Boolean> conceptActiveStateMap = new HashMap<>();
     private final Map<Long, Long> conceptToModuleMap = new HashMap<>();
     private final Set<Long> allConceptIds = new HashSet<>();
-//    private final Map<Long, Path> refsetNameAndPath = new HashMap<>();
+    private final Map<Long, String> refsetCodeAndFilename = new HashMap<>();
 	private final Map<Long, Set<Long>> parentChildRelationships = new HashMap<>();
 
     /**
@@ -71,10 +71,26 @@ public class RF2InformationCache extends ImpotentComponentFactory {
     public boolean conceptExists(Long conceptId) {
         return allConceptIds.contains(conceptId);
     }
-    
+
+	public Set<Long> getConceptDescendants(Long conceptId) {
+		Set<Long> all = new HashSet<>();
+		doGetConceptDescendants(conceptId, all);
+		return all;
+	}
+
+	public void doGetConceptDescendants(Long conceptId, Set<Long> all) {
+		Set<Long> children = parentChildRelationships.get(conceptId);
+		if (children != null) {
+			for (Long child : children) {
+				all.add(child);
+				doGetConceptDescendants(child, all);
+			}
+		}
+	}
+
     /**
      * Gets all module IDs for a set of concepts.
-     * 
+     *
      * @param conceptIds The set of concept IDs
      * @return Set of module IDs
      */
@@ -88,7 +104,15 @@ public class RF2InformationCache extends ImpotentComponentFactory {
         }
         return moduleIds;
     }
-    
+
+	public boolean isRefset(Long concept) {
+		return refsetCodeAndFilename.containsKey(concept);
+	}
+
+	public String getRefsetFilename(Long concept) {
+		return refsetCodeAndFilename.get(concept);
+	}
+
 	@Override
 	public void newConceptState(String conceptId, String effectiveTime, String active, String moduleId, String definitionStatusId) {
 		long conceptIdL = Long.parseLong(conceptId);
@@ -105,9 +129,8 @@ public class RF2InformationCache extends ImpotentComponentFactory {
 		}
 	}
 
-//	@Override
-//	public void newReferenceSetMemberState(Path rf2FilePath, String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId, String referencedComponentId, String... otherValues) {
-//		refsetNameAndPath.put(Long.parseLong(refsetId), rf2FilePath);
-//	}
-
+	@Override
+	public void newReferenceSetMemberState(String filename, String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId, String referencedComponentId, String... otherValues) {
+		refsetCodeAndFilename.put(Long.parseLong(refsetId), filename);
+	}
 }

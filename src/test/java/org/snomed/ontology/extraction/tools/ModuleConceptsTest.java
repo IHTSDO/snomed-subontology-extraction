@@ -13,10 +13,10 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ModuleConceptsTest {
+class ModuleConceptsTest {
 
     @Test
-    public void testModuleConceptCollection() throws IOException {
+    void testModuleConceptCollection() throws IOException {
         // Create a test subset file with concepts that have different module IDs
         File subsetFile = File.createTempFile("test_module_subset", ".txt");
         subsetFile.deleteOnExit();

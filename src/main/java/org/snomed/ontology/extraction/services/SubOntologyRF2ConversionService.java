@@ -8,9 +8,7 @@ import org.snomed.ontology.extraction.writers.RF2Printer;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
 import java.io.*;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /*
 Converted to RF2 as follows, making use of the SNOMED OWL Toolkit RF2 conversion methods
@@ -28,8 +26,8 @@ public class SubOntologyRF2ConversionService {
 	private static final String OWLRefsetRF2Filename = "debug_OWLRefset";
 	public static final Integer SCTID_GENERATION_NAMESPACE = 1000003;
 
-	public static void convertSubOntologytoRF2(OWLOntology subOntology, OWLOntology nnfOntology, Set<Long> inactiveConcepts, File outputDirectory, File sourceFile, RF2InformationCache rf2Cache) throws ReleaseImportException, IOException,
-			OWLException, ConversionException {
+	public static void convertSubOntologytoRF2(OWLOntology subOntology, OWLOntology nnfOntology, Set<Long> inactiveConcepts, File outputDirectory,
+			File sourceFile, RF2InformationCache rf2Cache) throws ReleaseImportException, IOException, OWLException, ConversionException {
 
 		//Extract the concept and description RF2 files, based on the source ontology (includes all entities in subontology)
 		Set<OWLEntity> entitiesInSubontologyAndNNFs = new HashSet<>();
@@ -120,7 +118,13 @@ public class SubOntologyRF2ConversionService {
 		Set<Long> allIds = new HashSet<>(entityIDs);
 		allIds.addAll(collectModuleConcepts(entityIDs, rf2Cache));
 		allIds.addAll(inactiveConcepts);
-		new RF2ExtractionService().extractConcepts(new FileInputStream(backgroundFile), allIds, subontologyRF2);
+		Map<Long, String> refsetsToInclude = new HashMap<>();
+		for (Long concept : allIds) {
+			if (rf2Cache.isRefset(concept)) {
+				refsetsToInclude.put(concept, rf2Cache.getRefsetFilename(concept));
+			}
+		}
+		new RF2ExtractionService().extractConcepts(new FileInputStream(backgroundFile), allIds, refsetsToInclude, subontologyRF2);
 	}
 
 	private static void addMetadataConcepts(Set<Long> entityIDs, String... conceptIdTerm) {

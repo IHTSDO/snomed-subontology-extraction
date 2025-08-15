@@ -11,10 +11,10 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class InactiveConceptsTest {
+class InactiveConceptsTest {
 
     @Test
-    public void testInactiveConceptDetection() throws IOException {
+    void testInactiveConceptDetection() throws IOException {
         // Create a test subset file with some concepts
         File subsetFile = File.createTempFile("test_inactive_subset", ".txt");
         subsetFile.deleteOnExit();

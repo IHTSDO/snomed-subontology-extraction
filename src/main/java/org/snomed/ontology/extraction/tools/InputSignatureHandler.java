@@ -3,10 +3,8 @@ package org.snomed.ontology.extraction.tools;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.ontology.extraction.classification.OntologyReasoningService;
-import org.snomed.ontology.extraction.exception.ReasonerException;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
@@ -111,40 +109,9 @@ public abstract class InputSignatureHandler {
 		Set<Long> conceptsWithDescendants = new HashSet<>();
 		Set<Long> directConcepts = new HashSet<>();
 		Set<Long> allRequestedConcepts = new HashSet<>();
-		
-		try (BufferedReader br = new BufferedReader(new FileReader(refsetFile))) {
-			String inLine = "";
-			while ((inLine = br.readLine()) != null) {
-				// process the line, remove whitespace
-				if(inLine.matches(".*\\d+.*")) {
-					inLine = inLine.trim();
-					
-					// Check if line contains the descendant flag
-					if (inLine.contains(DESCENDANT_FLAG)) {
-						// Extract concept ID from line with flag, handling optional terms
-						String conceptId = extractConceptIdFromLine(inLine, DESCENDANT_FLAG);
-						if (conceptId != null && conceptId.matches("\\d+")) {
-							Long conceptIdLong = Long.parseLong(conceptId);
-							conceptsWithDescendants.add(conceptIdLong);
-							allRequestedConcepts.add(conceptIdLong);
-							System.out.println("Adding concept with descendants: " + conceptId);
-						}
-					} else {
-						// Regular concept ID, handling optional terms
-						String conceptId = extractConceptIdFromLine(inLine, null);
-						if (conceptId != null && conceptId.matches("\\d+")) {
-							Long conceptIdLong = Long.parseLong(conceptId);
-							directConcepts.add(conceptIdLong);
-							allRequestedConcepts.add(conceptIdLong);
-							System.out.println("Adding direct concept: " + conceptId);
-						}
-					}
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
+
+		readSubset(refsetFile, conceptsWithDescendants, allRequestedConcepts, directConcepts);
+
 		// Add direct concepts
 		for (Long conceptId : directConcepts) {
 			classes.add(df.getOWLClass(IRI.create(SNOMED_IRI_STRING + conceptId)));
@@ -171,6 +138,44 @@ public abstract class InputSignatureHandler {
 		
 		System.out.println(classes.size() + " identifiers read from input subset.");
 		return classes;
+	}
+
+	private static void readSubset(File refsetFile, Set<Long> conceptsWithDescendants, Set<Long> allRequestedConcepts, Set<Long> directConcepts) {
+		try (BufferedReader br = new BufferedReader(new FileReader(refsetFile))) {
+			String inLine;
+			while ((inLine = br.readLine()) != null) {
+				// process the line, remove whitespace
+				if(inLine.matches(".*\\d+.*")) {
+					inLine = inLine.trim();
+					readSubsetLine(conceptsWithDescendants, allRequestedConcepts, directConcepts, inLine);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void readSubsetLine(Set<Long> conceptsWithDescendants, Set<Long> allRequestedConcepts, Set<Long> directConcepts, String inLine) {
+		// Check if line contains the descendant flag
+		if (inLine.contains(DESCENDANT_FLAG)) {
+			// Extract concept ID from line with flag, handling optional terms
+			String conceptId = extractConceptIdFromLine(inLine, DESCENDANT_FLAG);
+			if (conceptId != null && conceptId.matches("\\d+")) {
+				Long conceptIdLong = Long.parseLong(conceptId);
+				conceptsWithDescendants.add(conceptIdLong);
+				allRequestedConcepts.add(conceptIdLong);
+				System.out.println("Adding concept with descendants: " + conceptId);
+			}
+		} else {
+			// Regular concept ID, handling optional terms
+			String conceptId = extractConceptIdFromLine(inLine, null);
+			if (conceptId != null && conceptId.matches("\\d+")) {
+				Long conceptIdLong = Long.parseLong(conceptId);
+				directConcepts.add(conceptIdLong);
+				allRequestedConcepts.add(conceptIdLong);
+				System.out.println("Adding direct concept: " + conceptId);
+			}
+		}
 	}
 
 	/**
@@ -218,13 +223,12 @@ public abstract class InputSignatureHandler {
 		}
 	}
 
-	private static Set<Long> loadDescendantsFromRF2Cache(org.snomed.ontology.extraction.services.RF2InformationCache rf2Cache, 
-			Set<Long> rootConcepts) {
-		// Note: Parent-child relationship data is not available in the current cache implementation
-		// The cache only stores concept activity status and module mappings
-		// For now, we'll return just the root concepts and log a warning
-		System.out.println("Warning: Descendant loading not available - cache only contains concept activity and module data");
-		return new HashSet<>(rootConcepts);
+	private static Set<Long> loadDescendantsFromRF2Cache(org.snomed.ontology.extraction.services.RF2InformationCache rf2Cache, Set<Long> rootConcepts) {
+		Set<Long> all = new HashSet<>(rootConcepts);
+		for (Long rootConcept : rootConcepts) {
+			all.addAll(rf2Cache.getConceptDescendants(rootConcept));
+		}
+		return all;
 	}
 
 	public static void main(String[] args) throws OWLOntologyCreationException, IOException {
@@ -234,9 +238,8 @@ public abstract class InputSignatureHandler {
 		OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 		OWLDataFactory df = man.getOWLDataFactory();
 		OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
-		String snomedIRIString = "http://snomed.info/id/";
 		Set<OWLClass> conceptsToInclude = new HashSet<>();
-		conceptsToInclude.add(df.getOWLClass(IRI.create(snomedIRIString + "417163006")));
+		conceptsToInclude.add(df.getOWLClass(IRI.create(SNOMED_IRI_STRING + "417163006")));
 
 		Set<OWLClass> classes = new HashSet<>();
 		for(OWLClass cls:conceptsToInclude) {
