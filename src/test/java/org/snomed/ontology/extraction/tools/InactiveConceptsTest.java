@@ -2,6 +2,8 @@ package org.snomed.ontology.extraction.tools;
 
 import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.model.OWLClass;
+import org.snomed.ontology.extraction.services.RF2InformationCache;
+import org.snomed.otf.owltoolkit.constants.Concepts;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -13,29 +15,35 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class InactiveConceptsTest {
 
-    @Test
-    void testInactiveConceptDetection() throws IOException {
-        // Create a test subset file with some concepts
-        File subsetFile = File.createTempFile("test_inactive_subset", ".txt");
-        subsetFile.deleteOnExit();
-        
-        try (FileWriter writer = new FileWriter(subsetFile)) {
-            writer.write("131148009 |Bleeding (finding)|\n");
-            writer.write("<<239161005 |Wound hemorrhage (finding)|\n");
-            writer.write("16541001 |Yellow fever (disorder)|\n");
-        }
-        
-        // Test parsing with tracking (without RF2 archive)
-        Set<Long> inactiveConcepts = new HashSet<>();
-        Set<Long> missingConcepts = new HashSet<>();
-        
-        Set<OWLClass> classes = InputSignatureHandler.readRefsetWithDescendantsAndTracking(
-            subsetFile, null, inactiveConcepts, missingConcepts);
-        
-        // Should have 3 concepts (no RF2 archive, so no inactive/missing detection)
-        assertEquals(3, classes.size());
-        assertEquals(0, inactiveConcepts.size());
-        assertEquals(0, missingConcepts.size());
-    }
-    
+	@Test
+	void testInactiveConceptDetection() throws IOException {
+		// Create a test subset file with some concepts
+		File subsetFile = File.createTempFile("test_inactive_subset", ".txt");
+		subsetFile.deleteOnExit();
+		
+		try (FileWriter writer = new FileWriter(subsetFile)) {
+			writer.write("131148009 |Bleeding (finding)|\n");
+			writer.write("<<239161005 |Wound hemorrhage (finding)|\n");
+			writer.write("16541001 |Yellow fever (disorder)|\n");
+		}
+		
+		// Test parsing with tracking (without RF2 archive)
+		Set<Long> inactiveConcepts = new HashSet<>();
+		Set<Long> missingConcepts = new HashSet<>();
+
+		RF2InformationCache rf2Cache = new RF2InformationCache();
+		rf2Cache.newConceptState("131148009", "20250101", "1", Concepts.SNOMED_CT_CORE_MODULE, Concepts.PRIMITIVE);
+		rf2Cache.newConceptState("239161005", "20250101", "1", Concepts.SNOMED_CT_CORE_MODULE, Concepts.PRIMITIVE);
+		rf2Cache.newConceptState("16541001", "20250101", "1", Concepts.SNOMED_CT_CORE_MODULE, Concepts.PRIMITIVE);
+
+
+		Set<OWLClass> classes = InputSignatureHandler.readRefsetWithDescendantsAndTracking(
+			subsetFile, rf2Cache, inactiveConcepts, missingConcepts);
+		
+		// Should have 3 concepts (no RF2 archive, so no inactive/missing detection)
+		assertEquals(3, classes.size());
+		assertEquals(0, inactiveConcepts.size());
+		assertEquals(0, missingConcepts.size());
+	}
+	
 }

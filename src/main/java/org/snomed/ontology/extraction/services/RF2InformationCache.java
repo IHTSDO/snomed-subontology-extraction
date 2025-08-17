@@ -1,15 +1,13 @@
 package org.snomed.ontology.extraction.services;
 
 import org.ihtsdo.otf.snomedboot.factory.ImpotentComponentFactory;
+import org.snomed.ontology.extraction.utils.SCTIDUtils;
 import org.snomed.otf.owltoolkit.constants.Concepts;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Caches RF2 information gathered in a single pass to avoid multiple RF2 reads.
@@ -22,6 +20,8 @@ public class RF2InformationCache extends ImpotentComponentFactory {
     private final Set<Long> allConceptIds = new HashSet<>();
     private final Map<Long, String> refsetCodeAndFilename = new HashMap<>();
 	private final Map<Long, Set<Long>> parentChildRelationships = new HashMap<>();
+	private final Map<Long, Set<Long>> conceptAssociations = new HashMap<>();
+	private final Map<String, List<Integer>> refsetFilenameComponentIndices = new HashMap<>();
 
     /**
      * Loads all RF2 information in a single pass and caches it for later use.
@@ -113,6 +113,10 @@ public class RF2InformationCache extends ImpotentComponentFactory {
 		return refsetCodeAndFilename.get(concept);
 	}
 
+	public Set<Long> getConceptAssociations(Long concept) {
+		return conceptAssociations.getOrDefault(concept, Collections.emptySet());
+	}
+
 	@Override
 	public void newConceptState(String conceptId, String effectiveTime, String active, String moduleId, String definitionStatusId) {
 		long conceptIdL = Long.parseLong(conceptId);
@@ -132,5 +136,35 @@ public class RF2InformationCache extends ImpotentComponentFactory {
 	@Override
 	public void newReferenceSetMemberState(String filename, String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId, String referencedComponentId, String... otherValues) {
 		refsetCodeAndFilename.put(Long.parseLong(refsetId), filename);
+
+		if (SCTIDUtils.isConceptId(referencedComponentId)) {
+			// Save associations between any two concepts using all "c" component type fields
+			collectConceptAssociations(filename, referencedComponentId, otherValues);
+		}
+	}
+
+	private void collectConceptAssociations(String filename, String referencedComponentId, String[] otherValues) {
+		long referencedComponentIdL = Long.parseLong(referencedComponentId);
+
+		// A list of integers representing all index positions for the character "c"
+		List<Integer> componentPositions = refsetFilenameComponentIndices.computeIfAbsent(filename, theFilename -> {
+			// der2_cissccRefset_MRCMAttributeDomainSnapshot_INT_20250801
+			// der2_cRefset_AssociationSnapshot_INT_20250801
+			List<Integer> cPositions = new ArrayList<>();
+			String fields = filename.split("_")[1].replace("Refset", "");
+			for (int i = 0; i < fields.length(); i++) {
+				if (fields.charAt(i) == 'c') {
+					cPositions.add(i);
+				}
+			}
+			return cPositions;
+		});
+
+		for (Integer componentPosition : componentPositions) {
+			String otherComponent = otherValues[componentPosition];
+			if (SCTIDUtils.isConceptId(otherComponent)) {
+				conceptAssociations.computeIfAbsent(referencedComponentIdL, i -> new HashSet<>()).add(Long.parseLong(otherComponent));
+			}
+		}
 	}
 }

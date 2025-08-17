@@ -3,6 +3,7 @@ package org.snomed.ontology.extraction.tools;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.snomed.ontology.extraction.classification.OntologyReasoningService;
+import org.snomed.ontology.extraction.services.RF2InformationCache;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -56,7 +57,7 @@ public abstract class InputSignatureHandler {
 	}
 
 	public static Set<OWLClass> readRefsetWithDescendantsAndTracking(File refsetFile,
-			org.snomed.ontology.extraction.services.RF2InformationCache rf2Cache, 
+			RF2InformationCache rf2Cache,
 			Set<Long> inactiveConcepts, Set<Long> missingConcepts) {
 		if(refsetFile.getName().endsWith(".json")) {
 			return readRefsetJson(refsetFile);
@@ -101,53 +102,55 @@ public abstract class InputSignatureHandler {
 	}
 
 	private static Set<OWLClass> readRefsetTxtWithDescendantsAndTracking(File refsetFile,
-			org.snomed.ontology.extraction.services.RF2InformationCache rf2Cache, 
+			RF2InformationCache rf2Cache,
 			Set<Long> inactiveConcepts, Set<Long> missingConcepts) {
 
 		OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
 		Set<OWLClass> classes = new HashSet<>();
-		Set<Long> conceptsWithDescendants = new HashSet<>();
-		Set<Long> directConcepts = new HashSet<>();
+
 		Set<Long> allRequestedConcepts = new HashSet<>();
+		Set<Long> directConcepts = new HashSet<>();
+		Set<Long> conceptsWithDescendants = new HashSet<>();
+		readSubset(refsetFile, allRequestedConcepts, directConcepts, conceptsWithDescendants);
 
-		readSubset(refsetFile, conceptsWithDescendants, allRequestedConcepts, directConcepts);
+		Set<Long> allRequiredConcepts = new HashSet<>(allRequestedConcepts);
 
-		// Add direct concepts
-		for (Long conceptId : directConcepts) {
-			classes.add(df.getOWLClass(IRI.create(SNOMED_IRI_STRING + conceptId)));
-		}
-		
-		// If RF2 cache is provided and we have concepts with descendants, load hierarchy
+		// If RF2 cache is provided, and we have concepts with descendants, load hierarchy
 		if (rf2Cache != null && !conceptsWithDescendants.isEmpty()) {
-			Set<Long> allDescendants = loadDescendantsFromRF2Cache(rf2Cache, conceptsWithDescendants);
-			for (Long conceptId : allDescendants) {
-				classes.add(df.getOWLClass(IRI.create(SNOMED_IRI_STRING + conceptId)));
-			}
+			Set<Long> descendants = loadDescendantsFromRF2Cache(rf2Cache, conceptsWithDescendants);
+			allRequiredConcepts.addAll(descendants);
 		} else if (!conceptsWithDescendants.isEmpty()) {
 			// If no RF2 cache but we have descendant flags, just add the root concepts
 			System.out.println("Warning: RF2 information cache not provided, adding only root concepts for descendant flags");
-			for (Long conceptId : conceptsWithDescendants) {
-				classes.add(df.getOWLClass(IRI.create(SNOMED_IRI_STRING + conceptId)));
-			}
 		}
-		
+
 		// Check for inactive/missing concepts using RF2 cache
 		if (rf2Cache != null) {
 			checkForInactiveAndMissingConcepts(rf2Cache, allRequestedConcepts, inactiveConcepts, missingConcepts);
 		}
-		
+
+		allRequiredConcepts.removeAll(missingConcepts);
+
+		// Add concepts required through refsets, for example the historical association refsets
+		Set<Long> associatedConcepts = loadAssociatedConceptsFromRF2Cache(rf2Cache, allRequiredConcepts);
+		allRequiredConcepts.addAll(associatedConcepts);
+
+		for (Long conceptId : allRequiredConcepts) {
+			classes.add(df.getOWLClass(IRI.create(SNOMED_IRI_STRING + conceptId)));
+		}
+
 		System.out.println(classes.size() + " identifiers read from input subset.");
 		return classes;
 	}
 
-	private static void readSubset(File refsetFile, Set<Long> conceptsWithDescendants, Set<Long> allRequestedConcepts, Set<Long> directConcepts) {
+	private static void readSubset(File refsetFile, Set<Long> allRequestedConcepts, Set<Long> directConcepts, Set<Long> conceptsWithDescendants) {
 		try (BufferedReader br = new BufferedReader(new FileReader(refsetFile))) {
 			String inLine;
 			while ((inLine = br.readLine()) != null) {
 				// process the line, remove whitespace
 				if(inLine.matches(".*\\d+.*")) {
 					inLine = inLine.trim();
-					readSubsetLine(conceptsWithDescendants, allRequestedConcepts, directConcepts, inLine);
+					readSubsetLine(inLine, allRequestedConcepts, directConcepts, conceptsWithDescendants);
 				}
 			}
 		} catch (IOException e) {
@@ -155,7 +158,7 @@ public abstract class InputSignatureHandler {
 		}
 	}
 
-	private static void readSubsetLine(Set<Long> conceptsWithDescendants, Set<Long> allRequestedConcepts, Set<Long> directConcepts, String inLine) {
+	private static void readSubsetLine(String inLine, Set<Long> allRequestedConcepts, Set<Long> directConcepts, Set<Long> conceptsWithDescendants) {
 		// Check if line contains the descendant flag
 		if (inLine.contains(DESCENDANT_FLAG)) {
 			// Extract concept ID from line with flag, handling optional terms
@@ -209,7 +212,7 @@ public abstract class InputSignatureHandler {
 		return null;
 	}
 
-	private static void checkForInactiveAndMissingConcepts(org.snomed.ontology.extraction.services.RF2InformationCache rf2Cache,
+	private static void checkForInactiveAndMissingConcepts(RF2InformationCache rf2Cache,
 			Set<Long> requestedConcepts, Set<Long> inactiveConcepts, Set<Long> missingConcepts) {
 		// Use the cached RF2 information for efficient lookup
 		for (Long conceptId : requestedConcepts) {
@@ -223,12 +226,26 @@ public abstract class InputSignatureHandler {
 		}
 	}
 
-	private static Set<Long> loadDescendantsFromRF2Cache(org.snomed.ontology.extraction.services.RF2InformationCache rf2Cache, Set<Long> rootConcepts) {
+	private static Set<Long> loadDescendantsFromRF2Cache(RF2InformationCache rf2Cache, Set<Long> rootConcepts) {
 		Set<Long> all = new HashSet<>(rootConcepts);
 		for (Long rootConcept : rootConcepts) {
 			all.addAll(rf2Cache.getConceptDescendants(rootConcept));
 		}
 		return all;
+	}
+
+	private static Set<Long> loadAssociatedConceptsFromRF2Cache(RF2InformationCache rf2Cache, Set<Long> sourceConcepts) {
+		Set<Long> associated = new HashSet<>();
+		Set<Long> newAssociations;
+		do {
+			newAssociations = new HashSet<>();
+			for (Long concept : sourceConcepts) {
+				newAssociations.addAll(rf2Cache.getConceptAssociations(concept));
+			}
+			associated.addAll(newAssociations);
+			sourceConcepts = newAssociations;
+		} while (!newAssociations.isEmpty());
+		return associated;
 	}
 
 	public static void main(String[] args) throws OWLOntologyCreationException, IOException {

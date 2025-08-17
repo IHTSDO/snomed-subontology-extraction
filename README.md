@@ -50,6 +50,8 @@ Optional parameters for OWL conversion:
  -rf2-snapshot-archive                  This parameter is required when using -output-rf2.
                                         A SNOMED CT RF2 archive containing a snapshot. The release version must match the source ontology OWL file.
 
+ -include-inactive                      Include inactive concepts in output.
+ 
  -verify-subontology                    (Optional) runs verification for the computed subontology to check steps 1 and 2 above.
                                         Warning: this can be expensive for larger subontologies.
 
@@ -67,6 +69,12 @@ java -Xms4g -jar snomed-subontology-extraction-*-executable.jar \
 ### RF2 Output
 All RF2 files are written to "output/RF2" ready to be zipped into an RF2 snapshot archive.   
 **Please note**: Inferred relationship records have throw-away generated identifiers in a demo namespace that must not be relied upon.
+
+### Reference Sets
+- Axiom and language refset files are included by default.
+- Other refsets are included if the refset id is in the input-subset. For example `<<900000000000522004 |Historical association reference set (foundation metadata concept)|`.
+- Included refsets are read during pre-processing. Rows that refer to a concept within the input-subset are included in the RF2 output. 
+  - If these rows refer to any other concept, those concepts in turn are added to the input-subset. This processing is recursive.    
 
 ### Subset Parsing with Descendants
 When using the `-output-rf2` flag, the subset file can include concept IDs with a `<<` flag to automatically include all descendants of those concepts. This is useful for including entire hierarchies in your subontology.
