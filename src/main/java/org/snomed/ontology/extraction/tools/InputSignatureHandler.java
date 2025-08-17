@@ -131,9 +131,11 @@ public abstract class InputSignatureHandler {
 
 		allRequiredConcepts.removeAll(missingConcepts);
 
-		// Add concepts required through refsets, for example the historical association refsets
-		Set<Long> associatedConcepts = loadAssociatedConceptsFromRF2Cache(rf2Cache, allRequiredConcepts);
-		allRequiredConcepts.addAll(associatedConcepts);
+		if (rf2Cache != null) {
+			// Add concepts required through refsets, for example the historical association refsets
+			Set<Long> associatedConcepts = loadAssociatedConceptsFromRF2Cache(rf2Cache, allRequiredConcepts);
+			allRequiredConcepts.addAll(associatedConcepts);
+		}
 
 		for (Long conceptId : allRequiredConcepts) {
 			classes.add(df.getOWLClass(IRI.create(SNOMED_IRI_STRING + conceptId)));
