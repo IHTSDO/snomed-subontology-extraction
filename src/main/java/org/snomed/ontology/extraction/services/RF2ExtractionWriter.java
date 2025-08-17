@@ -140,35 +140,55 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	}
 
 	@Override
-	public void newReferenceSetMemberState(String filename, String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId, String referencedComponentId, String... otherValues) {
+	public void newReferenceSetMemberState(String filename, String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId,
+			String referencedComponentId, String... otherValues) {
+
 		if (fieldNames.length == 7 && fieldNames[6].equals("acceptabilityId")) {
-			if (descriptionIds.contains(parseLong(referencedComponentId))) {
-				try {
-					languageReferenceSetWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0]));
-					newline(languageReferenceSetWriter);
-				} catch (IOException e) {
-					throw new RuntimeException("Failed to write to language refset file.", e);
-				}
-			}
+			handleLangRefsetMember(id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues);
 		} else if (fieldNames.length == 7 && fieldNames[6].equals("owlExpression")) {
-			if (conceptIds.contains(parseLong(referencedComponentId))) {
-				try {
-					owlAxiomWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0]));
-					newline(owlAxiomWriter);
-				} catch (IOException e) {
-					throw new RuntimeException("Failed to write to OWL axiom refset file.", e);
-				}
-			}
+			handleAxiom(id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues);
 		} else {
-			long refsetIdL = parseLong(refsetId);
-			if (refsetsToInclude.containsKey(refsetIdL)) {
-				try {
-					BufferedWriter refsetWriter = getCreateRefsetWriter(refsetIdL, refsetsToInclude.get(refsetIdL), fieldNames);
-					refsetWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0]));
-					newline(refsetWriter);
-				} catch (IOException e) {
-					throw new RuntimeException("Failed to write refset file.", e);
-				}
+			handleOtherRefset(fieldNames, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues);
+		}
+	}
+
+	private void handleLangRefsetMember(String id, String effectiveTime, String active, String moduleId, String refsetId,
+			String referencedComponentId, String[] otherValues) throws RF2ExtractionException {
+
+		if (descriptionIds.contains(parseLong(referencedComponentId))) {
+			try {
+				languageReferenceSetWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0]));
+				newline(languageReferenceSetWriter);
+			} catch (IOException e) {
+				throw new RF2ExtractionException("Failed to write to language refset file.", e);
+			}
+		}
+	}
+
+	private void handleAxiom(String id, String effectiveTime, String active, String moduleId, String refsetId,
+			String referencedComponentId, String[] otherValues) throws RF2ExtractionException {
+
+		if (conceptIds.contains(parseLong(referencedComponentId))) {
+			try {
+				owlAxiomWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0]));
+				newline(owlAxiomWriter);
+			} catch (IOException e) {
+				throw new RF2ExtractionException("Failed to write to OWL axiom refset file.", e);
+			}
+		}
+	}
+
+	private void handleOtherRefset(String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId,
+			String referencedComponentId, String[] otherValues) throws RF2ExtractionException {
+
+		long refsetIdL = parseLong(refsetId);
+		if (refsetsToInclude.containsKey(refsetIdL) && conceptIds.contains(Long.parseLong(referencedComponentId))) {
+			try {
+				BufferedWriter refsetWriter = getCreateRefsetWriter(refsetIdL, refsetsToInclude.get(refsetIdL), fieldNames);
+				refsetWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0]));
+				newline(refsetWriter);
+			} catch (IOException e) {
+				throw new RF2ExtractionException("Failed to write refset file.", e);
 			}
 		}
 	}
