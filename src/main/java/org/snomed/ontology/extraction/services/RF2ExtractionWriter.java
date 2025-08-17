@@ -40,6 +40,9 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		refsetWriters = new HashMap<>();
 		this.dateString = dateString;
 
+		File readmeFile = new File(outputDirectory, "Readme.txt");
+		writeReadme(readmeFile);
+
 		File snapshotDir = new File(outputDirectory, "Snapshot");
 		createDirectoryOrThrow(snapshotDir);
 
@@ -78,6 +81,21 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 				terminologyDir,
 				String.format("sct2_sRefset_OWLExpressionSnapshot_INT_%s.txt", dateString),
 				String.join(TAB, "id", "effectiveTime", "active", "moduleId", "refsetId", "referencedComponentId", "owlExpression"));
+	}
+
+	private void writeReadme(File readmeFile) {
+		try (BufferedReader templateReader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/Readme_template.txt")));
+			 BufferedWriter readmeWriter = new BufferedWriter(new FileWriter(readmeFile))) {
+
+			String year = new GregorianCalendar().get(Calendar.YEAR) + "";
+			String line;
+			while ((line = templateReader.readLine()) != null) {
+				readmeWriter.write(line.replace("{YEAR}", year));
+				newline(readmeWriter);
+			}
+		} catch (IOException e) {
+			throw new RF2ExtractionException("Failed to generate Readme.txt", e);
+		}
 	}
 
 	private void createDirectoryOrThrow(File snapshotDir) throws IOException {

@@ -66,6 +66,9 @@ java -Xms4g -jar snomed-subontology-extraction-*-executable.jar \
  -rf2-snapshot-archive ../release/SnomedCT_InternationalRF2_PRODUCTION_20200731T120000Z.zip 
 ```
 
+### License
+The subsets and subontologies created by this project are subject to the normal SNOMED CT license. A Readme.txt file is included in the output RF2 directory with this information.  
+
 ### RF2 Output
 All RF2 files are written to "output/RF2" ready to be zipped into an RF2 snapshot archive.   
 **Please note**: Inferred relationship records have throw-away generated identifiers in a demo namespace that must not be relied upon.
