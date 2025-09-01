@@ -1,0 +1,3 @@
+id	effectiveTime	active	moduleId	conceptId	languageCode	typeId	term	caseSignificanceId
+91000003111		1	31000003106	31000003106	en	900000000000013009	Test subontology module	900000000000448009
+101000003112		1	31000003106	31000003106	en	900000000000003001	Test subontology module (core metadata concept)	900000000000448009

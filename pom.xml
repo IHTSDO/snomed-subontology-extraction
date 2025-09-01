@@ -56,6 +56,52 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<id>zip-resources-folder</id>
+						<phase>generate-resources</phase>
+						<configuration>
+							<target>
+								<!-- Zip src/main/resources/xx into target/generated-resources/xx.zip -->
+								<zip destfile="${project.build.directory}/generated-resources/SnomedCT_TestSubonologyModule.zip"
+									 basedir="src/main/resources/SnomedCT_TestSubonologyModule" />
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.3.1</version>
+				<executions>
+					<execution>
+						<id>copy-zipped-resources</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.outputDirectory}</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${project.build.directory}/generated-resources</directory>
+									<includes>
+										<include>SnomedCT_TestSubonologyModule.zip</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.1.2</version>
 				<configuration>

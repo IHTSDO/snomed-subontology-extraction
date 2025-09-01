@@ -59,7 +59,7 @@ Optional parameters for OWL conversion:
 
 ### Example command line options
 ```
-java -Xms4g -jar snomed-subontology-extraction-*-executable.jar \
+java -Xms4g --add-opens java.base/java.lang=ALL-UNNAMED -jar snomed-subontology-extraction-*-executable.jar \
  -source-ontology ../release/snomed-int-20200731-ontology.owl \
  -input-subset concept-ids-from-dentistry-refset.txt \
  -output-rf2 \
@@ -70,7 +70,10 @@ java -Xms4g -jar snomed-subontology-extraction-*-executable.jar \
 The subsets and subontologies created by this project are subject to the normal SNOMED CT license. A Readme.txt file is included in the output RF2 directory with this information.  
 
 ### RF2 Output
-All RF2 files are written to "output/RF2" ready to be zipped into an RF2 snapshot archive.   
+All RF2 files are written to "output/RF2" ready to be zipped into an RF2 snapshot archive.  
+
+Concept `31000003106 |Test subontology module (core metadata concept)|` is always included in the RF2 output. This concept is used to identify the subontology.  
+
 **Please note**: Inferred relationship records have throw-away generated identifiers in a demo namespace that must not be relied upon.
 
 ### Reference Sets
@@ -136,7 +139,7 @@ Found 1 concepts not present in RF2 archive:
 **Usage:**
 ```bash
 # Include inactive concepts in RF2 output
-java -jar snomed-subontology-extraction-2.1.0-SNAPSHOT-executable.jar \
+java --add-opens java.base/java.lang=ALL-UNNAMED -jar snomed-subontology-extraction-2.1.0-SNAPSHOT-executable.jar \
   -source-ontology source.owl \
   -input-subset subset.txt \
   -rf2-snapshot-archive SnomedCT_InternationalRF2_PRODUCTION_20200731T120000Z.zip \
