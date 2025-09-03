@@ -33,6 +33,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	private final Map<String, BufferedWriter> refsetWriters;
 	private final File refsetDir;
 	private final String dateString;
+	private final Map<Long, Integer> maxModuleDates = new HashMap<>();
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -130,6 +131,11 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		});
 	}
 
+	@Override
+	public void loadingComponentsCompleted() {
+		completeMDRS();
+	}
+
 	private BufferedWriter newRF2Writer(File terminologyDir, String filename, String header) throws IOException {
 		final BufferedWriter fileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(terminologyDir, filename)), StandardCharsets.UTF_8));
 		writers.add(fileWriter);
@@ -172,6 +178,8 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	@Override
 	public void newReferenceSetMemberState(String filename, String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId,
 			String referencedComponentId, String... otherValues) {
+
+		recordMaxModuleEffectiveDate(effectiveTime, moduleId);
 
 		if (fieldNames.length == 7 && fieldNames[6].equals("acceptabilityId")) {
 			handleLangRefsetMember(id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues);
@@ -218,6 +226,20 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 			newline(mdrsReferenceSetWriter);
 		} catch (IOException e) {
 			throw new RF2ExtractionException("Failed to write to OWL axiom refset file.", e);
+		}
+	}
+
+	private void completeMDRS() throws RF2ExtractionException {
+		try {
+			for (Map.Entry<Long, Integer> moduleEffectiveTime : maxModuleDates.entrySet()) {
+				String otherModule = moduleEffectiveTime.getKey().toString();
+				String otherModuleEffectiveTime = moduleEffectiveTime.getValue().toString();
+				mdrsReferenceSetWriter.write(String.join(TAB, UUID.randomUUID().toString(), dateString, "1",
+						TEST_SUBONTOLOGY_MODULE_CONCEPT, MDRS, otherModule, dateString, otherModuleEffectiveTime));
+				newline(mdrsReferenceSetWriter);
+			}
+		} catch (IOException e) {
+			throw new RF2ExtractionException("Failed to write to MDRS refset file.", e);
 		}
 	}
 
