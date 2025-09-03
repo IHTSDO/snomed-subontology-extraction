@@ -25,7 +25,7 @@ public class SubOntologyRF2ConversionService {
 	public static final String IRI_PREFIX = "http://snomed.info/id/";
 	private static final String OWLRefsetRF2Filename = "debug_OWLRefset";
 	public static final Integer SCTID_GENERATION_NAMESPACE = 1000003;
-	public static final long TEST_SUBONTOLOGY_MODULE_CONCEPT = 31000003106L;
+	public static final String TEST_SUBONTOLOGY_MODULE_CONCEPT = "31000003106";
 
 	public static void convertSubOntologytoRF2(OWLOntology subOntology, OWLOntology nnfOntology, Set<Long> inactiveConcepts, File outputDirectory,
 			File sourceFile, RF2InformationCache rf2Cache) throws ReleaseImportException, IOException, OWLException, ConversionException {
@@ -119,7 +119,7 @@ public class SubOntologyRF2ConversionService {
 		Set<Long> allIds = new HashSet<>(entityIDs);
 		allIds.addAll(collectModuleConcepts(entityIDs, rf2Cache));
 		allIds.addAll(inactiveConcepts);
-		allIds.add(TEST_SUBONTOLOGY_MODULE_CONCEPT);
+		allIds.add(Long.parseLong(TEST_SUBONTOLOGY_MODULE_CONCEPT));
 		Map<Long, String> refsetsToInclude = new HashMap<>();
 		for (Long concept : allIds) {
 			if (rf2Cache.isRefset(concept)) {

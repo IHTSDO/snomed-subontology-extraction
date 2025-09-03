@@ -1,5 +1,6 @@
 package org.snomed.ontology.extraction.services;
 
+import com.google.common.base.Strings;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import org.ihtsdo.otf.snomedboot.factory.ImpotentComponentFactory;
 import org.slf4j.Logger;
@@ -10,10 +11,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static java.lang.Long.parseLong;
+import static org.snomed.ontology.extraction.services.SubOntologyRF2ConversionService.TEST_SUBONTOLOGY_MODULE_CONCEPT;
 
 public class RF2ExtractionWriter extends ImpotentComponentFactory implements AutoCloseable {
 
 	public static final String TAB = "\t";
+	public static final String MDRS = "900000000000534007";
 
 	private final Set<Long> conceptIds;
 	private final Set<Long> descriptionIds;
@@ -25,6 +28,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	private final BufferedWriter textDefWriter;
 	private final BufferedWriter languageReferenceSetWriter;
 	private final BufferedWriter owlAxiomWriter;
+	private final BufferedWriter mdrsReferenceSetWriter;
 	private final Map<Long, String> refsetName;
 	private final Map<String, BufferedWriter> refsetWriters;
 	private final File refsetDir;
@@ -55,6 +59,9 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		File langRefsetDir = new File(refsetDir, "Language");
 		createDirectoryOrThrow(langRefsetDir);
 
+		File metaRefsetDir = new File(refsetDir, "Metadata");
+		createDirectoryOrThrow(metaRefsetDir);
+
 		writers = new ArrayList<>();
 
 		conceptWriter = newRF2Writer(
@@ -81,6 +88,11 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 				terminologyDir,
 				String.format("sct2_sRefset_OWLExpressionSnapshot_INT_%s.txt", dateString),
 				String.join(TAB, "id", "effectiveTime", "active", "moduleId", "refsetId", "referencedComponentId", "owlExpression"));
+
+		mdrsReferenceSetWriter = newRF2Writer(
+				metaRefsetDir,
+				String.format("der2_ssRefset_ModuleDependencySnapshot-en_INT_%s.txt", dateString),
+				String.join(TAB, "id", "effectiveTime", "active", "moduleId", "refsetId", "referencedComponentId", "sourceEffectiveTime", "targetEffectiveTime"));
 	}
 
 	private void writeReadme(File readmeFile) {
@@ -165,6 +177,8 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 			handleLangRefsetMember(id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues);
 		} else if (fieldNames.length == 7 && fieldNames[6].equals("owlExpression")) {
 			handleAxiom(id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues);
+		} else if (refsetId.equals(MDRS)) {
+			handleMDRS(id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues);
 		} else {
 			handleOtherRefset(fieldNames, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues);
 		}
@@ -196,6 +210,17 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		}
 	}
 
+	private void handleMDRS(String id, String effectiveTime, String active, String moduleId, String refsetId,
+			String referencedComponentId, String[] otherValues) throws RF2ExtractionException {
+
+		try {
+			mdrsReferenceSetWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0], otherValues[1]));
+			newline(mdrsReferenceSetWriter);
+		} catch (IOException e) {
+			throw new RF2ExtractionException("Failed to write to OWL axiom refset file.", e);
+		}
+	}
+
 	private void handleOtherRefset(String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId,
 			String referencedComponentId, String[] otherValues) throws RF2ExtractionException {
 
@@ -214,6 +239,17 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	private void newline(BufferedWriter languageReferenceSetWriter) throws IOException {
 		languageReferenceSetWriter.write("\r");
 		languageReferenceSetWriter.newLine();
+	}
+
+	private void recordMaxModuleEffectiveDate(String effectiveTime, String moduleId) {
+		if (!Strings.isNullOrEmpty(effectiveTime)) {
+			long moduleIdL = parseLong(moduleId);
+			int effectiveTimeI = Integer.parseInt(effectiveTime);
+			int currentMax = maxModuleDates.getOrDefault(moduleIdL, 0);
+			if (effectiveTimeI > currentMax) {
+				maxModuleDates.put(moduleIdL, effectiveTimeI);
+			}
+		}
 	}
 
 	@Override
