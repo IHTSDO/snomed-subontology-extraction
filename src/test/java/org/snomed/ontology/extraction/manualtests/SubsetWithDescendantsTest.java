@@ -41,7 +41,7 @@ public class SubsetWithDescendantsTest {
             
             // Test parsing without RF2 archive (will just add root concepts)
             System.out.println("Testing parsing without RF2 archive:");
-            Set<OWLClass> classesWithoutRF2 = InputSignatureHandler.readRefset(subsetFile);
+            Set<OWLClass> classesWithoutRF2 = new InputSignatureHandler().readRefset(subsetFile);
             System.out.println("Found " + classesWithoutRF2.size() + " concepts");
             for (OWLClass cls : classesWithoutRF2) {
                 System.out.println("  " + cls.getIRI().toString());

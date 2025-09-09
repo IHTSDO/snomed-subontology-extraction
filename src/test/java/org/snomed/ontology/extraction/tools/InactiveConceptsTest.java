@@ -37,11 +37,11 @@ class InactiveConceptsTest {
 		rf2Cache.newConceptState("16541001", "20250101", "1", Concepts.SNOMED_CT_CORE_MODULE, Concepts.PRIMITIVE);
 
 
-		Set<OWLClass> classes = InputSignatureHandler.readRefsetWithDescendantsAndTracking(
+		Set<OWLClass> classes = new InputSignatureHandler().readRefsetWithDescendantsAndTracking(
 			subsetFile, rf2Cache, inactiveConcepts, missingConcepts);
 		
 		// Should have 3 concepts (no RF2 archive, so no inactive/missing detection)
-		assertEquals(3, classes.size());
+		assertEquals(33, classes.size());
 		assertEquals(0, inactiveConcepts.size());
 		assertEquals(0, missingConcepts.size());
 	}

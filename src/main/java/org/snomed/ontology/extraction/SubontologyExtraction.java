@@ -78,15 +78,16 @@ public class SubontologyExtraction {
 		Set<Long> missingConcepts = new HashSet<>();
 
 		RF2InformationCache rf2Cache = new RF2InformationCache();
+		InputSignatureHandler inputSignatureHandler = new InputSignatureHandler();
 		if (outputRF2 && sourceRF2File != null) {
 			// Load RF2 information cache once for efficient processing
 			rf2Cache = new RF2InformationCache();
 			rf2Cache.loadRF2Information(sourceRF2File);
 			// Use enhanced parsing with cached RF2 information
-			conceptsToDefine = InputSignatureHandler.readRefsetWithDescendantsAndTracking(inputRefsetFile, rf2Cache, inactiveConcepts, missingConcepts);
+			conceptsToDefine = inputSignatureHandler.readRefsetWithDescendantsAndTracking(inputRefsetFile, rf2Cache, inactiveConcepts, missingConcepts);
 		} else {
 			// Use standard parsing when no RF2 archive is provided
-			conceptsToDefine = InputSignatureHandler.readRefset(inputRefsetFile);
+			conceptsToDefine = inputSignatureHandler.readRefset(inputRefsetFile);
 		}
 
 		// alternatively, can specify concepts directly as a set e.g.

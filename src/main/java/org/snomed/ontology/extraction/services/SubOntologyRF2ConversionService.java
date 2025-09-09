@@ -70,50 +70,6 @@ public class SubOntologyRF2ConversionService {
 			entityIDs.add(id);
 		}
 
-		// Add metadata concepts
-		addMetadataConcepts(entityIDs,
-		 		"138875005 |SNOMED CT Concept (SNOMED RT+CTV3)|",
-				"900000000000441003 |SNOMED CT Model Component (metadata)|",
-				"106237007 |Linkage concept (linkage concept)|",
-				"246061005 |Attribute (attribute)|",
-				"116680003 |Is a (attribute)|",
-				"410662002 |Concept model attribute (attribute)|",
-
-				// << 900000000000444006 |Definition status|
-				"900000000000444006 |Definition status (core metadata concept)|",
-				"900000000000074008 |Not sufficiently defined by necessary conditions definition status (core metadata concept)|",
-				"900000000000073002 |Sufficiently defined by necessary conditions definition status (core metadata concept)|",
-
-				// << 900000000000446008 |Description type|
-				"900000000000446008 |Description type (core metadata concept)|",
-				"900000000000003001 |Fully specified name (core metadata concept)|",
-				"900000000000550004 |Definition (core metadata concept)|",
-				"900000000000013009 |Synonym (core metadata concept)|",
-
-				 // << 900000000000447004 |Case significance|
-				"900000000000447004 |Case significance (core metadata concept)|",
-				"900000000000448009 |Entire term case insensitive (core metadata concept)|",
-				"900000000000020002 |Only initial character case insensitive (core metadata concept)|",
-				"900000000000017005 |Entire term case sensitive (core metadata concept)|",
-
-				 // << 900000000000449001 |Characteristic type|
-				"900000000000449001 |Characteristic type (core metadata concept)|",
-				"900000000000006009 |Defining relationship (core metadata concept)|",
-				"900000000000010007 |Stated relationship (core metadata concept)|",
-				"900000000000011006 |Inferred relationship (core metadata concept)|",
-				"900000000000225001 |Qualifying relationship (core metadata concept)|",
-				"900000000000227009 |Additional relationship (core metadata concept)|",
-
-				// << 900000000000450001 |Modifier|
-				"900000000000450001 |Modifier (core metadata concept)|",
-				"900000000000451002 |Existential restriction modifier (core metadata concept)|",
-				"900000000000452009 |Universal restriction modifier (core metadata concept)|",
-
-				// <<900000000000511003 |Acceptability|
-				"900000000000511003 |Acceptability (foundation metadata concept)|",
-				"900000000000548007 |Preferred (foundation metadata concept)|",
-				"900000000000549004 |Acceptable (foundation metadata concept)|"
-				);
 
 		File subontologyRF2 = new File(outputDirectory, "RF2");
 		Set<Long> allIds = new HashSet<>(entityIDs);
@@ -127,12 +83,6 @@ public class SubOntologyRF2ConversionService {
 			}
 		}
 		new RF2ExtractionService().extractConcepts(new FileInputStream(sourceRF2File), allIds, refsetsToInclude, subontologyRF2);
-	}
-
-	private static void addMetadataConcepts(Set<Long> entityIDs, String... conceptIdTerm) {
-		for (String idTerm : conceptIdTerm) {
-			entityIDs.add(Long.parseLong(idTerm.substring(0, idTerm.indexOf(" "))));
-		}
 	}
 
 	private static void printRelationshipRF2(OWLOntology nnfOntology, File outputDirectory) throws IOException, ConversionException {

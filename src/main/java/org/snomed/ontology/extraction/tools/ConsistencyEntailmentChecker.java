@@ -8,6 +8,7 @@ import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 import org.semanticweb.owlapi.reasoner.SimpleConfiguration;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -48,13 +49,13 @@ public class ConsistencyEntailmentChecker {
 		Class<?> reasonerFactoryClass;
 		try {
 			reasonerFactoryClass = Class.forName(reasonerFactoryName);
-			return (OWLReasonerFactory) reasonerFactoryClass.newInstance();
+			return (OWLReasonerFactory) reasonerFactoryClass.getDeclaredConstructor().newInstance();
 		} catch (ClassNotFoundException e) {
 			throw new ReasonerException(String.format("Requested reasoner class '%s' not found.", reasonerFactoryName), e);
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
 			throw new ReasonerException(String.format("Requested reasoner class '%s' not found.", reasonerFactoryName), e);
-		} catch (InstantiationException e) {
+		} catch (InstantiationException | InvocationTargetException | NoSuchMethodException e) {
 			e.printStackTrace();
 			throw new ReasonerException("Reasoner instantiation exception.", e);
 		}

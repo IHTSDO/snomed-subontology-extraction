@@ -10,12 +10,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract class InputSignatureHandler {
+public class InputSignatureHandler {
 
 	private static final String SNOMED_IRI_STRING = "http://snomed.info/id/";
 	private static final String DESCENDANT_FLAG = "<<";
+	private final OWLDataFactory owlDataFactory;
 
-	public static Set<OWLClass> extractRefsetClassesFromDescendents(OWLOntology inputOntology, OWLClass rootClass, boolean excludePrimitives) {
+	public InputSignatureHandler() {
+		owlDataFactory = OWLManager.createOWLOntologyManager().getOWLDataFactory();
+	}
+
+	public Set<OWLClass> extractRefsetClassesFromDescendents(OWLOntology inputOntology, OWLClass rootClass, boolean excludePrimitives) {
 		OntologyReasoningService service = new OntologyReasoningService(inputOntology);
 		service.classifyOntology();
 		Set<OWLClass> conceptsInRefset = new HashSet<>();
@@ -38,7 +43,7 @@ public abstract class InputSignatureHandler {
 		return conceptsInRefset;
 	}
 
-	public static void printRefset(Set<OWLEntity> entitiesInRefset, String outputFilePath) throws IOException {
+	public void printRefset(Set<OWLEntity> entitiesInRefset, String outputFilePath) throws IOException {
 		try (BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(outputFilePath), StandardCharsets.UTF_8))) {
 			for (OWLEntity ent : entitiesInRefset) {
 				System.out.println("cls: " + ent.toString());
@@ -49,24 +54,79 @@ public abstract class InputSignatureHandler {
 		}
 	}
 
-	public static Set<OWLClass> readRefset(File refsetFile) {
+	public Set<OWLClass> readRefset(File refsetFile) {
 		if(refsetFile.getName().endsWith(".json")) {
 			return readRefsetJson(refsetFile);
 		}
 		return readRefsetTxt(refsetFile);
 	}
 
-	public static Set<OWLClass> readRefsetWithDescendantsAndTracking(File refsetFile,
+	public Set<OWLClass> readRefsetWithDescendantsAndTracking(File refsetFile,
 			RF2InformationCache rf2Cache,
 			Set<Long> inactiveConcepts, Set<Long> missingConcepts) {
-		if(refsetFile.getName().endsWith(".json")) {
-			return readRefsetJson(refsetFile);
+
+		Set<OWLClass> owlClasses;
+		if (refsetFile.getName().endsWith(".json")) {
+			owlClasses = readRefsetJson(refsetFile);
+		} else {
+			owlClasses = readRefsetTxtWithDescendantsAndTracking(refsetFile, rf2Cache, inactiveConcepts, missingConcepts);
 		}
-		return readRefsetTxtWithDescendantsAndTracking(refsetFile, rf2Cache, inactiveConcepts, missingConcepts);
+		addMetadataConcept(owlClasses);
+		return owlClasses;
+
 	}
 
-	private static Set<OWLClass> readRefsetJson(File refsetFile) {
-		OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
+	public Set<OWLClass> addMetadataConcept(Set<OWLClass> existingSet) {
+		// Add metadata concepts
+		addMetadataConcepts(existingSet,
+				"138875005 |SNOMED CT Concept (SNOMED RT+CTV3)|",
+				"900000000000441003 |SNOMED CT Model Component (metadata)|",
+				"106237007 |Linkage concept (linkage concept)|",
+				"246061005 |Attribute (attribute)|",
+				"116680003 |Is a (attribute)|",
+				"410662002 |Concept model attribute (attribute)|",
+				"900000000000443000 |Module (core metadata concept)|",
+
+				// << 900000000000444006 |Definition status|
+				"900000000000444006 |Definition status (core metadata concept)|",
+				"900000000000074008 |Not sufficiently defined by necessary conditions definition status (core metadata concept)|",
+				"900000000000073002 |Sufficiently defined by necessary conditions definition status (core metadata concept)|",
+
+				// << 900000000000446008 |Description type|
+				"900000000000446008 |Description type (core metadata concept)|",
+				"900000000000003001 |Fully specified name (core metadata concept)|",
+				"900000000000550004 |Definition (core metadata concept)|",
+				"900000000000013009 |Synonym (core metadata concept)|",
+
+				// << 900000000000447004 |Case significance|
+				"900000000000447004 |Case significance (core metadata concept)|",
+				"900000000000448009 |Entire term case insensitive (core metadata concept)|",
+				"900000000000020002 |Only initial character case insensitive (core metadata concept)|",
+				"900000000000017005 |Entire term case sensitive (core metadata concept)|",
+
+				// << 900000000000449001 |Characteristic type|
+				"900000000000449001 |Characteristic type (core metadata concept)|",
+				"900000000000006009 |Defining relationship (core metadata concept)|",
+				"900000000000010007 |Stated relationship (core metadata concept)|",
+				"900000000000011006 |Inferred relationship (core metadata concept)|",
+				"900000000000225001 |Qualifying relationship (core metadata concept)|",
+				"900000000000227009 |Additional relationship (core metadata concept)|",
+
+				// << 900000000000450001 |Modifier|
+				"900000000000450001 |Modifier (core metadata concept)|",
+				"900000000000451002 |Existential restriction modifier (core metadata concept)|",
+				"900000000000452009 |Universal restriction modifier (core metadata concept)|",
+
+				// <<900000000000511003 |Acceptability|
+				"900000000000511003 |Acceptability (foundation metadata concept)|",
+				"900000000000548007 |Preferred (foundation metadata concept)|",
+				"900000000000549004 |Acceptable (foundation metadata concept)|"
+		);
+
+		return null;
+	}
+
+	private Set<OWLClass> readRefsetJson(File refsetFile) {
 		Set<OWLClass> classes = new HashSet<>();
 		try (BufferedReader br = new BufferedReader(new FileReader(refsetFile))) {
 			String inLine;
@@ -74,7 +134,7 @@ public abstract class InputSignatureHandler {
 			while ((inLine = br.readLine()) != null) {
 				// process the line.
 				System.out.println("Adding class: " + inLine + " to input");
-				classes.add(df.getOWLClass(IRI.create(SNOMED_IRI_STRING + inLine)));
+				classes.add(getOwlClass(inLine));
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -82,8 +142,7 @@ public abstract class InputSignatureHandler {
 		return classes;
 	}
 
-	private static Set<OWLClass> readRefsetTxt(File refsetFile) {
-		OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
+	private Set<OWLClass> readRefsetTxt(File refsetFile) {
 		Set<OWLClass> classes = new HashSet<>();
 		try (BufferedReader br = new BufferedReader(new FileReader(refsetFile))) {
 			String inLine;
@@ -91,7 +150,7 @@ public abstract class InputSignatureHandler {
 				// process the line, remove whitespace
 				if(inLine.matches(".*\\d+.*")) {
 					inLine = inLine.replaceAll("[\\s\\p{Z}]+", "").trim();
-					classes.add(df.getOWLClass(IRI.create(SNOMED_IRI_STRING + inLine)));
+					classes.add(getOwlClass(inLine));
 				}
 			}
 		} catch (IOException e) {
@@ -101,11 +160,14 @@ public abstract class InputSignatureHandler {
 		return classes;
 	}
 
-	private static Set<OWLClass> readRefsetTxtWithDescendantsAndTracking(File refsetFile,
+	private OWLClass getOwlClass(String conceptCode) {
+		return owlDataFactory.getOWLClass(IRI.create(SNOMED_IRI_STRING + conceptCode));
+	}
+
+	private Set<OWLClass> readRefsetTxtWithDescendantsAndTracking(File refsetFile,
 			RF2InformationCache rf2Cache,
 			Set<Long> inactiveConcepts, Set<Long> missingConcepts) {
 
-		OWLDataFactory df = OWLManager.createOWLOntologyManager().getOWLDataFactory();
 		Set<OWLClass> classes = new HashSet<>();
 
 		Set<Long> allRequestedConcepts = new HashSet<>();
@@ -138,14 +200,14 @@ public abstract class InputSignatureHandler {
 		}
 
 		for (Long conceptId : allRequiredConcepts) {
-			classes.add(df.getOWLClass(IRI.create(SNOMED_IRI_STRING + conceptId)));
+			classes.add(owlDataFactory.getOWLClass(IRI.create(SNOMED_IRI_STRING + conceptId)));
 		}
 
 		System.out.println(classes.size() + " identifiers read from input subset.");
 		return classes;
 	}
 
-	private static void readSubset(File refsetFile, Set<Long> allRequestedConcepts, Set<Long> directConcepts, Set<Long> conceptsWithDescendants) {
+	private void readSubset(File refsetFile, Set<Long> allRequestedConcepts, Set<Long> directConcepts, Set<Long> conceptsWithDescendants) {
 		try (BufferedReader br = new BufferedReader(new FileReader(refsetFile))) {
 			String inLine;
 			while ((inLine = br.readLine()) != null) {
@@ -160,7 +222,7 @@ public abstract class InputSignatureHandler {
 		}
 	}
 
-	private static void readSubsetLine(String inLine, Set<Long> allRequestedConcepts, Set<Long> directConcepts, Set<Long> conceptsWithDescendants) {
+	private void readSubsetLine(String inLine, Set<Long> allRequestedConcepts, Set<Long> directConcepts, Set<Long> conceptsWithDescendants) {
 		// Check if line contains the descendant flag
 		if (inLine.contains(DESCENDANT_FLAG)) {
 			// Extract concept ID from line with flag, handling optional terms
@@ -185,17 +247,17 @@ public abstract class InputSignatureHandler {
 
 	/**
 	 * Extracts concept ID from a line that may contain optional terms in the format "conceptId |term|"
-	 * 
+	 *
 	 * @param line The input line to parse
 	 * @param flag Optional flag to remove from the line (e.g., "<<")
 	 * @return The concept ID as a string, or null if not found
 	 */
-	private static String extractConceptIdFromLine(String line, String flag) {
+	private String extractConceptIdFromLine(String line, String flag) {
 		// Remove the flag if present
 		if (flag != null && line.contains(flag)) {
 			line = line.replaceAll(".*" + flag + "\\s*", "").trim();
 		}
-		
+
 		// Handle lines with optional terms in format "conceptId |term|"
 		if (line.contains("|")) {
 			// Extract the part before the first pipe
@@ -204,17 +266,17 @@ public abstract class InputSignatureHandler {
 				return beforePipe;
 			}
 		}
-		
+
 		// Handle lines without terms - extract just the concept ID
 		String conceptId = line.replaceAll("[\\s\\p{Z}]+", "").trim();
 		if (conceptId.matches("\\d+")) {
 			return conceptId;
 		}
-		
+
 		return null;
 	}
 
-	private static void checkForInactiveAndMissingConcepts(RF2InformationCache rf2Cache,
+	private void checkForInactiveAndMissingConcepts(RF2InformationCache rf2Cache,
 			Set<Long> requestedConcepts, Set<Long> inactiveConcepts, Set<Long> missingConcepts) {
 		// Use the cached RF2 information for efficient lookup
 		for (Long conceptId : requestedConcepts) {
@@ -228,7 +290,7 @@ public abstract class InputSignatureHandler {
 		}
 	}
 
-	private static Set<Long> loadDescendantsFromRF2Cache(RF2InformationCache rf2Cache, Set<Long> rootConcepts) {
+	private Set<Long> loadDescendantsFromRF2Cache(RF2InformationCache rf2Cache, Set<Long> rootConcepts) {
 		Set<Long> all = new HashSet<>(rootConcepts);
 		for (Long rootConcept : rootConcepts) {
 			all.addAll(rf2Cache.getConceptDescendants(rootConcept));
@@ -236,7 +298,7 @@ public abstract class InputSignatureHandler {
 		return all;
 	}
 
-	private static Set<Long> loadAssociatedConceptsFromRF2Cache(RF2InformationCache rf2Cache, Set<Long> sourceConcepts) {
+	private Set<Long> loadAssociatedConceptsFromRF2Cache(RF2InformationCache rf2Cache, Set<Long> sourceConcepts) {
 		Set<Long> associated = new HashSet<>();
 		Set<Long> newAssociations;
 		do {
@@ -250,22 +312,33 @@ public abstract class InputSignatureHandler {
 		return associated;
 	}
 
+	private void addMetadataConcepts(Set<OWLClass> owlClasses, String... conceptIdTerm) {
+		int meta = 0;
+		for (String idTerm : conceptIdTerm) {
+			String code = idTerm.substring(0, idTerm.indexOf(" "));
+			owlClasses.add(getOwlClass(code));
+			meta++;
+		}
+		System.out.printf("Added %s metadata concepts.%n", meta);
+	}
+
+	// Hacky test method
 	public static void main(String[] args) throws OWLOntologyCreationException, IOException {
-		String inputPath = "E:/Users/warren/Documents/aPostdoc/SCT-files/";
+		String inputPath = "snomed-files/";
 		File inputOntologyFile = new File(inputPath + "sct-injury.owl");
 
 		OWLOntologyManager man = OWLManager.createOWLOntologyManager();
-		OWLDataFactory df = man.getOWLDataFactory();
 		OWLOntology inputOntology = man.loadOntologyFromOntologyDocument(inputOntologyFile);
 		Set<OWLClass> conceptsToInclude = new HashSet<>();
-		conceptsToInclude.add(df.getOWLClass(IRI.create(SNOMED_IRI_STRING + "417163006")));
+		InputSignatureHandler handler = new InputSignatureHandler();
+		conceptsToInclude.add(handler.getOwlClass("417163006"));
 
 		Set<OWLClass> classes = new HashSet<>();
 		for(OWLClass cls:conceptsToInclude) {
-			classes.addAll(InputSignatureHandler.extractRefsetClassesFromDescendents(inputOntology, cls, false));
+			classes.addAll(handler.extractRefsetClassesFromDescendents(inputOntology, cls, false));
 		}
 
-		String outputFilePath = "E:/Users/warren/Documents/aPostdoc/IAA-content-extraction/refsets/injury/injury_refset.txt";
-		InputSignatureHandler.printRefset(new HashSet<>(classes), outputFilePath);
+		String outputFilePath = "refsets/injury/injury_refset.txt";
+		handler.printRefset(new HashSet<>(classes), outputFilePath);
 	}
 }

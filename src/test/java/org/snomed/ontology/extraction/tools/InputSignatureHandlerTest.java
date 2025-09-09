@@ -29,7 +29,7 @@ class InputSignatureHandlerTest {
         }
         
         // Test parsing without RF2 archive (should just add root concepts)
-        Set<OWLClass> classes = InputSignatureHandler.readRefset(tempFile);
+        Set<OWLClass> classes = new InputSignatureHandler().readRefset(tempFile);
         
         // Should have 4 concepts (readRefset doesn't handle << flag, so all are treated as direct concepts)
         assertEquals(4, classes.size());
@@ -67,7 +67,7 @@ class InputSignatureHandlerTest {
         }
         
         // Test parsing without RF2 archive
-        Set<OWLClass> classes = InputSignatureHandler.readRefset(tempFile);
+        Set<OWLClass> classes = new InputSignatureHandler().readRefset(tempFile);
         
         // Should have 3 concepts (readRefset doesn't handle << flag, so all are treated as direct concepts)
         assertEquals(3, classes.size());
@@ -102,7 +102,7 @@ class InputSignatureHandlerTest {
         }
         
         // Test parsing without RF2 archive
-        Set<OWLClass> classes = InputSignatureHandler.readRefset(tempFile);
+        Set<OWLClass> classes = new InputSignatureHandler().readRefset(tempFile);
         
         // Should have 3 concepts (readRefset doesn't handle << flag, so all are treated as direct concepts)
         assertEquals(3, classes.size());

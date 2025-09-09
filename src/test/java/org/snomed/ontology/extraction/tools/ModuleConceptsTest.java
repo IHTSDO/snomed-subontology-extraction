@@ -36,11 +36,11 @@ class ModuleConceptsTest {
 		rf2Cache.newConceptState("239161005", "20250801", "1", "900000000000207008", Concepts.PRIMITIVE);
 		rf2Cache.newConceptState("16541001", "20250801", "1", "900000000000207008", Concepts.PRIMITIVE);
 
-		Set<OWLClass> classes = InputSignatureHandler.readRefsetWithDescendantsAndTracking(
+		Set<OWLClass> classes = new InputSignatureHandler().readRefsetWithDescendantsAndTracking(
             subsetFile, rf2Cache, inactiveConcepts, missingConcepts);
         
         // Should have 3 concepts (no RF2 archive, so no module detection)
-        assertEquals(3, classes.size());
+        assertEquals(33, classes.size());
         assertEquals(0, inactiveConcepts.size());
         assertEquals(0, missingConcepts.size());
     }
