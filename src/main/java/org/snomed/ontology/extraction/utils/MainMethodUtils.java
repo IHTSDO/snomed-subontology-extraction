@@ -1,5 +1,7 @@
 package org.snomed.ontology.extraction.utils;
 
+import com.google.common.base.Strings;
+
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -42,6 +44,10 @@ public class MainMethodUtils {
 		}
 		assertTrue("Expecting " + paramName + " in yyyyMMdd format.", isValidEffectiveTime(value));
 		return value;
+	}
+
+	public static String resolveEffectiveTime(String effectiveTime, String exportDate) {
+		return Strings.isNullOrEmpty(effectiveTime) ? exportDate : effectiveTime;
 	}
 
 	private static boolean isValidEffectiveTime(String value) {

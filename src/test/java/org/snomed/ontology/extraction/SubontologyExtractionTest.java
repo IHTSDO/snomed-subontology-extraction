@@ -108,6 +108,15 @@ public class SubontologyExtractionTest {
 			}
 		}
 		assertTrue(foundSyntheticMdrsRow, "Generated Module Dependency refset row should use configured effective time.");
+
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(relationshipOutputFile)))) {
+			reader.readLine();
+			String line;
+			while ((line = reader.readLine()) != null) {
+				String[] values = line.split("\\t");
+				assertEquals(effectiveTime, values[1], "Generated relationship rows should use configured effective time.");
+			}
+		}
 	}
 
 	private Map<String, Set<String>> extractParents(File relationshipsFile) throws IOException {

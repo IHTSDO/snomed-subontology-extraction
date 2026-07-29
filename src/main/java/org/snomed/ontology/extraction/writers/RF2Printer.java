@@ -233,7 +233,8 @@ public class RF2Printer extends Printer {
 						relationshipWriter.write(relationshipIdSource.getNewId());
 						relationshipWriter.write("\t");
 
-						//effectiveTime - blank
+						//effectiveTime
+						relationshipWriter.write(effectiveTime);
 						relationshipWriter.write("\t");
 
 						//active

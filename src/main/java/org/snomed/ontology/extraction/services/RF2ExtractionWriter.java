@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import org.ihtsdo.otf.snomedboot.factory.ImpotentComponentFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snomed.ontology.extraction.utils.MainMethodUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -149,7 +150,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	public void newConceptState(String conceptId, String effectiveTime, String active, String moduleId, String definitionStatusId) {
 		if (conceptIds.contains(parseLong(conceptId))) {
 			try {
-				conceptWriter.write(String.join(TAB, conceptId, effectiveTime, active, moduleId, definitionStatusId));
+				conceptWriter.write(String.join(TAB, conceptId, resolveEffectiveTime(effectiveTime), active, moduleId, definitionStatusId));
 				newline(conceptWriter);
 			} catch (IOException e) {
 				// Ugly but the interface does not allow throwing a checked exception
@@ -167,7 +168,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 				if (typeId.equals("900000000000550004")) {// 900000000000550004 | Definition (core metadata concept) |
 					writer = textDefWriter;
 				}
-				writer.write(String.join(TAB, id, effectiveTime, active, moduleId, conceptId, languageCode, typeId, term, caseSignificanceId));
+				writer.write(String.join(TAB, id, resolveEffectiveTime(effectiveTime), active, moduleId, conceptId, languageCode, typeId, term, caseSignificanceId));
 				newline(writer);
 			} catch (IOException e) {
 				throw new RuntimeException("Failed to write to description file.", e);
@@ -179,6 +180,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	public void newReferenceSetMemberState(String filename, String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId,
 			String referencedComponentId, String... otherValues) {
 
+		effectiveTime = resolveEffectiveTime(effectiveTime);
 		recordMaxModuleEffectiveDate(effectiveTime, moduleId);
 
 		if (fieldNames.length == 7 && fieldNames[6].equals("acceptabilityId")) {
@@ -277,6 +279,10 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 				maxModuleDates.put(moduleIdL, effectiveTimeI);
 			}
 		}
+	}
+
+	private String resolveEffectiveTime(String effectiveTime) {
+		return MainMethodUtils.resolveEffectiveTime(effectiveTime, dateString);
 	}
 
 	@Override
