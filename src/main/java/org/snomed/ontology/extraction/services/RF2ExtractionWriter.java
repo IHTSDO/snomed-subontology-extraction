@@ -117,14 +117,14 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		}
 	}
 
-	private BufferedWriter getCreateRefsetWriter(long refsetIdL, String originalFilename, String[] fieldNames) {
+	private BufferedWriter getCreateRefsetWriter(long refsetIdL, String originalFilename, String[] fieldNames, File directory) {
 		String filename = refsetName.computeIfAbsent(refsetIdL, i -> {
 			String filenamePart = originalFilename.substring(0, originalFilename.lastIndexOf("_"));
 			return "%s_%s.txt".formatted(filenamePart, dateString);
 		});
 		return refsetWriters.computeIfAbsent(filename, i -> {
 			try {
-				return newRF2Writer(refsetDir, filename, String.join(TAB, fieldNames));
+				return newRF2Writer(directory, filename, String.join(TAB, fieldNames));
 			} catch (IOException e) {
 				throw new RuntimeException("Failed to create refset writer.", e);
 			}
@@ -187,8 +187,10 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 			handleAxiom(id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues);
 		} else if (refsetId.equals(MDRS)) {
 			handleMDRS(id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues);
+		} else if (filename.contains("Refset_MRCM")) {
+			handleOtherRefset(fieldNames, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues, "Metadata");
 		} else {
-			handleOtherRefset(fieldNames, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues);
+			handleOtherRefset(fieldNames, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues, null);
 		}
 	}
 
@@ -244,13 +246,16 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	}
 
 	private void handleOtherRefset(String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId,
-			String referencedComponentId, String[] otherValues) throws RF2ExtractionException {
+			String referencedComponentId, String[] otherValues, String refsetSubdirectory) throws RF2ExtractionException {
 
 		long refsetIdL = parseLong(refsetId);
 		if (refsetsToInclude.containsKey(refsetIdL) && conceptIds.contains(Long.parseLong(referencedComponentId))) {
 			try {
-				BufferedWriter refsetWriter = getCreateRefsetWriter(refsetIdL, refsetsToInclude.get(refsetIdL), fieldNames);
-				refsetWriter.write(String.join(TAB, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues[0]));
+				File directory = refsetSubdirectory == null ? refsetDir : new File(refsetDir, refsetSubdirectory);
+				BufferedWriter refsetWriter = getCreateRefsetWriter(refsetIdL, refsetsToInclude.get(refsetIdL), fieldNames, directory);
+				List<String> row = new ArrayList<>(List.of(id, effectiveTime, active, moduleId, refsetId, referencedComponentId));
+				Collections.addAll(row, otherValues);
+				refsetWriter.write(String.join(TAB, row));
 				newline(refsetWriter);
 			} catch (IOException e) {
 				throw new RF2ExtractionException("Failed to write refset file.", e);
