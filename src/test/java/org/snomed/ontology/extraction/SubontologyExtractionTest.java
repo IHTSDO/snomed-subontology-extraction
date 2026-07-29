@@ -69,6 +69,47 @@ public class SubontologyExtractionTest {
 		assertEquals("[138875005]", parents.get("900000000000441003").toString());
 	}
 
+	@Test
+	void testEffectiveTimeParameter() throws ConversionException, OWLException, ReleaseImportException, IOException, ReasonerException {
+		File tempOutputDirectory = Files.createTempDirectory(new Date().getTime() + "").toFile();
+		tempOutputDirectory.deleteOnExit();
+		File inputRF2Zip = ZipUtil.zipDirectoryRemovingCommentsAndBlankLines("src/test/resources/dummy-sct-snapshot");
+		String effectiveTime = "20250901";
+
+		subontologyExtraction.run(("-source-ontology src/test/resources/dummy-sct-ontology.owl " +
+				"-input-subset src/test/resources/subset.txt " +
+				"-output-rf2 " +
+				"-output-path " + tempOutputDirectory.getAbsolutePath() + " " +
+				"-rf2-snapshot-archive " + inputRF2Zip.getAbsolutePath() + " " +
+				"-effective-time " + effectiveTime).split(" "));
+
+		File relationshipOutputFile = new File(tempOutputDirectory,
+				String.format("RF2/Snapshot/Terminology/sct2_Relationship_Snapshot_INT_%s.txt", effectiveTime));
+		assertTrue(relationshipOutputFile.isFile(), "Relationship file should use configured effective time in filename.");
+
+		File conceptOutputFile = new File(tempOutputDirectory,
+				String.format("RF2/Snapshot/Terminology/sct2_Concept_Snapshot_INT_%s.txt", effectiveTime));
+		assertTrue(conceptOutputFile.isFile(), "Concept file should use configured effective time in filename.");
+
+		File mdrsOutputFile = new File(tempOutputDirectory,
+				String.format("RF2/Snapshot/Refset/Metadata/der2_ssRefset_ModuleDependencySnapshot-en_INT_%s.txt", effectiveTime));
+		assertTrue(mdrsOutputFile.isFile(), "Module Dependency refset file should use configured effective time in filename.");
+
+		boolean foundSyntheticMdrsRow = false;
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(mdrsOutputFile)))) {
+			reader.readLine();
+			String line;
+			while ((line = reader.readLine()) != null) {
+				String[] values = line.split("\\t");
+				if (effectiveTime.equals(values[1]) && effectiveTime.equals(values[6])) {
+					foundSyntheticMdrsRow = true;
+					break;
+				}
+			}
+		}
+		assertTrue(foundSyntheticMdrsRow, "Generated Module Dependency refset row should use configured effective time.");
+	}
+
 	private Map<String, Set<String>> extractParents(File relationshipsFile) throws IOException {
 		Map<String, Set<String>> parents = new HashMap<>();
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(relationshipsFile)))) {

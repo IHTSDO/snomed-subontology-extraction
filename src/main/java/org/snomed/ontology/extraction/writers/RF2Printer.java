@@ -191,7 +191,7 @@ public class RF2Printer extends Printer {
 		return idToFSNMap;
 	}
 
-	public void printRelationshipRF2Files(OWLOntology nnfOntology) throws ConversionException, IOException {
+	public void printRelationshipRF2Files(OWLOntology nnfOntology, String effectiveTime) throws ConversionException, IOException {
 		AxiomRelationshipConversionService converter = new AxiomRelationshipConversionService(new HashSet<>());
 
 		Set<AxiomRepresentation> representations = new HashSet<>();
@@ -203,8 +203,8 @@ public class RF2Printer extends Printer {
 		terminologyDirectory.mkdirs();
 		SCTIDSource relationshipIdSource = new SCTIDSource(SubOntologyRF2ConversionService.SCTID_GENERATION_NAMESPACE, "02", 100);
 
-		File outputFile = new File(terminologyDirectory, "sct2_Relationship_Snapshot_INT_" + SIMPLE_DATE_FORMAT.format(new Date().getTime()) + ".txt");
-		File concreteOutputFile = new File(terminologyDirectory, "sct2_RelationshipConcreteValues_Snapshot_INT_" + SIMPLE_DATE_FORMAT.format(new Date().getTime()) + ".txt");
+		File outputFile = new File(terminologyDirectory, "sct2_Relationship_Snapshot_INT_" + effectiveTime + ".txt");
+		File concreteOutputFile = new File(terminologyDirectory, "sct2_RelationshipConcreteValues_Snapshot_INT_" + effectiveTime + ".txt");
 		System.out.println("Writing inferred relationships files for: " + outputFile + " and " + concreteOutputFile);
 
 		try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), UTF_8_CHARSET));

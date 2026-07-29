@@ -8,6 +8,8 @@ import org.snomed.ontology.extraction.writers.RF2Printer;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 
 import java.io.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /*
@@ -28,7 +30,7 @@ public class SubOntologyRF2ConversionService {
 	public static final String TEST_SUBONTOLOGY_MODULE_CONCEPT = "31000003106";
 
 	public static void convertSubOntologytoRF2(OWLOntology subOntology, OWLOntology nnfOntology, Set<Long> inactiveConcepts, File outputDirectory,
-			File sourceFile, RF2InformationCache rf2Cache) throws ReleaseImportException, IOException, OWLException, ConversionException {
+			File sourceFile, RF2InformationCache rf2Cache, String effectiveTime) throws ReleaseImportException, IOException, OWLException, ConversionException {
 
 		//Extract the concept and description RF2 files, based on the source ontology (includes all entities in subontology)
 		Set<OWLEntity> entitiesInSubontologyAndNNFs = new HashSet<>();
@@ -53,15 +55,15 @@ public class SubOntologyRF2ConversionService {
 		entitiesInSubontologyAndNNFs.remove(df.getOWLNothing());
 
 		//Extract relationship rf2 file from nnfs
-		printRelationshipRF2(nnfOntology, outputDirectory);
+		printRelationshipRF2(nnfOntology, outputDirectory, effectiveTime);
 
-		extractConceptAndDescriptionRF2(entitiesInSubontologyAndNNFs, inactiveConcepts, outputDirectory, sourceFile, rf2Cache);
+		extractConceptAndDescriptionRF2(entitiesInSubontologyAndNNFs, inactiveConcepts, outputDirectory, sourceFile, rf2Cache, effectiveTime);
 
 		//Extract OWLRefset rf2 file (and TextDefinitions file) from authoring definitions
-		computeOWLRefsetAndTextDefinitions(outputDirectory);
+		computeOWLRefsetAndTextDefinitions(outputDirectory, effectiveTime);
 	}
 
-	private static void extractConceptAndDescriptionRF2(Set<OWLEntity> entitiesToExtract, Set<Long> inactiveConcepts, File outputDirectory, File sourceRF2File, RF2InformationCache rf2Cache) throws IOException, ReleaseImportException {
+	private static void extractConceptAndDescriptionRF2(Set<OWLEntity> entitiesToExtract, Set<Long> inactiveConcepts, File outputDirectory, File sourceRF2File, RF2InformationCache rf2Cache, String effectiveTime) throws IOException, ReleaseImportException {
 		Set<Long> entityIDs = new HashSet<>();
 		System.out.println("Extracting background RF2 information for entities in subontology.");
 		System.out.println("Storing in " + new File(outputDirectory, "RF2"));
@@ -82,19 +84,27 @@ public class SubOntologyRF2ConversionService {
 				refsetsToInclude.put(concept, rf2Cache.getRefsetFilename(concept));
 			}
 		}
-		new RF2ExtractionService().extractConcepts(new FileInputStream(sourceRF2File), allIds, refsetsToInclude, subontologyRF2);
+		new RF2ExtractionService().extractConcepts(new FileInputStream(sourceRF2File), allIds, refsetsToInclude, subontologyRF2, effectiveTime);
 	}
 
-	private static void printRelationshipRF2(OWLOntology nnfOntology, File outputDirectory) throws IOException, ConversionException {
+	private static void printRelationshipRF2(OWLOntology nnfOntology, File outputDirectory, String effectiveTime) throws IOException, ConversionException {
 		RF2Printer printer = new RF2Printer(outputDirectory);
-		printer.printRelationshipRF2Files(nnfOntology);
+		printer.printRelationshipRF2Files(nnfOntology, effectiveTime);
 	}
 
-	private static void computeOWLRefsetAndTextDefinitions(File outputDirectory) throws IOException, OWLException {
+	private static void computeOWLRefsetAndTextDefinitions(File outputDirectory, String effectiveTime) throws IOException, OWLException {
 		OWLtoRF2Service owlToRF2Converter = new OWLtoRF2Service();
 		try (InputStream owlFileStreamAuthoring = new BufferedInputStream(new FileInputStream(new File(outputDirectory, "subOntology.owl")))) {
 			File rf2ZipAuthoring = new File(outputDirectory, OWLRefsetRF2Filename + ".zip");
-			owlToRF2Converter.writeToRF2(owlFileStreamAuthoring, new FileOutputStream(rf2ZipAuthoring), new Date());
+			owlToRF2Converter.writeToRF2(owlFileStreamAuthoring, new FileOutputStream(rf2ZipAuthoring), parseEffectiveTime(effectiveTime));
+		}
+	}
+
+	private static Date parseEffectiveTime(String effectiveTime) {
+		try {
+			return new SimpleDateFormat("yyyyMMdd").parse(effectiveTime);
+		} catch (ParseException e) {
+			throw new IllegalArgumentException("Invalid effective time: " + effectiveTime, e);
 		}
 	}
 

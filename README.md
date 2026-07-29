@@ -51,6 +51,10 @@ Optional parameters for OWL conversion:
                                         A SNOMED CT RF2 archive containing a snapshot. The release version must match the source ontology OWL file.
 
  -include-inactive                      Include inactive concepts in output.
+
+ -effective-time                        (Optional) effective time for generated RF2 output in yyyyMMdd format.
+                                        Used in snapshot filenames and generated Module Dependency refset rows.
+                                        Defaults to today's date.
  
  -verify-subontology                    (Optional) runs verification for the computed subontology to check steps 1 and 2 above.
                                         Warning: this can be expensive for larger subontologies.

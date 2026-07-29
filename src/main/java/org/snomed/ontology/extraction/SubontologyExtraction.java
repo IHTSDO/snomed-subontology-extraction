@@ -37,6 +37,7 @@ public class SubontologyExtraction {
 	private static final String ARG_RF2_SNAPSHOT_ARCHIVE = "-rf2-snapshot-archive";
 	private static final String ARG_VERIFY_SUBONTOLOGY = "-verify-subontology";
 	private static final String ARG_INCLUDE_INACTIVE = "-include-inactive";
+	private static final String ARG_EFFECTIVE_TIME = "-effective-time";
 
 	public static void main(String[] argsArray) {
 		try {
@@ -147,8 +148,9 @@ public class SubontologyExtraction {
 			//generator.generateNNFs();
 			OWLOntology nnfOntology = generator.getNnfOntology();
 			OntologySaver.saveOntology(nnfOntology, outputDirectory, "subOntologyNNFs.owl");
+			String effectiveTime = getEffectiveTimeParameter(ARG_EFFECTIVE_TIME, args);
 			SubOntologyRF2ConversionService.convertSubOntologytoRF2(subOntology, nnfOntology, includeInactive ? inactiveConcepts : Collections.emptySet(),
-					outputDirectory, sourceRF2File, rf2Cache);
+					outputDirectory, sourceRF2File, rf2Cache, effectiveTime);
 		}
 		if(verifySubontology) {
 			VerificationChecker checker = new VerificationChecker();
@@ -270,6 +272,12 @@ public class SubontologyExtraction {
 						pad(ARG_INCLUDE_INACTIVE) +
 						"(Optional) includes inactive concepts in RF2 output when using " + ARG_OUTPUT_RF2 + ".\n" +
 						pad("") + "Inactive concepts will be included with active=0 in the RF2 files.\n" +
+						"\n" +
+
+						pad(ARG_EFFECTIVE_TIME) +
+						"(Optional) effective time for generated RF2 output in yyyyMMdd format.\n" +
+						pad("") + "Used in snapshot filenames and generated Module Dependency refset rows.\n" +
+						pad("") + "Defaults to today's date.\n" +
 						"\n" +
 
 						"");
