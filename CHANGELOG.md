@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.1
+
+### Fixes
+- Generated inferred relationships use the subontology module (`31000003106`) instead of the International Release Module
+
 ## 2.2.0
 
 ### Features

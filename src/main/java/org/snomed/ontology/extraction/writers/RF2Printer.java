@@ -242,7 +242,7 @@ public class RF2Printer extends Printer {
 						relationshipWriter.write("\t");
 
 						//moduleId
-						relationshipWriter.write("900000000000207008");
+						relationshipWriter.write(SubOntologyRF2ConversionService.TEST_SUBONTOLOGY_MODULE_CONCEPT);
 						relationshipWriter.write("\t");
 
 						//sourceId

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.model.OWLException;
 import org.snomed.ontology.extraction.exception.ReasonerException;
+import org.snomed.ontology.extraction.services.SubOntologyRF2ConversionService;
 import org.snomed.otf.owltoolkit.conversion.ConversionException;
 import org.snomed.otf.snomedboot.testutil.ZipUtil;
 
@@ -67,6 +68,7 @@ public class SubontologyExtractionTest {
 		assertEquals("[900000000000441003]", parents.get("410662002").toString());
 		assertTrue(parents.containsKey("900000000000441003"));
 		assertEquals("[138875005]", parents.get("900000000000441003").toString());
+		assertRelationshipModuleIds(relationshipOutputFile);
 	}
 
 	@Test
@@ -115,6 +117,20 @@ public class SubontologyExtractionTest {
 			while ((line = reader.readLine()) != null) {
 				String[] values = line.split("\\t");
 				assertEquals(effectiveTime, values[1], "Generated relationship rows should use configured effective time.");
+				assertEquals(SubOntologyRF2ConversionService.TEST_SUBONTOLOGY_MODULE_CONCEPT, values[3],
+						"Generated relationship rows should use subontology module.");
+			}
+		}
+	}
+
+	private void assertRelationshipModuleIds(File relationshipsFile) throws IOException {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(relationshipsFile)))) {
+			reader.readLine();
+			String line;
+			while ((line = reader.readLine()) != null) {
+				String[] values = line.split("\\t");
+				assertEquals(SubOntologyRF2ConversionService.TEST_SUBONTOLOGY_MODULE_CONCEPT, values[3],
+						"Generated relationship rows should use subontology module.");
 			}
 		}
 	}
