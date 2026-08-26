@@ -6,6 +6,7 @@ import org.ihtsdo.otf.snomedboot.factory.ImpotentComponentFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snomed.ontology.extraction.utils.MainMethodUtils;
+import org.springframework.lang.NonNull;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -63,6 +64,9 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 
 		File metaRefsetDir = new File(refsetDir, "Metadata");
 		createDirectoryOrThrow(metaRefsetDir);
+
+		File contentRefsetDir = new File(refsetDir, "Content");
+		createDirectoryOrThrow(contentRefsetDir);
 
 		writers = new ArrayList<>();
 
@@ -192,7 +196,7 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 		} else if (filename.contains("Refset_MRCM")) {
 			handleOtherRefset(fieldNames, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues, "Metadata");
 		} else {
-			handleOtherRefset(fieldNames, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues, null);
+			handleOtherRefset(fieldNames, id, effectiveTime, active, moduleId, refsetId, referencedComponentId, otherValues, "Content");
 		}
 	}
 
@@ -248,12 +252,12 @@ public class RF2ExtractionWriter extends ImpotentComponentFactory implements Aut
 	}
 
 	private void handleOtherRefset(String[] fieldNames, String id, String effectiveTime, String active, String moduleId, String refsetId,
-			String referencedComponentId, String[] otherValues, String refsetSubdirectory) throws RF2ExtractionException {
+			String referencedComponentId, String[] otherValues, @NonNull String refsetSubdirectory) throws RF2ExtractionException {
 
 		long refsetIdL = parseLong(refsetId);
 		if (refsetsToInclude.containsKey(refsetIdL) && conceptIds.contains(Long.parseLong(referencedComponentId))) {
 			try {
-				File directory = refsetSubdirectory == null ? refsetDir : new File(refsetDir, refsetSubdirectory);
+				File directory = new File(refsetDir, refsetSubdirectory);
 				BufferedWriter refsetWriter = getCreateRefsetWriter(refsetIdL, refsetsToInclude.get(refsetIdL), fieldNames, directory);
 				List<String> row = new ArrayList<>(List.of(id, effectiveTime, active, moduleId, refsetId, referencedComponentId));
 				Collections.addAll(row, otherValues);

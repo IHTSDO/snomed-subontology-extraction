@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.2
+
+### Fixes
+- Write additional refsets to the `Refsets/Content/` directory, not `Refsets/`
+
 ## 2.2.1
 
 ### Fixes
